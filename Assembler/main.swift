@@ -20,7 +20,7 @@ class C74
   //-------------------------------------------------------------------------------------------
   func processSources() -> Bool
   {
-    for sourceURL in console.sources
+    for sourceURL in console.sources 
     {
       let data = try! Data(contentsOf:sourceURL);
       let source = Source()
