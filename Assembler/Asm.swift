@@ -191,6 +191,7 @@ class Source
   var progSyms:Dictionary<Data,Int> = [:]  // Public symbols pointing to addresses in program memory
   var dataSyms:Dictionary<Data,Int> = [:]  // Public symbols pointing to addresses in data memory
   
+  // TO DO
   func assemble()
   {
       for fun in functions
