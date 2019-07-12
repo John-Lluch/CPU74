@@ -1,10 +1,10 @@
 version: "Apple Swift version 4.0.3 (swiftlang-900.0.74.1 clang-900.0.39.2)"
 options: "852f208b531d2ed181ba7eb0010e17c1"
-build_time: [1562919278, 627444000]
+build_time: [1562920559, 325419000]
 inputs:
   "/Users/joan/Documents-Local/Relay/CPU74/Assembler/SourceParser.swift": [1562919206, 0]
   "/Users/joan/Documents-Local/Relay/CPU74/Assembler/InstInfo.swift": [1562778367, 0]
-  "/Users/joan/Documents-Local/Relay/CPU74/Assembler/main.swift": [1562859362, 0]
+  "/Users/joan/Documents-Local/Relay/CPU74/Assembler/main.swift": [1562920500, 0]
   "/Users/joan/Documents-Local/Relay/CPU74/Assembler/Asm.swift": [1562913546, 0]
   "/Users/joan/Documents-Local/Relay/CPU74/Assembler/PrimitiveParser.swift": [1562919168, 0]
   "/Users/joan/Documents-Local/Relay/CPU74/Assembler/Console.swift": [1562919209, 0]
