@@ -15,7 +15,7 @@ import Foundation
 
 class C74
 {
-  var assembler = Assembler()
+  let assembler = Assembler()
 
   //-------------------------------------------------------------------------------------------
   func processSourceFile( _ sourceURL:URL ) -> Bool
