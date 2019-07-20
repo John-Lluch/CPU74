@@ -267,30 +267,6 @@ class SourceParser:PrimitiveParser
     return false
   }
   
-//  //-------------------------------------------------------------------------------------------
-//  func parseAssemblyName() -> Bool
-//  {
-//    if parseConcreteToken(cStr: "mov.w".d )
-//    {
-//      currInst = Instruction( "mov.w".d )
-//      currInst?.needsExOp = true
-//    }
-//
-//    else if let name = parseConditionalInstructionPrefix()
-//    {
-//      currInst = Instruction( name )
-//      if parseConditionCode() { return true }
-//      else { printError( "Unrecognized condition code for conditional instruction" ) }
-//    }
-//
-//    else if let name = parseToken()
-//    {
-//      currInst = Instruction( name )
-//      return true
-//    }
-//    return false
-//  }
-  
   //-------------------------------------------------------------------------------------------
   func parseInstruction() -> Bool
   {
@@ -341,22 +317,6 @@ class SourceParser:PrimitiveParser
     c = svc;
     return nil;
   }
-  
-  //-------------------------------------------------------------------------------------------
-//  func parsePrivateLabel() -> Data?
-//  {
-//    let svc = c
-//    if let token = parseDotToken()
-//    {
-//      if parseChar( UInt8(ascii:":") )
-//      {
-//        return token
-//      }
-//    }
-//    c = svc;
-//    return nil;
-//  }
-  
   
   //-------------------------------------------------------------------------------------------
   func parseTokenList() -> [Data]?
