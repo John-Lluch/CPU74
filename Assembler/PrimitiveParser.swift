@@ -196,23 +196,6 @@ class PrimitiveParser
     return nil ;
   }
 
-//  //-------------------------------------------------------------------------------------------
-//  // Parse a Token with a leading dot. Return a wrapped data if successful or nil otherwhise
-//  // Optionally pass a character prefix that must be present
-//  func parseDotToken() -> Data?
-//  {
-//    let svc = c
-//    if ( parseChar( _dot ) )
-//    {
-//      if ( parseToken() )
-//      {
-//        return s[svc..<c]
-//      }
-//    }
-//    c = svc
-//    return nil
-//  }
-
   //-------------------------------------------------------------------------------------------
   // Parse an int. Return a wrapped Int if successful or nil otherwhise
   func parseInteger() -> Int?

@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 //-------------------------------------------------------------------------------------------
 // Operand
 //-------------------------------------------------------------------------------------------
@@ -85,7 +84,6 @@ class OpSym : Operand
     return "nil"
   }
 }
-
 
 //-------------------------------------------------------------------------------------------
 // Instruction
@@ -165,7 +163,6 @@ class Instruction : Hashable, CustomStringConvertible
   }
 }
 
-
 //-------------------------------------------------------------------------------------------
 // Function
 //-------------------------------------------------------------------------------------------
@@ -193,7 +190,6 @@ class Function
   }
 }
 
-
 //-------------------------------------------------------------------------------------------
 // Address Label
 //-------------------------------------------------------------------------------------------
@@ -210,7 +206,6 @@ class DataValue
   }
 }
 
-
 //-------------------------------------------------------------------------------------------
 // Source
 //-------------------------------------------------------------------------------------------
@@ -219,68 +214,97 @@ class Source
 {
   var name = Data();            // Source name
   var functions:[Function] = [] // Functions
-  
   var privSyms:Dictionary<Data,Int> = [:]  // Private symbols pointing to program memory
+}
+
+//-------------------------------------------------------------------------------------------
+// Assembler
+//-------------------------------------------------------------------------------------------
+
+class Assembler
+{
+  var sources = [Source]()
   var progSyms:Dictionary<Data,Int> = [:]  // Public symbols pointing to addresses in program memory
   var dataSyms:Dictionary<Data,Int> = [:]  // Public symbols pointing to addresses in data memory
   
-  
   //-------------------------------------------------------------------------------------------
-  func assemble()
+  func addSource( _ source:Source)
   {
-      for fun in functions
+    sources.append(source)
+  }
+
+  //-------------------------------------------------------------------------------------------
+  func assemble(source:Source) -> Bool
+  {
+    for fun in source.functions
+    {
+      #if DEBUG
+      out.print( "function: " )
+      out.println( fun.name.s )
+      #endif
+      for i in 0..<fun.instructions.count
       {
-        out.print( "function: " )
-        out.println( fun.name.s )
-        for i in 0..<fun.instructions.count
-        {
-          let inst = fun.instructions[i]
-          let mcInst = InstrList.getMachineInst(inst:inst)
-          
-          if ( mcInst == nil )
-          {
-            out.printError( "Unrecognised Instruction Pattern: " + inst.description )
-            exit(0)
-          }
-
-          let here = fun.offset + i
-          var ra:Int? = nil
-          var aa:Int? = nil
-
-          if let mcrInst = mcInst as? InstPCRelative
-          {
-            var a = privSyms[inst.sym!]
-            if a == nil { a = progSyms[inst.sym!] }
-            if ( a == nil ) {
-              out.printError( "Unresolved symbol: " + inst.sym!.s )
-            }
-            
-            ra = a! - here
-            mcrInst.setRelative(a:UInt16(truncatingIfNeeded:ra!))
-          }
-          
-          if let mcaInst = mcInst as? InstDTAbsolute
-          {
-            let a = dataSyms[inst.sym!]
-            if ( a == nil ) {
-              out.printError( "Unresolved symbol: " + inst.sym!.s )
-            }
-
-            aa = a!
-            mcaInst.setAbsolute(a:UInt16(truncatingIfNeeded:aa!))
-          }
-
-          #if DEBUG
-          let encoding = mcInst!.encoding
-          let str = String(encoding, radix:2) //binary base
-          let padd = String(repeating:"0", count:(16 - str.count))
-          var prStr = String(format:"%05d : %@%@  %@", fun.offset+i, padd, str, inst.description )
-          if ( ra != nil) { prStr += String(format:"(%+d)", ra!) }
-          if ( aa != nil) { prStr += String(format:"(%05d)", aa!) }
-          out.println( prStr )
-          #endif
+        let inst = fun.instructions[i]
+        let mcInst = InstrList.getMachineInst(inst:inst)
+        
+        if ( mcInst == nil ) {
+          out.printError( "Unrecognised Instruction Pattern: " + inst.description )
+          return false
         }
+
+        let here = fun.offset + i
+        var ra:Int? = nil
+        var aa:Int? = nil
+
+        if let mcrInst = mcInst as? InstPCRelative
+        {
+          var a = source.privSyms[inst.sym!]
+          if a == nil { a = progSyms[inst.sym!] }
+          if ( a == nil ) {
+            out.printError( "Unresolved symbol: " + inst.sym!.s )
+            return false
+          }
+  
+          ra = a! - here
+          mcrInst.setRelative(a:UInt16(truncatingIfNeeded:ra!))
+        }
+        
+        if let mcaInst = mcInst as? InstDTAbsolute
+        {
+          let a = dataSyms[inst.sym!]
+          if ( a == nil ) {
+            out.printError( "Unresolved symbol: " + inst.sym!.s )
+            return false
+          }
+
+          aa = a!
+          mcaInst.setAbsolute(a:UInt16(truncatingIfNeeded:aa!))
+        }
+
+        #if DEBUG
+        let encoding = mcInst!.encoding
+        
+        let str = String(encoding, radix:2) //binary base
+        let padd = String(repeating:"0", count:(16 - str.count))
+        var prStr = String(format:"%05d : %@%@  %@", fun.offset+i, padd, str, inst.description )
+        if ( ra != nil) { prStr += String(format:"(%+d)", ra!) }
+        if ( aa != nil) { prStr += String(format:"(%05d)", aa!) }
+        out.println( prStr )
+        #endif
       }
+    }
+    return true
+  }
+
+//-------------------------------------------------------------------------------------------
+  func assembleAll()
+  {
+    for source in sources
+    {
+      if !assemble(source:source) { break }
+    }
   }
 }
+
+
 

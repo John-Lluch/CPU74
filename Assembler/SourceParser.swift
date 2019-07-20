@@ -32,15 +32,17 @@ extension Data
 class SourceParser:PrimitiveParser
 {
   let src:Source
+  let asm:Assembler
   var currOffs:Int = 0
   var currFn:Function?
   var currInst:Instruction?
 
   //-------------------------------------------------------------------------------------------
-  init( withData:Data, source:Source)
+  init( withData:Data, source:Source, assembler:Assembler)
   {
-    src = source;
-    super.init(withData:withData);
+    src = source
+    asm = assembler
+    super.init(withData:withData)
   }
   
   //-------------------------------------------------------------------------------------------
@@ -393,7 +395,7 @@ class SourceParser:PrimitiveParser
       // must be followed by a token
       if let name = parseToken()
       {
-        src.progSyms[name] = currOffs
+        asm.progSyms[name] = currOffs
         
         // the line after .glob may contain a .set directire
         skip()
@@ -404,8 +406,8 @@ class SourceParser:PrimitiveParser
           {
             if tokens.count == 2
             {
-              let offs = src.progSyms[tokens[1]]
-              src.progSyms[tokens[0]] = offs
+              let offs = asm.progSyms[tokens[1]]
+              asm.progSyms[tokens[0]] = offs
               return true
             }
             else { printError( "Expecting exactly 2 tokens after .set directive" ) }

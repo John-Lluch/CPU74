@@ -15,51 +15,33 @@ import Foundation
 
 class C74
 {
-  var sources = [Source]();
+  var assembler = Assembler()
 
   //-------------------------------------------------------------------------------------------
-  func processSources() -> Bool
+  func processSourceFile( _ sourceURL:URL ) -> Bool
   {
-    for sourceURL in console.sources
+    let data = try! Data(contentsOf:sourceURL)
+    let source = Source()
+    let sourceParser = SourceParser(withData:data, source:source, assembler:assembler)
+    if sourceParser.parseAll()
     {
-      let data = try! Data(contentsOf:sourceURL);
-      let source = Source()
-      let sourceParser = SourceParser(withData:data, source:source)
-      if sourceParser.parseAll()
-      {
-        source.assemble()
-        sources.append(source)
-        continue
-      }
-      break
+      assembler.addSource( source )
+      return true
     }
-    
-    return sources.count == console.sources.count;
-  }
-
-  //-------------------------------------------------------------------------------------------
-  func linkSources() -> Bool
-  {
-    // TO DO
-    return true
+    return false
   }
   
   //-------------------------------------------------------------------------------------------
   init()
   {
-    if console.sources.count == 0
+    for sourceURL in console.sources
     {
-      return
+      if !processSourceFile(sourceURL) { break }
     }
     
-    if !processSources()
+    if console.sources.count == assembler.sources.count
     {
-      return
-    }
-  
-    if !linkSources()
-    {
-      return
+      assembler.assembleAll()
     }
   }
 
