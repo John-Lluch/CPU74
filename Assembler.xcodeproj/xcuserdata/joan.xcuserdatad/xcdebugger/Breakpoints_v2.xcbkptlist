@@ -6,15 +6,15 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "CPU74Assembler/Asm.swift"
-            timestampString = "584606738.592262"
+            filePath = "Assembler/Asm.swift"
+            timestampString = "585327789.139564"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "196"
-            endingLineNumber = "196"
+            startingLineNumber = "238"
+            endingLineNumber = "238"
             landmarkName = "assemble()"
             landmarkType = "7">
          </BreakpointContent>
@@ -25,13 +25,13 @@
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "CPU74Assembler/SourceParser.swift"
-            timestampString = "584606738.593433"
+            filePath = "Assembler/InstInfo.swift"
+            timestampString = "585327789.1405081"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "229"
-            endingLineNumber = "229"
-            landmarkName = "parseInstruction()"
+            startingLineNumber = "472"
+            endingLineNumber = "472"
+            landmarkName = "getMachineInst(inst:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -41,13 +41,29 @@
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "CPU74Assembler/SourceParser.swift"
-            timestampString = "584606738.5940599"
+            filePath = "Assembler/InstInfo.swift"
+            timestampString = "585327789.141229"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "364"
-            endingLineNumber = "364"
-            landmarkName = "parseAll()"
+            startingLineNumber = "466"
+            endingLineNumber = "466"
+            landmarkName = "getMachineInst(inst:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Assembler/Asm.swift"
+            timestampString = "585327789.14165"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "252"
+            endingLineNumber = "252"
+            landmarkName = "assemble()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

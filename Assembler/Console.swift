@@ -26,6 +26,13 @@ class ConsoleIO
   func print(_ message:String, _ isError:Bool=false) {
     fputs("\(message)", isError ? stderr : stdout);
   }
+  
+  func printError( _ message:String )
+  {
+    out.print( "ERROR: ", true )
+    out.println( message, true )
+    exit(0)
+  }
 }
 
 // -----------------------------------------------------------------

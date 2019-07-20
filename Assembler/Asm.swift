@@ -9,43 +9,67 @@
 import Foundation
 
 
-/////////////////////////////////////////////////////////////////
+//-------------------------------------------------------------------------------------------
 // Operand
-/////////////////////////////////////////////////////////////////
+//-------------------------------------------------------------------------------------------
+
 class Operand : CustomStringConvertible
 {
   let value:Int
   let sym:Data?
   let indirect:Bool
+  var extern:Bool
   
   var description: String { return "(none)" }
+  var u16value:UInt16 { return UInt16(truncatingIfNeeded:value) }
   
-  init ( _ v:Int, _ s:Data?, _ b:Bool )
+  init ( _ v:Int, _ s:Data?, ind b:Bool, ext e:Bool )
   {
     value = v
     sym = s
     indirect = b
+    extern = e
   }
   
-  convenience init ( _ v:Int, _ b:Bool )
+  convenience init ( )
   {
-    self.init( v, nil, b )
+    self.init( 0, nil, ind:false, ext:false )
   }
   
-  convenience init ( _ b:Bool )
+  convenience init ( ind b:Bool )
   {
-    self.init( 0, nil, b )
+    self.init( 0, nil, ind:b, ext:false )
   }
   
-  convenience init ( _ s:Data?, _ b:Bool )
+  convenience init ( _ v:Int, ind b:Bool )
   {
-    self.init( 0, s, b )
+    self.init( v, nil, ind:b, ext:false )
+  }
+  
+  convenience init ( _ s:Data?, ind b:Bool )
+  {
+    self.init( 0, s, ind:b, ext:false )
+  }
+  
+  convenience init ( _ v:Int, ind b:Bool, ext e:Bool)
+  {
+    self.init( v, nil, ind:b, ext:e )
+  }
+  
+  convenience init ( _ s:Data?, ind b:Bool, ext e:Bool )
+  {
+    self.init( 0, s, ind:b, ext:e )
   }
 }
 
 class OpReg : Operand
 {
   override var description: String { return "r\(value)" }
+}
+
+class OpRSP : OpReg
+{
+  override var description: String { return "SP" }
 }
 
 class OpImm : Operand
@@ -63,24 +87,24 @@ class OpSym : Operand
 }
 
 
-/////////////////////////////////////////////////////////////////
+//-------------------------------------------------------------------------------------------
 // Instruction
-/////////////////////////////////////////////////////////////////
+//-------------------------------------------------------------------------------------------
+
 class Instruction : Hashable, CustomStringConvertible
 {
   let name:Data
-  //let altName:Data
-  var isBranch:Bool
+  var needsExOp:Bool
   var ops:[Operand]
   
   var hashValue: Int
   {
-      return name.hashValue //^ altName.hashValue
+      return name.hashValue
   }
 
   static func == (lhs: Instruction, rhs: Instruction) -> Bool
   {
-    if !(lhs.name == rhs.name /*|| lhs.altName == rhs.altName*/) { return false }
+    if !(lhs.name == rhs.name ) { return false }
     if !(lhs.ops.count == rhs.ops.count) { return false }
     
     for i in 0..<lhs.ops.count
@@ -111,32 +135,46 @@ class Instruction : Hashable, CustomStringConvertible
     return str
   }
   
-  init( _ n:Data /*, _ an:Data*/ )
+  var exOperand:Operand?
+  {
+    for op in ops {
+      if op.extern { return op }
+    }
+    return nil
+  }
+  
+  var sym:Data?
+  {
+    for op in ops {
+      if op is OpSym { return op.sym }
+    }
+    return nil
+  }
+  
+  init( _ n:Data )
   {
     name = n
-    //altName = an
-    isBranch = false
+    needsExOp = false;
     ops = []
   }
   
-  init( _ n:Data /*, _ an:Data*/, _ b:Bool, _ o:[Operand] )
+  convenience init( _ n:Data, _ o:[Operand] )
   {
-    name = n
-    //altName = an
-    isBranch = b
+    self.init( n )
     ops = o
   }
 }
 
-/////////////////////////////////////////////////////////////////
+
+//-------------------------------------------------------------------------------------------
 // Function
-/////////////////////////////////////////////////////////////////
+//-------------------------------------------------------------------------------------------
+
 class Function
 {
   var name:Data
   var offset:Int
   var instructions:[Instruction] = []
-  //var instrs:[MachineInstr] = []
   
   init( _ n:Data, _ o:Int)
   {
@@ -155,52 +193,92 @@ class Function
   }
 }
 
-/////////////////////////////////////////////////////////////////
-// Label
-/////////////////////////////////////////////////////////////////
+
+//-------------------------------------------------------------------------------------------
+// Address Label
+//-------------------------------------------------------------------------------------------
+
 class DataValue
 {
   var name:Data
   var offset:Int
-  var size:Int
-  //var instrs:[MachineInstr] = []
   
   init( _ n:Data, _ o:Int)
   {
     name = n
     offset = o
-    size = 0
   }
 }
 
 
-/////////////////////////////////////////////////////////////////
+//-------------------------------------------------------------------------------------------
 // Source
-/////////////////////////////////////////////////////////////////
+//-------------------------------------------------------------------------------------------
+
 class Source
 {
   var name = Data();            // Source name
   var functions:[Function] = [] // Functions
-                                // Global vars
-  //var prLabels:[Label] = []     // Private labels pointing to program memory
-  //var progSyms:[Label] = []     // Public labels pointing to addresses in program memory
-  //var dataSyms:[Label] = []     // Public labels pointing to addresses in data memory
-  
   
   var privSyms:Dictionary<Data,Int> = [:]  // Private symbols pointing to program memory
   var progSyms:Dictionary<Data,Int> = [:]  // Public symbols pointing to addresses in program memory
   var dataSyms:Dictionary<Data,Int> = [:]  // Public symbols pointing to addresses in data memory
   
-  // TO DO
+  
+  //-------------------------------------------------------------------------------------------
   func assemble()
   {
       for fun in functions
       {
         out.print( "function: " )
-        fun.name.dump()
-        for ins in fun.instructions
+        out.println( fun.name.s )
+        for i in 0..<fun.instructions.count
         {
-          out.println( ins.description )
+          let inst = fun.instructions[i]
+          let mcInst = InstrList.getMachineInst(inst:inst)
+          
+          if ( mcInst == nil )
+          {
+            out.printError( "Unrecognised Instruction Pattern: " + inst.description )
+            exit(0)
+          }
+
+          let here = fun.offset + i
+          var ra:Int? = nil
+          var aa:Int? = nil
+
+          if let mcrInst = mcInst as? InstPCRelative
+          {
+            var a = privSyms[inst.sym!]
+            if a == nil { a = progSyms[inst.sym!] }
+            if ( a == nil ) {
+              out.printError( "Unresolved symbol: " + inst.sym!.s )
+            }
+            
+            ra = a! - here
+            mcrInst.setRelative(a:UInt16(truncatingIfNeeded:ra!))
+          }
+          
+          if let mcaInst = mcInst as? InstDTAbsolute
+          {
+            let a = dataSyms[inst.sym!]
+            if ( a == nil ) {
+              out.printError( "Unresolved symbol: " + inst.sym!.s )
+            }
+
+            aa = a!
+            mcaInst.setAbsolute(a:UInt16(truncatingIfNeeded:aa!))
+          }
+
+          #if DEBUG
+          let encoding = mcInst!.encoding
+          let str = String(encoding, radix:2) //binary base
+          let padd = String(repeating:"0", count:(16 - str.count))
+          var prStr = String(format:"%05d : %@%@  %@", fun.offset+i, padd, str, inst.description )
+          if ( ra != nil) { prStr += String(format:"(%+d)", ra!) }
+          if ( aa != nil) { prStr += String(format:"(%05d)", aa!) }
+          out.println( prStr )
+          #endif
         }
       }
   }

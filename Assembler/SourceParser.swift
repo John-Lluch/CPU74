@@ -18,15 +18,17 @@ extension String
 
 extension Data
 {
-   func dump()
+  var s:String
   {
-    out.println( String(data:self, encoding:.ascii)! )
+    get { return String(data:self, encoding:.ascii)! }
   }
 }
+
 
 //-------------------------------------------------------------------------------------------
 // SourceParser
 //-------------------------------------------------------------------------------------------
+
 class SourceParser:PrimitiveParser
 {
   let src:Source
@@ -90,17 +92,10 @@ class SourceParser:PrimitiveParser
   //-------------------------------------------------------------------------------------------
   func parsePrivateAddress() -> Data?
   {
-    let svc = c
-    if let addr = parseDotToken()
+    if let addr = parsePrefixedToken( prefix: ".L".d )
     {
-      let prefix = ".L".d
-      if addr.count > prefix.count
-        && prefix == addr[addr.startIndex..<addr.startIndex+prefix.count]
-      {
         return addr
-      }
     }
-    c = svc;
     return nil
   }
   
@@ -115,7 +110,7 @@ class SourceParser:PrimitiveParser
   }
   
   //-------------------------------------------------------------------------------------------
-  func parseOperand(ind:Bool) -> Bool
+  func parseOperand( ind:Bool ) -> Bool
   {
     if parseIndirectOperand()
     {
@@ -124,32 +119,38 @@ class SourceParser:PrimitiveParser
     
     if let value = parseRegister()
     {
-      currInst?.ops.append( OpReg(value, ind) )
+      currInst?.ops.append( OpReg(value, ind:ind) )
+      return true;
+    }
+    
+    if parseConcreteToken(cStr: "SP".d)
+    {
+      currInst?.ops.append( OpRSP(8, ind:ind) )
       return true;
     }
     
     if let addr = parseDataAddress()
     {
-      currInst?.ops.append( OpSym(addr, ind) )
+      currInst?.ops.append( OpSym(addr, ind:ind, ext:true) )
       return true;
     }
     
     if let value = parseImmediate()
     {
-      currInst?.ops.append( OpImm(value, ind) )
+      let ext = currInst?.needsExOp
+      currInst?.ops.append( OpImm(value, ind:ind, ext:ext!) )
       return true;
     }
 
     if let addr = parsePrivateAddress()
     {
-      currInst?.isBranch = true;
-      currInst?.ops.append( OpSym(addr, ind) )
+      currInst?.ops.append( OpSym(addr, ind:ind) )
       return true
     }
     
     if let addr = parsePublicAddress()
     {
-      currInst?.ops.append( OpSym(addr, ind) )
+      currInst?.ops.append( OpSym(addr, ind:ind) )
       return true;
     }
     
@@ -188,9 +189,108 @@ class SourceParser:PrimitiveParser
         break
       }
     }
+    
     return true // zero operands are allowed so return always true
   }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseConditionCode() -> Bool
+  {
+    if let token = parseToken()
+    {
+      if let value =
+        [ "eq".d : 0, "ne".d : 1, "uge".d : 2,
+          "ult".d: 3, "lt".d: 4, "ge".d: 5,
+          "ugt".d: 6, "gt".d: 7 ][token]
+      {
+        currInst?.ops.append( OpImm(value, ind:false) )
+        return true
+      }
+    }
+    return false
+  }
 
+//  //-------------------------------------------------------------------------------------------
+//  func parseConditionalInstructionPrefix() -> Data?
+//  {
+//    if parseRawToken( cStr:"br".d ) { return "brcc".d  }
+//    if parseRawToken( cStr:"set".d ) { return "setcc".d }
+//    if parseRawToken( cStr:"sel".d ) { return "selcc".d }
+//    return nil
+//  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseConditionalInstruction() -> Bool
+  {
+    if let name:Data? = { if self.parseRawToken( cStr:"br".d ) { return "brcc".d  }
+                          if self.parseRawToken( cStr:"set".d ) { return "setcc".d }
+                          if self.parseRawToken( cStr:"sel".d ) { return "selcc".d }
+                          return nil }()
+    {
+      currInst = Instruction( name! )
+      if parseConditionCode() { return true }
+      else { printError( "Unrecognized condition code for conditional instruction" ) }
+    }
+    
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseMovWordInstruction() -> Bool
+  {
+    if parseConcreteToken(cStr: "mov.w".d )
+    {
+      currInst = Instruction( "mov.w".d )
+      currInst?.needsExOp = true
+      return true
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseAnyInstruction() -> Bool
+  {
+    if let name = parseToken()
+    {
+      currInst = Instruction( name )
+      return true
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseInstructionName() -> Bool
+  {
+    if parseMovWordInstruction() { return true }
+    if parseConditionalInstruction() { return true }
+    if parseAnyInstruction() { return true }
+    return false
+  }
+  
+//  //-------------------------------------------------------------------------------------------
+//  func parseAssemblyName() -> Bool
+//  {
+//    if parseConcreteToken(cStr: "mov.w".d )
+//    {
+//      currInst = Instruction( "mov.w".d )
+//      currInst?.needsExOp = true
+//    }
+//
+//    else if let name = parseConditionalInstructionPrefix()
+//    {
+//      currInst = Instruction( name )
+//      if parseConditionCode() { return true }
+//      else { printError( "Unrecognized condition code for conditional instruction" ) }
+//    }
+//
+//    else if let name = parseToken()
+//    {
+//      currInst = Instruction( name )
+//      return true
+//    }
+//    return false
+//  }
+  
   //-------------------------------------------------------------------------------------------
   func parseInstruction() -> Bool
   {
@@ -199,14 +299,11 @@ class SourceParser:PrimitiveParser
     {
       currInst = nil;
       skipSpTab()
-      if let name = parseToken()
+      if parseInstructionName()
       {
-        currInst = Instruction( name )
         skipSpTab()
         if parseOperators(ind:false)
         {
-          currFn?.instructions.append(currInst!)
-          out.println( currInst!.description )
           return true
         }
       }
@@ -234,7 +331,7 @@ class SourceParser:PrimitiveParser
   func parsePrivateLabel() -> Data?
   {
     let svc = c
-    if let token = parseDotToken()
+    if let token = parsePrefixedToken( prefix: ".".d )
     {
       if parseChar( UInt8(ascii:":") )
       {
@@ -246,61 +343,138 @@ class SourceParser:PrimitiveParser
   }
   
   //-------------------------------------------------------------------------------------------
-  func parseFunctionHeader() -> Bool
+//  func parsePrivateLabel() -> Data?
+//  {
+//    let svc = c
+//    if let token = parseDotToken()
+//    {
+//      if parseChar( UInt8(ascii:":") )
+//      {
+//        return token
+//      }
+//    }
+//    c = svc;
+//    return nil;
+//  }
+  
+  
+  //-------------------------------------------------------------------------------------------
+  func parseTokenList() -> [Data]?
   {
-    skip()
-    if parseConcreteToken(cStr: "\t.globl".d )
+    var list:[Data]? = nil
+    if let token = parseToken()
     {
-      skipSpTab()
-      if let name = parseToken()
+      list = [token]
+      while true
       {
-        skip()
-        if let fname = parsePublicLabel()
+        let svc = c
+        skipSpTab()
+        if parseChar( UInt8(ascii:","))
         {
-          if ( fname == name )
+          skipSpTab()
+          if let token = parseToken()
           {
-            currFn = Function( name, currOffs)
-            src.progSyms[fname] = currOffs
-            return true;
+            list!.append(token)
+            continue
           }
+          c = svc
         }
-        else { printError( "Function entry label mismatch" ) }
+        break
       }
     }
-    return false;
+    return list
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseFunctionBody() -> Bool
+  {
+    while true
+    {
+      skip();
+      if let addr = parsePrivateLabel()
+      {
+        src.privSyms[addr] = currFn!.getEnd()
+        continue
+      }
+        
+      if parseInstruction()
+      {
+        currFn?.instructions.append( currInst! )
+        #if DEBUG
+        out.println( currInst!.description )
+        #endif
+          
+        if let op = currInst?.exOperand
+        {
+          let inst = Instruction( "_imm".d, [op] )
+          currFn?.instructions.append( inst )
+          #if DEBUG
+          out.println( inst.description )
+          #endif
+        }
+        continue
+      }
+      break
+    }
+
+    src.functions.append(currFn!)
+    currOffs = currFn!.getEnd()
+    return true;
   }
   
   //-------------------------------------------------------------------------------------------
   func parseFunction() -> Bool
   {
-    if parseFunctionHeader()
+    // check for .glob directive
+    if parseConcreteToken(cStr: "\t.globl".d )
     {
-      while true
+      skipSpTab()
+      
+      // must be followed by a token
+      if let name = parseToken()
       {
-        skip();
-        if let addr = parsePrivateLabel()
+        src.progSyms[name] = currOffs
+        
+        // the line after .glob may contain a .set directire
+        skip()
+        if parseConcreteToken(cStr: ".set".d )
         {
-          src.privSyms[addr] = currFn!.getEnd()
-          continue
+          skipSpTab()
+          if let tokens = parseTokenList()
+          {
+            if tokens.count == 2
+            {
+              let offs = src.progSyms[tokens[1]]
+              src.progSyms[tokens[0]] = offs
+              return true
+            }
+            else { printError( "Expecting exactly 2 tokens after .set directive" ) }
+          }
+          else { printError( "Expecting symbol after .set directive" ) }
         }
         
-        if parseInstruction()
+        // or it may contain a public label, which indicates it is a function entry
+        else if let fname = parsePublicLabel()
         {
-          continue
+          if ( fname == name )
+          {
+            currFn = Function( name, currOffs)  // tentativelly set as the current function
+            return parseFunctionBody()  // this always retuns true
+          }
+          else { printError( "Function entry label mismatch" ) }
         }
-        break
+        else { printError( "Unrecognized pattern for function entry" ) }
       }
-      
-      src.functions.append(currFn!)
-      currOffs = currFn!.getEnd()
-      return true;
     }
     return false;
   }
   
+
+  
   //-------------------------------------------------------------------------------------------
-  func parseGlob() -> Bool
+  func parseGlobData() -> Bool
   {
+    // TO DO
     return false;
   }
   
@@ -349,7 +523,7 @@ class SourceParser:PrimitiveParser
       while true
       {
         skip();
-        if parseGlob() { continue }
+        if parseGlobData() { continue }
         break
       }
       

@@ -168,7 +168,6 @@ class PrimitiveParser
 
   //-------------------------------------------------------------------------------------------
   // Parse a Token. Return a wrapped data if successful or nil otherwhise
-  // Optionally pass a character prefix that must be present
   func parseToken() -> Data?
   {
     let svc = c
@@ -178,23 +177,41 @@ class PrimitiveParser
     }
     return nil
   }
-
+  
   //-------------------------------------------------------------------------------------------
-  // Parse a Token with a leading dot. Return a wrapped data if successful or nil otherwhise
-  // Optionally pass a character prefix that must be present
-  func parseDotToken() -> Data?
+  // Parse a token with a given raw prefix. Return a wrapped data if successful or nil otherwhise
+  func parsePrefixedToken( prefix:Data ) -> Data?
   {
     let svc = c
-    if ( parseChar( _dot ) )
+    let len = prefix.count
+    if ( c+len <= end && prefix == s[c..<c+len] )
     {
+      c = c + len
       if ( parseToken() )
       {
         return s[svc..<c]
       }
+      c = svc
     }
-    c = svc
-    return nil
+    return nil ;
   }
+
+//  //-------------------------------------------------------------------------------------------
+//  // Parse a Token with a leading dot. Return a wrapped data if successful or nil otherwhise
+//  // Optionally pass a character prefix that must be present
+//  func parseDotToken() -> Data?
+//  {
+//    let svc = c
+//    if ( parseChar( _dot ) )
+//    {
+//      if ( parseToken() )
+//      {
+//        return s[svc..<c]
+//      }
+//    }
+//    c = svc
+//    return nil
+//  }
 
   //-------------------------------------------------------------------------------------------
   // Parse an int. Return a wrapped Int if successful or nil otherwhise
@@ -226,10 +243,24 @@ class PrimitiveParser
     c = svc;
     return nil ;
   }
-
+  
   //-------------------------------------------------------------------------------------------
-  // Parse a concrete Token. Returns true if token is identified.
-  // Only return true if token is found and char after token is not alphanumeric
+  // Parse a raw string. Returns true if the string is immediatelly identified
+  // regardless of what's next
+  func parseRawToken( cStr:Data ) -> Bool
+  {
+    let len = cStr.count
+    if ( c+len < end && cStr == s[c..<c+len] )
+    {
+      c = c + len;
+      return true;
+    }
+    return false ;
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  // Parse a concrete token. Returns true if the token is identified
+  // and the character after the token is not a valid token character
   func parseConcreteToken( cStr:Data ) -> Bool
   {
     let len = cStr.count
@@ -238,7 +269,8 @@ class PrimitiveParser
       let ce = c+len;
       if ( ce < end && (
         (s[ce] >= _a && s[ce] <= _z) || (s[ce] >= _A && s[ce] <= _Z) ||
-        (s[ce] >= _0 && s[ce] <= _9) || (s[ce] == _underscore) ) ) {
+        (s[ce] >= _0 && s[ce] <= _9) || (s[ce] == _underscore) ) )
+        {
           return false;
         }
         c = ce;
@@ -254,7 +286,6 @@ class PrimitiveParser
     if parseChar( _quote )
     {
       let svc = c;
-      
       while true
       {
         var string:Data? = nil;
