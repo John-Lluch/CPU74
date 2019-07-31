@@ -273,7 +273,7 @@ class Type11:MachineInstr
     let m = (op>>3)&0b11
     encoding |= (0b0000)          << 12
     encoding |= (0b111 & o)       << 9
-    encoding |= (0b00)            << 7
+    encoding |= (0b10)            << 7
     encoding |= (0b11 & m)        << 5
     encoding |= (0b00)            << 3
     encoding |= (0b111 & rd)      << 0
@@ -338,13 +338,13 @@ class Type12:MachineInstr
 // Two register Move, Compare, ALU operation
 class Type13:MachineInstr
 {
-  init( /*str:Data, alt:Data,*/ op:UInt16, rs:UInt16, rd:UInt16 )
+  init( op:UInt16, rs:UInt16, rd:UInt16 )
   {
     //super.init(str, alt);
     super.init()
     encoding |= (0b0000)       << 12
     encoding |= (0b111 & op)   << 9
-    encoding |= (0b00)         << 7
+    encoding |= (0b000)        << 6
     encoding |= (0b111 & rs)   << 3
     encoding |= (0b111 & rd)   << 0
   }
@@ -355,7 +355,7 @@ class Type13:MachineInstr
 }
 
 // Machine instruction list
-class InstrList
+class MachineInstrList
 {
   static let allInstr:Dictionary<Instruction, (ty:MachineInstr.Type, op:UInt16)> =
   [
@@ -433,7 +433,7 @@ class InstrList
     Instruction( "not".d,   [OpReg()] )                       : (ty:Type11.self,  op:0b10110),
 
     Instruction( "mov.w".d,  [OpImm(), OpReg()] )             : (ty:Type11b.self, op:0b11000),
-    Instruction( "mov.w".d,  [OpSym(), OpReg()] )             : (ty:Type11b.self, op:0b11000),  // to do create type (Not)
+    Instruction( "mov.w".d,  [OpSym(), OpReg()] )             : (ty:Type11b.self, op:0b11000),
     Instruction( "ld.w".d,   [OpSym(ind:true), OpReg()] )     : (ty:Type11b.self, op:0b11001),
     Instruction( "ld.zb".d,  [OpSym(ind:true), OpReg()] )     : (ty:Type11b.self, op:0b11010),
     Instruction( "ld.sb".d,  [OpSym(ind:true), OpReg()] )     : (ty:Type11b.self, op:0b11011),
@@ -461,7 +461,7 @@ class InstrList
     
   ]
   
-  static func getMachineInst( inst:Instruction ) -> MachineInstr?
+  static func getMachineInst( _ inst:Instruction ) -> MachineInstr?
   {
     if let t = allInstr[inst]
     {
@@ -474,3 +474,95 @@ class InstrList
   
 }
 
+// Abstract protocol to represent raw data bytes expressed as a string
+protocol RawDataString
+{
+}
+
+// Machine data formats
+class MachineData
+{
+  //var value:Int
+  var bytes:Data
+  init() {
+    //value = 0
+    bytes = Data()
+  }
+  
+  func appendBytes( size:Int, k:Int )
+  {
+    var val = k
+    for _ in 0..<size
+    {
+      let byte = UInt8(truncatingIfNeeded:(val & 0xff))
+      bytes.append(byte)
+      val = val >> 8
+    }
+  }
+
+  init( size:Int, k:Int )
+  {
+    bytes = Data()
+    appendBytes(size:size, k:k)
+  }
+  
+  init( data:Data )
+  {
+    bytes = data
+  }
+  
+  required convenience init( size:Int, op:Operand ) {
+    self.init()
+  }
+}
+
+class TypeImm:MachineData
+{
+  required convenience init( size:Int, op:Operand ) {
+    self.init( size:size, k:Int(op.u16value) )
+  }
+}
+
+class TypeAddr:MachineData, InstDTAbsolute
+{
+  required convenience init( size:Int, op:Operand ) {
+    self.init( size:size, k:Int(op.u16value) )
+  }
+  
+  func setAbsolute( a:UInt16 )
+  {
+    bytes.removeAll(keepingCapacity:true)
+    appendBytes(size:2, k:Int(a))
+  }
+}
+
+class TypeString:MachineData
+{
+  required convenience init( size:Int, op:Operand ) {
+    self.init( data:op.sym! )
+  }
+}
+
+
+
+// Data list
+class MachineDataList
+{
+  static let allData:Dictionary<DataValue, MachineData.Type> =
+  [
+    DataValue( 0, OpImm() )  : TypeImm.self,
+    DataValue( 0, OpSym() )  : TypeAddr.self,
+    DataValue( 0, OpStr() )  : TypeString.self
+  ]
+  
+  static func getMachineData( _ dv:DataValue ) -> MachineData?
+  {
+    if let machineDataType = allData[dv]
+    {
+      let machineData = machineDataType.init( size:dv.byteSize, op:dv.oper )
+      return machineData
+    }
+    return nil
+  }
+  
+}

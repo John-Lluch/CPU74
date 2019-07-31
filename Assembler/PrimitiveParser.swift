@@ -49,9 +49,13 @@ class PrimitiveParser
   let _dollar = UInt8(ascii:"$");
   let _a = UInt8(ascii:"a");
   let _A = UInt8(ascii:"A");
+  let _f = UInt8(ascii:"f");
+  let _F = UInt8(ascii:"F");
   let _z = UInt8(ascii:"z");
   let _Z = UInt8(ascii:"Z");
   let _0 = UInt8(ascii:"0");
+  let _1 = UInt8(ascii:"1");
+  let _7 = UInt8(ascii:"7");
   let _9 = UInt8(ascii:"9");
   let _dot = UInt8(ascii:".");
   let _minus = UInt8(ascii:"-");
@@ -148,7 +152,8 @@ class PrimitiveParser
   }
 
   //-------------------------------------------------------------------------------------------
-  // Helper function to parse arbitrary tokens
+  // Helper function to parse arbitrary tokens. Underscores and dots are allowed as part of
+  // the token name, but the token shall not start with a number or a dot
   private func parseToken() -> Bool
   {
     if c < end && (
@@ -198,8 +203,24 @@ class PrimitiveParser
 
   //-------------------------------------------------------------------------------------------
   // Parse an int. Return a wrapped Int if successful or nil otherwhise
-  func parseInteger() -> Int?
+  func parseInteger( base:Int=10 ) -> Int?
   {
+  
+    let lowerChar = { ( ch:UInt8 ) -> Int in
+        if ch <= self._9 { return Int( ch - self._0 ) }
+        if ch <= self._F { return Int( 10 + ch - self._A ) }
+        if ch <= self._f { return Int( 10 + ch - self._a ) }
+        return 0
+    }
+  
+    let checkRange = { ( ch:UInt8, base:Int ) -> Bool in
+        if (base == 10 || base == 16) && (ch >= self._0 && ch <= self._9) { return true }
+        if base == 8 && (ch >= self._0 && ch <= self._7) { return true }
+        if base == 1 && (ch >= self._0 && ch <= self._1) { return true }
+        if base == 16 && ((ch >= self._a && ch <= self._f) || (ch >= self._a && ch <= self._F )) { return true }
+        return false
+    }
+
     let svc = c
     var minus = false
     var result:Int = 0
@@ -210,14 +231,14 @@ class PrimitiveParser
       c += 1
     }
     
-    if c < end && (s[c] >= _0 && s[c] <= _9)
+    if c < end && checkRange(s[c], base)
     {
-      result = Int(s[c] - _0)
+      result = lowerChar( s[c] ) // Int(s[c] - _0)
       c += 1
       
-      while c < end && (s[c] >= _0 && s[c] <= _9)
+      while c < end && checkRange(s[c], base)
       {
-          result = result*10 + Int(s[c] - _0)
+          result = result*base + lowerChar( s[c] )
           c += 1
       }
       
@@ -269,9 +290,9 @@ class PrimitiveParser
     if parseChar( _quote )
     {
       let svc = c;
+      var string:Data? = nil;
       while true
       {
-        var string:Data? = nil;
         var cstr:Data.Index = 0;
         var len:size_t = 0;
         if skipToChar(cstr: &cstr, length: &len, _quote, _backSlash)
@@ -292,16 +313,16 @@ class PrimitiveParser
             else if parseChar( UInt8(ascii:"n") ) { char = _newline }
             else if parseChar( UInt8(ascii:"r") ) { char = _return }
             else if parseChar( UInt8(ascii:"t") ) { char = _tab }
+            else if let value = parseInteger(base:8) { char = UInt8(truncatingIfNeeded:value) }
+            else { break }
             
-            if ( char != 0 ) {
-              string!.append(char)
-            }
+            string!.append(char)
           }
           continue
         }
-        c = svc
         break
       }
+      c = svc
     }
     return nil
   }

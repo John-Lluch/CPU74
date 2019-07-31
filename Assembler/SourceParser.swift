@@ -31,10 +31,15 @@ extension Data
 
 class SourceParser:PrimitiveParser
 {
+  enum Bank {
+    case program
+    case constant
+    case variable
+  }
+
   let src:Source
   let asm:Assembler
-  var currOffs:Int = 0
-  var currFn:Function?
+  var currBank:Bank = .program
   var currInst:Instruction?
 
   //-------------------------------------------------------------------------------------------
@@ -48,9 +53,11 @@ class SourceParser:PrimitiveParser
   //-------------------------------------------------------------------------------------------
   func printError( _ message:String )
   {
-    out.print( message, true )
-    out.println( ", line:\(line)", true )
-    exit(0)
+//    out.print( message, true )
+//    out.println( ", line:\(line)", true )
+    
+    out.printError( "\(message), line:\(line)" )
+//    exit(1)
   }
   
   //-------------------------------------------------------------------------------------------
@@ -67,12 +74,25 @@ class SourceParser:PrimitiveParser
   }
   
   //-------------------------------------------------------------------------------------------
+  func parseAddressToken() -> Data?
+  {
+    if let token = parseToken() { return token }
+    if let token = parsePrefixedToken( prefix: ".L".d )
+    {
+      var mangled = src.shortName;
+      mangled.append(token)
+      return mangled
+    }
+    return nil
+  }
+  
+  //-------------------------------------------------------------------------------------------
   func parseDataAddress() -> Data?
   {
     let svc = c
     if parseChar(UInt8(ascii:"&"))
     {
-      if let addr = parseToken()
+      if let addr = parseAddressToken()
       {
         return addr
       }
@@ -80,6 +100,21 @@ class SourceParser:PrimitiveParser
     c = svc
     return nil
   }
+  
+//  //-------------------------------------------------------------------------------------------
+//  func parseDataAddress() -> Data?
+//  {
+//    let svc = c
+//    if parseChar(UInt8(ascii:"&"))
+//    {
+//      if let addr = parseToken() c
+//      {
+//        return addr
+//      }
+//    }
+//    c = svc
+//    return nil
+//  }
   
   //-------------------------------------------------------------------------------------------
   func parseImmediate() -> Int?
@@ -91,22 +126,31 @@ class SourceParser:PrimitiveParser
     return nil
   }
   
-  //-------------------------------------------------------------------------------------------
-  func parsePrivateAddress() -> Data?
-  {
-    if let addr = parsePrefixedToken( prefix: ".L".d )
-    {
-        return addr
-    }
-    return nil
-  }
+//  //-------------------------------------------------------------------------------------------
+//  func parsePrivateAddress() -> Data?
+//  {
+//    if let addr = parsePrefixedToken( prefix: ".L".d )
+//    {
+//        return addr
+//    }
+//    return nil
+//  }
+//
+//  //-------------------------------------------------------------------------------------------
+//  func parsePublicAddress() -> Data?
+//  {
+//    if let addr = parseToken()
+//    {
+//      return addr
+//    }
+//    return nil
+//  }
   
-  //-------------------------------------------------------------------------------------------
-  func parsePublicAddress() -> Data?
+  func parseStrOperand() -> Data?
   {
-    if let addr = parseToken()
+    if let str = parseEscapedString()
     {
-      return addr
+      return str
     }
     return nil
   }
@@ -143,20 +187,42 @@ class SourceParser:PrimitiveParser
       currInst?.ops.append( OpImm(value, ind:ind, ext:ext!) )
       return true;
     }
-
-    if let addr = parsePrivateAddress()
+    
+    if let addr = parseAddressToken()
     {
       currInst?.ops.append( OpSym(addr, ind:ind) )
       return true
     }
-    
-    if let addr = parsePublicAddress()
-    {
-      currInst?.ops.append( OpSym(addr, ind:ind) )
-      return true;
-    }
+
+//    if let addr = parsePrivateAddress()
+//    {
+//      currInst?.ops.append( OpSym(addr, ind:ind) )
+//      return true
+//    }
+//
+//    if let addr = parsePublicAddress()
+//    {
+//      currInst?.ops.append( OpSym(addr, ind:ind) )
+//      return true;
+//    }
     
     return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseDataOperand() -> Operand?
+  {
+    if let value = parseImmediate()
+    {
+      return OpImm( value )
+    }
+    
+    if let addr = parseAddressToken()
+    {
+      return OpSym( addr )
+    }
+    
+    return nil
   }
   
   //-------------------------------------------------------------------------------------------
@@ -269,32 +335,33 @@ class SourceParser:PrimitiveParser
     return false
   }
   
-  //-------------------------------------------------------------------------------------------
-  func parseInstruction() -> Bool
-  {
-    let svc = c
-    if parseChar( _tab )
-    {
-      currInst = nil;
-      skipSpTab()
-      if parseInstructionName()
-      {
-        skipSpTab()
-        if parseOperators(ind:false)
-        {
-          return true
-        }
-      }
-    }
-    c = svc
-    return false
-  }
+//  //-------------------------------------------------------------------------------------------
+//  func parseInstructionVell() -> Bool
+//  {
+//    let svc = c
+//    if parseChar( _tab )
+//    {
+//      currInst = nil;
+//      skipSpTab()
+//      if parseInstructionName()
+//      {
+//        skipSpTab()
+//        if parseOperators(ind:false)
+//        {
+//          return true
+//        }
+//      }
+//    }
+//    c = svc
+//    return false
+//  }
+
   
   //-------------------------------------------------------------------------------------------
-  func parsePublicLabel() -> Data?
+  func parseAddressLabel() -> Data?
   {
     let svc = c
-    if let token = parseToken()
+    if let token = parseAddressToken()
     {
       if parseChar( UInt8(ascii:":") )
       {
@@ -304,21 +371,36 @@ class SourceParser:PrimitiveParser
     c = svc;
     return nil;
   }
-  
-  //-------------------------------------------------------------------------------------------
-  func parsePrivateLabel() -> Data?
-  {
-    let svc = c
-    if let token = parsePrefixedToken( prefix: ".".d )
-    {
-      if parseChar( UInt8(ascii:":") )
-      {
-        return token
-      }
-    }
-    c = svc;
-    return nil;
-  }
+
+//  //-------------------------------------------------------------------------------------------
+//  func parsePublicLabel() -> Data?
+//  {
+//    let svc = c
+//    if let token = parseToken()
+//    {
+//      if parseChar( UInt8(ascii:":") )
+//      {
+//        return token
+//      }
+//    }
+//    c = svc;
+//    return nil;
+//  }
+//
+//  //-------------------------------------------------------------------------------------------
+//  func parsePrivateLabel() -> Data?
+//  {
+//    let svc = c
+//    if let token = parsePrefixedToken( prefix: ".".d )
+//    {
+//      if parseChar( UInt8(ascii:":") )
+//      {
+//        return token
+//      }
+//    }
+//    c = svc;
+//    return nil;
+//  }
   
   //-------------------------------------------------------------------------------------------
   func parseTokenList() -> [Data]?
@@ -331,7 +413,7 @@ class SourceParser:PrimitiveParser
       {
         let svc = c
         skipSpTab()
-        if parseChar( UInt8(ascii:","))
+        if parseChar( UInt8(ascii:",") )
         {
           skipSpTab()
           if let token = parseToken()
@@ -347,123 +429,372 @@ class SourceParser:PrimitiveParser
     return list
   }
   
+//  //-------------------------------------------------------------------------------------------
+//  func parseGlobData() -> Bool
+//  {
+//    // TO DO
+//    return false;
+//  }
+  
+//  //-------------------------------------------------------------------------------------------
+//  func parseSourceHeader() -> Bool
+//  {
+//    if parseConcreteToken(cStr: "\t.text".d)
+//    {
+//      while true
+//      {
+//        skip()
+//        if parseConcreteToken(cStr: "\t.file".d)
+//        {
+//          skipSpTab()
+//          if let name = parseEscapedString()
+//          {
+//            let shortName = name.prefix(while:{$0 != self._dot} )
+//            src.name = shortName;
+//            continue
+//          }
+//          else { printError( "Expecting file name string" ) }
+//        }
+//        else { break }
+//      }
+//    }
+//    else { printError( "Unrecognized file format" ) }
+//    return true
+//  }
+//
+
   //-------------------------------------------------------------------------------------------
-  func parseFunctionBody() -> Bool
+  func parseText() -> Bool
   {
-    while true
+    if parseConcreteToken(cStr: "text".d)
     {
-      skip();
-      if let addr = parsePrivateLabel()
+      currBank = .program
+      return true
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseFile() -> Bool
+  {
+    if parseConcreteToken(cStr: "file".d)
+    {
+      skipSpTab()
+      if let name = parseEscapedString()
       {
-        src.privSyms[addr] = currFn!.getEnd()
-        continue
+        var pos = 0 ;
+        while pos < name.count && name[pos] != _dot { pos = pos + 1 }
+        src.name = name
+        src.shortName = name.prefix(pos)
+        return true
       }
-        
-      if parseInstruction()
+      else { printError( "Expecting file name string" ) }
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseGlobl() -> Bool
+  {
+    if parseConcreteToken(cStr: "globl".d )
+    {
+      skipSpTab()
+      if let name = parseToken()
       {
-        currFn?.instructions.append( currInst! )
-        #if DEBUG
-        out.println( currInst!.description )
-        #endif
-          
+        if currBank == .program { asm.progSyms[name] = src.getEnd() }
+        else if currBank == .constant { asm.constantDataSyms[name] = asm.constantDataEnd }
+        else if currBank == .variable { asm.initializedVarsSyms[name] = asm.initializedVarsEnd }
+        return true
+      }
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseSection() -> Bool
+  {
+    if parseConcreteToken(cStr: "section".d )
+    {
+      skipSpTab()
+      if nil != parsePrefixedToken(prefix:".".d) || nil != parseToken()
+      {
+        skipSpTab()
+        if parseChar( UInt8(ascii:",") )
+        {
+          skipSpTab()
+          if nil != parseEscapedString()
+          {
+            skipSpTab()
+            if parseChar( UInt8(ascii:",") )
+            {
+              skipSpTab()
+              if nil != parsePrefixedToken(prefix:"@".d)
+              {
+                // nothing to do at this time
+              }
+            }
+          }
+        }
+        currBank = .constant
+        return true
+      }
+      else { printError( "Expecting section name after .section directive" ) }
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseP2Align() -> Bool
+  {
+    if parseConcreteToken(cStr: "p2align".d )
+    {
+      skipSpTab()
+      if let align = parseInteger()
+      {
+        if currBank == .constant { asm.p2AlignConstantData(align) }
+        else if currBank == .variable { asm.p2AlignInitializedVar(align) }
+        return true
+      }
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func restParseData( _ size:Int ) -> Bool
+  {
+    if let op = parseDataOperand()
+    {
+      if currBank == .constant { asm.addConstantData( DataValue( size, op ) ) }
+      else if currBank == .variable { asm.addInitializedVar( DataValue( size, op ) ) }
+      #if DEBUG
+      out.println( "\t" + String(reflecting:op) )
+      #endif
+      return true
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func restParseStr(addZeroByte:Bool=false) -> Bool
+  {
+    if var str = parseStrOperand()
+    {
+      if addZeroByte { str.append(0) }
+      if currBank == .constant { asm.addConstantData( DataValue( str.count, OpStr(str) ) ) }
+      else if currBank == .variable { asm.addInitializedVar( DataValue( str.count, OpStr(str) ) ) }
+      #if DEBUG
+      out.println( "\t" + String(reflecting:str.s) )
+      #endif
+      return true
+    }
+    
+    return false
+  }
+  
+  
+  //-------------------------------------------------------------------------------------------
+  func parseByte() -> Bool
+  {
+    if parseConcreteToken(cStr: "byte".d )
+    {
+      skipSpTab()
+      if restParseData( 1 ) { return true }
+    }
+    return false
+  }
+  
+  
+  //-------------------------------------------------------------------------------------------
+  func parseShort() -> Bool
+  {
+    if parseConcreteToken(cStr: "short".d )
+    {
+      skipSpTab()
+      if restParseData( 2 ) { return true }
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseLong() -> Bool
+  {
+    if parseConcreteToken(cStr: "long".d )
+    {
+      skipSpTab()
+      if restParseData( 4 ) { return true }
+    }
+    return false
+  }
+
+  //-------------------------------------------------------------------------------------------
+  func parseData() -> Bool
+  {
+    if parseConcreteToken(cStr: "data".d )
+    {
+      currBank = .variable
+      return true
+    }
+    return false
+  }
+
+  //-------------------------------------------------------------------------------------------
+  func parseComm() -> Bool
+  {
+    if parseConcreteToken(cStr: "comm".d )
+    {
+      skipSpTab()
+      if let name = parseToken()
+      {
+        var length = 0
+        var align = 1
+        skipSpTab()
+        if parseChar( UInt8(ascii:",") )
+        {
+          skipSpTab()
+          if let len = parseInteger()
+          {
+            length = len
+            skipSpTab()
+            if parseChar( UInt8(ascii:",") )
+            {
+              skipSpTab()
+              if let algn = parseInteger()
+              {
+                align = algn
+              }
+            }
+          }
+        }
+      
+        asm.addUninitializedVar( name:name, size:length, align:align)
+        //currSection = 1
+        return true
+      }
+      else { printError( "Expecting section name after .section directive" ) }
+    }
+    return false
+  }
+  
+ //-------------------------------------------------------------------------------------------
+  func parseAscii() -> Bool
+  {
+    if parseConcreteToken(cStr: "ascii".d )
+    {
+      skipSpTab()
+      if restParseStr() { return true }
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parseAsciz() -> Bool
+  {
+    if parseConcreteToken(cStr: "asciz".d )
+    {
+      skipSpTab()
+      if restParseStr(addZeroByte:true) { return true }
+    }
+    return false
+  }
+
+  //-------------------------------------------------------------------------------------------
+  func parseInstruction() -> Bool
+  {
+    currInst = nil;
+    
+    let appendInstr = { ( inst:Instruction ) in
+      self.src.instructions.append( inst )
+      #if DEBUG
+      out.println( "\t" + String(reflecting:inst) )
+      #endif
+    }
+    
+    if parseInstructionName()
+    {
+      skipSpTab()
+      if parseOperators(ind:false)
+      {
+        appendInstr( currInst! )
         if let op = currInst?.exOperand
         {
           let inst = Instruction( "_imm".d, [op] )
-          currFn?.instructions.append( inst )
-          #if DEBUG
-          out.println( inst.description )
-          #endif
+          appendInstr( inst )
         }
-        continue
+        return true
       }
-      break
     }
-
-    src.functions.append(currFn!)
-    currOffs = currFn!.getEnd()
-    return true;
+    return false
   }
   
+  
   //-------------------------------------------------------------------------------------------
-  func parseFunction() -> Bool
+  func parseLabel() -> Bool
   {
-    // check for .glob directive
-    if parseConcreteToken(cStr: "\t.globl".d )
+    if let sym = parseAddressLabel()
+    {
+      if currBank == .program { asm.progSyms[sym] = src.getEnd() }
+      else if currBank == .constant { asm.constantDataSyms[sym] = asm.constantDataEnd }
+      else if currBank == .variable { asm.initializedVarsSyms[sym] = asm.initializedVarsEnd }
+      #if DEBUG
+      out.println( sym.s + ":" )
+      #endif
+      return true
+    }
+    return false
+  }
+  
+//  //-------------------------------------------------------------------------------------------
+//  func parseLabel() -> Bool
+//  {
+//    if let sym = parsePublicLabel()
+//    {
+//      if currBank == .program { asm.progSyms[sym] = src.getEnd() }
+//      else if currBank == .constant { asm.constantDataSyms[sym] = asm.constantDataEnd }
+//      else if currBank == .variable { asm.initializedVarsSyms[sym] = asm.initializedVarsEnd }
+//      #if DEBUG
+//      out.println( "\(sym.s):" )
+//      #endif
+//      return true
+//    }
+//    else if let addr = parsePrivateLabel()
+//    {
+//      if currBank == .program  { src.privSyms[addr] = src.getEnd() }
+//      else if currBank == .constant { asm.constantDataSyms[addr] = asm.constantDataEnd }
+//      else { /* Error? */ }
+//      #if DEBUG
+//      out.println( "\(addr.s):" )
+//      #endif
+//      return true
+//    }
+//    return false
+//  }
+  
+  
+  //-------------------------------------------------------------------------------------------
+  func parseSet() -> Bool
+  {
+    if parseConcreteToken(cStr: ".set".d )
     {
       skipSpTab()
-      
-      // must be followed by a token
-      if let name = parseToken()
+      if let tokens = parseTokenList()
       {
-        asm.progSyms[name] = currOffs
-        
-        // the line after .glob may contain a .set directire
-        skip()
-        if parseConcreteToken(cStr: ".set".d )
+        if tokens.count == 2
         {
-          skipSpTab()
-          if let tokens = parseTokenList()
+          if currBank == .program
           {
-            if tokens.count == 2
-            {
-              let offs = asm.progSyms[tokens[1]]
-              asm.progSyms[tokens[0]] = offs
-              return true
-            }
-            else { printError( "Expecting exactly 2 tokens after .set directive" ) }
+            let offs = asm.progSyms[tokens[1]]
+            asm.progSyms[tokens[0]] = offs
+            return true
           }
-          else { printError( "Expecting symbol after .set directive" ) }
+          else { printError( ".set directive issued in non program area" ) }
         }
-        
-        // or it may contain a public label, which indicates it is a function entry
-        else if let fname = parsePublicLabel()
-        {
-          if ( fname == name )
-          {
-            currFn = Function( name, currOffs)  // tentativelly set as the current function
-            return parseFunctionBody()  // this always retuns true
-          }
-          else { printError( "Function entry label mismatch" ) }
-        }
-        else { printError( "Unrecognized pattern for function entry" ) }
+        else { printError( "Expecting exactly 2 tokens after .set directive" ) }
       }
+      else { printError( "Expecting symbol after .set directive" ) }
     }
-    return false;
+    return false
   }
   
-
-  
-  //-------------------------------------------------------------------------------------------
-  func parseGlobData() -> Bool
-  {
-    // TO DO
-    return false;
-  }
-  
-  //-------------------------------------------------------------------------------------------
-  func parseSourceHeader() -> Bool
-  {
-    if parseConcreteToken(cStr: "\t.text".d)
-    {
-      while true
-      {
-        skip()
-        if parseConcreteToken(cStr: "\t.file".d)
-        {
-          skipSpTab()
-          if let name = parseEscapedString()
-          {
-            src.name = name;
-            continue
-          }
-          else { printError( "Expecting file name string" ) }
-        }
-        else { break }
-      }
-    }
-    else { printError( "Unrecognized file format" ) }
-    return true
-  }
   
   //-------------------------------------------------------------------------------------------
   func parseAll() -> Bool
@@ -472,26 +803,43 @@ class SourceParser:PrimitiveParser
     end = s.endIndex;
     c = beg;
     
-    skip()
-    if parseSourceHeader()
+    src.offset = asm.getProgEnd()
+    while true
     {
-      while true
+      skip()
+      if parseChar( _tab )
       {
-        skip();
-        if parseFunction() { continue }
+        skipSpTab()
+        if parseChar( _dot )
+        {
+          if parseText() { continue }
+          if parseFile() { continue }
+          if parseGlobl() { continue }
+          if parseSection() { continue }
+          if parseP2Align() { continue }
+          if parseByte() { continue }
+          if parseShort() { continue }
+          if parseLong() { continue }
+          if parseData() { continue }
+          if parseComm() { continue }
+          if parseAscii() { continue }
+          if parseAsciz() { continue }
+          printError( "Unknown assembler directive" )
+        }
+        if parseInstruction() { continue }
+        break;
+      }
+      else
+      {
+        if parseLabel() { continue }
+        if parseSet() { continue }
         break
       }
-      
-      while true
-      {
-        skip();
-        if parseGlobData() { continue }
-        break
-      }
-      
-      return true;
     }
-    return false;
+    
+    asm.p2AlignConstantData(1)
+    asm.p2AlignInitializedVar(1)
+    return true
   }
 
 } // SourceParser

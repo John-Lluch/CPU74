@@ -36,12 +36,13 @@ class C74
   {
     for sourceURL in console.sources
     {
-      if !processSourceFile(sourceURL) { break }
+      if !processSourceFile( sourceURL ) { break }
     }
     
     if console.sources.count == assembler.sources.count
     {
       assembler.assembleAll()
+      try! assembler.programMemory.write(to:console.destination!)
     }
   }
 

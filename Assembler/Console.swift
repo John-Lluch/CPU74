@@ -29,9 +29,9 @@ class ConsoleIO
   
   func printError( _ message:String )
   {
-    out.print( "ERROR: ", true )
-    out.println( message, true )
-    exit(0)
+    out.println( "ERROR: \(message)", false )
+    out.println( "Execution aborted, ERROR: \(message)", true )
+    exit(1)
   }
 }
 
