@@ -69,7 +69,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o /Users/joan/Documents-Local/Relay/RelayNou/main.c74 -s /Users/joan/Documents-Local/Relay/RelayNou/system.s /Users/joan/Documents-Local/Relay/RelayNou/add.s /Users/joan/Documents-Local/Relay/RelayNou/sumes.s /Users/joan/Documents-Local/Relay/RelayNou/main.s"
+            argument = "-l -o /Users/joan/Documents-Local/Relay/RelayNou/main.c74 -s /Users/joan/Documents-Local/Relay/RelayNou/system.s /Users/joan/Documents-Local/Relay/RelayNou/add.s /Users/joan/Documents-Local/Relay/RelayNou/sumes.s /Users/joan/Documents-Local/Relay/RelayNou/main.s"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

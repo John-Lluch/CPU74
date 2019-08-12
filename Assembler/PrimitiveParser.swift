@@ -8,72 +8,86 @@
 
 import Foundation
 
-
-
-
-
 //-------------------------------------------------------------------------------------------
 // Primitive Parser
+//
+// Base class for quick implementation of text based parsers
+//
+// Initialized with a Data object containing the source file in ascii or utf8 representation
+//
+// Use by calling class methods that identify patterns in the source file. Class methods may
+// have no return value, return a boolean value to signal success in simple cases, or return
+// the pattern being identified in the appropiate data type.
+//
+// Functions with return values only advance the character index if
+// they successfully identify patterns.
+//
+// Non private properties are directly accessible
 //-------------------------------------------------------------------------------------------
+
 class PrimitiveParser
 {
-  var line:Int = 1;
-  var s:Data;
-  var c:Data.Index;
-  var beg:Data.Index;
-  var end:Data.Index;
+  private var s:Data
+  var line:Int = 1        // Current line number
+  var c:Data.Index        // Current character index
+  var beg:Data.Index      // First character index in source
+  var end:Data.Index      // Index just beyond the last character in source
   
   init( withData:Data )
   {
-    s = withData;
-    beg = s.startIndex;
-    end = s.endIndex;
-    c = beg;
+    s = withData
+    beg = s.startIndex
+    end = s.endIndex
+    c = beg
   }
   
+  //-------------------------------------------------------------------------------------------
+  // Should be called by subclases when the parser is finished to free the source
+  // file memory in case the parser object is keep around for some reason
   func removeAll()
   {
-    s.removeAll();
-    beg = s.startIndex;
-    end = s.endIndex;
-    c = beg;
+    s.removeAll()
+    beg = s.startIndex
+    end = s.endIndex
+    c = beg
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  // Helper function for debugging purposes that will return the next some characters
+  // from the current character index
+  func dump() -> String?
+  {
+    let l = min(80, end-c)
+    return String(data:s[c..<c+l], encoding:.utf8)
   }
   
   //-------------------------------------------------------------------------------------------
   // Convenience constants
-  let _space = UInt8(ascii:" ");
-  let _tab = UInt8(ascii:"\t");
-  let _newline = UInt8(ascii:"\n");
-  let _return = UInt8(ascii:"\r");
-  let _underscore = UInt8(ascii:"_");
-  let _dollar = UInt8(ascii:"$");
-  let _a = UInt8(ascii:"a");
-  let _A = UInt8(ascii:"A");
-  let _f = UInt8(ascii:"f");
-  let _F = UInt8(ascii:"F");
-  let _z = UInt8(ascii:"z");
-  let _Z = UInt8(ascii:"Z");
-  let _0 = UInt8(ascii:"0");
-  let _1 = UInt8(ascii:"1");
-  let _7 = UInt8(ascii:"7");
-  let _9 = UInt8(ascii:"9");
-  let _dot = UInt8(ascii:".");
-  let _minus = UInt8(ascii:"-");
-  let _quote = UInt8(ascii:"\"");
-  let _backSlash = UInt8(ascii:"\\");
-  let _pillow = UInt8(ascii:"#");
-  
-  
-  //-------------------------------------------------------------------------------------------
-  func dump()
-  {
-    let l = min(80, end-c)
-    out.println( String(data:s[c..<c+l], encoding:.utf8)! )
-  }
+  let _space = UInt8(ascii:" ")
+  let _tab = UInt8(ascii:"\t")
+  let _newline = UInt8(ascii:"\n")
+  let _return = UInt8(ascii:"\r")
+  let _underscore = UInt8(ascii:"_")
+  let _dollar = UInt8(ascii:"$")
+  let _a = UInt8(ascii:"a")
+  let _A = UInt8(ascii:"A")
+  let _f = UInt8(ascii:"f")
+  let _F = UInt8(ascii:"F")
+  let _z = UInt8(ascii:"z")
+  let _Z = UInt8(ascii:"Z")
+  let _0 = UInt8(ascii:"0")
+  let _1 = UInt8(ascii:"1")
+  let _7 = UInt8(ascii:"7")
+  let _9 = UInt8(ascii:"9")
+  let _dot = UInt8(ascii:".")
+  let _minus = UInt8(ascii:"-")
+  let _plus = UInt8(ascii:"+")
+  let _quote = UInt8(ascii:"\"")
+  let _backSlash = UInt8(ascii:"\\")
+  let _pillow = UInt8(ascii:"#")
   
   //-------------------------------------------------------------------------------------------
   // Skip spaces
-  @inline(__always)
   func skipSp()
   {
     while c < end && (s[c] == _space) {
@@ -83,7 +97,6 @@ class PrimitiveParser
   
   //-------------------------------------------------------------------------------------------
   // Skip spaces and tabs
-  @inline(__always)
   func skipSpTab()
   {
     while c < end && ((s[c] == _space) || (s[c] == _tab)) {
@@ -97,11 +110,11 @@ class PrimitiveParser
   // Updates the staring index and skipped length
   func skipToChar( cstr:inout Data.Index, length:inout size_t, _ chars:UInt8... ) -> Bool
   {
-    cstr = c;
+    cstr = c
     if c < end
     {
-      var cc = 0;
-      let ccLen = chars.count;
+      var cc = 0
+      let ccLen = chars.count
       while s[c] != chars[cc]
       {
         cc += 1 ; if cc != ccLen { continue }
@@ -109,12 +122,11 @@ class PrimitiveParser
       }
     }
     length = c-cstr
-    return c < end;
+    return c < end
   }
   
   //-------------------------------------------------------------------------------------------
   // Skips to the given char
-  @inline(__always)
   func skipToChar( _ ch:UInt8 )
   {
     while c < end && ( s[c] != ch ) {
@@ -128,14 +140,14 @@ class PrimitiveParser
   {
     while c < end
     {
-      if s[c] == _space || /*s[c] == _tab ||*/ s[c] == _return { c+=1; continue }
-      if s[c] == _newline { c += 1; line += 1 ; continue }
+      if s[c] == _space || /*s[c] == _tab ||*/ s[c] == _return { c+=1 ; continue }
+      if s[c] == _newline { c += 1 ; line += 1 ; continue }
       if s[c] == _pillow {
-        c += 1;
-        skipToChar( _newline );
+        c += 1
+        skipToChar( _newline )
         continue
       }
-      break;
+      break
     }
   }
   
@@ -145,7 +157,7 @@ class PrimitiveParser
   func parseChar( _ ch:UInt8 ) -> Bool
   {
     if c < end && s[c] == ch {
-      c += 1;
+      c += 1
       return true
     }
     return false
@@ -160,7 +172,7 @@ class PrimitiveParser
           (s[c] >= _a && s[c] <= _z) || (s[c] >= _A && s[c] <= _Z) ||
           (s[c] == _underscore ) /*|| (s[c] == _dollar) */ ) {
 
-      c += 1 ;
+      c += 1
       while c < end && (
         (s[c] >= _a && s[c] <= _z) || (s[c] >= _A && s[c] <= _Z) ||
         (s[c] >= _0 && s[c] <= _9) || (s[c] == _underscore) || (s[c] == _dot) ) {
@@ -168,7 +180,7 @@ class PrimitiveParser
       }
       return true
     }
-    return false ;
+    return false
   }
 
   //-------------------------------------------------------------------------------------------
@@ -233,7 +245,7 @@ class PrimitiveParser
     
     if c < end && checkRange(s[c], base)
     {
-      result = lowerChar( s[c] ) // Int(s[c] - _0)
+      result = lowerChar( s[c] )
       c += 1
       
       while c < end && checkRange(s[c], base)
@@ -284,7 +296,8 @@ class PrimitiveParser
   }
 
   //-------------------------------------------------------------------------------------------
-  // Parse a C string with optional escape characters
+  // Parse a C string with optional escape characters.
+  // Limited implementation dealing only with the most common escape sequences
   func parseEscapedString() -> Data?
   {
     if parseChar( _quote )
@@ -327,7 +340,7 @@ class PrimitiveParser
     return nil
   }
 
-} // end of class PrimitiveParser
+} // end of PrimitiveParser
 
 
 

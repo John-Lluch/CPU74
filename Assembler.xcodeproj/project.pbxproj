@@ -9,8 +9,9 @@
 /* Begin PBXBuildFile section */
 		4E00447B22C604ED0010F22A /* SourceParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E00447A22C604ED0010F22A /* SourceParser.swift */; };
 		4E00447D22C6053C0010F22A /* PrimitiveParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E00447C22C6053C0010F22A /* PrimitiveParser.swift */; };
-		4E00447F22C605DF0010F22A /* Asm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E00447E22C605DF0010F22A /* Asm.swift */; };
-		4E00448122C636CB0010F22A /* InstInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E00448022C636CB0010F22A /* InstInfo.swift */; };
+		4E00447F22C605DF0010F22A /* Assembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E00447E22C605DF0010F22A /* Assembler.swift */; };
+		4E161BF5230169B0007C9D68 /* MachineInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E161BF4230169B0007C9D68 /* MachineInfo.swift */; };
+		4E161BF7230169C8007C9D68 /* AssemblyInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E161BF6230169C8007C9D68 /* AssemblyInfo.swift */; };
 		4E1BFD9D22B23B4E002FEA84 /* Console.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E1BFD9C22B23B4E002FEA84 /* Console.swift */; };
 		4ED6875C229151100046538A /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ED6875B229151100046538A /* main.swift */; };
 /* End PBXBuildFile section */
@@ -30,8 +31,9 @@
 /* Begin PBXFileReference section */
 		4E00447A22C604ED0010F22A /* SourceParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceParser.swift; sourceTree = "<group>"; };
 		4E00447C22C6053C0010F22A /* PrimitiveParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimitiveParser.swift; sourceTree = "<group>"; };
-		4E00447E22C605DF0010F22A /* Asm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Asm.swift; sourceTree = "<group>"; };
-		4E00448022C636CB0010F22A /* InstInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstInfo.swift; sourceTree = "<group>"; };
+		4E00447E22C605DF0010F22A /* Assembler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assembler.swift; sourceTree = "<group>"; };
+		4E161BF4230169B0007C9D68 /* MachineInfo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MachineInfo.swift; sourceTree = "<group>"; };
+		4E161BF6230169C8007C9D68 /* AssemblyInfo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AssemblyInfo.swift; sourceTree = "<group>"; };
 		4E1BFD9C22B23B4E002FEA84 /* Console.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Console.swift; sourceTree = "<group>"; };
 		4ED68758229151100046538A /* c74-as */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "c74-as"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4ED6875B229151100046538A /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -67,11 +69,12 @@
 		4ED6875A229151100046538A /* Assembler */ = {
 			isa = PBXGroup;
 			children = (
-				4E1BFD9C22B23B4E002FEA84 /* Console.swift */,
-				4E00448022C636CB0010F22A /* InstInfo.swift */,
-				4E00447E22C605DF0010F22A /* Asm.swift */,
+				4E161BF6230169C8007C9D68 /* AssemblyInfo.swift */,
+				4E161BF4230169B0007C9D68 /* MachineInfo.swift */,
 				4E00447C22C6053C0010F22A /* PrimitiveParser.swift */,
 				4E00447A22C604ED0010F22A /* SourceParser.swift */,
+				4E00447E22C605DF0010F22A /* Assembler.swift */,
+				4E1BFD9C22B23B4E002FEA84 /* Console.swift */,
 				4ED6875B229151100046538A /* main.swift */,
 			);
 			path = Assembler;
@@ -136,9 +139,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				4E00447B22C604ED0010F22A /* SourceParser.swift in Sources */,
-				4E00448122C636CB0010F22A /* InstInfo.swift in Sources */,
+				4E161BF5230169B0007C9D68 /* MachineInfo.swift in Sources */,
+				4E161BF7230169C8007C9D68 /* AssemblyInfo.swift in Sources */,
 				4ED6875C229151100046538A /* main.swift in Sources */,
-				4E00447F22C605DF0010F22A /* Asm.swift in Sources */,
+				4E00447F22C605DF0010F22A /* Assembler.swift in Sources */,
 				4E00447D22C6053C0010F22A /* PrimitiveParser.swift in Sources */,
 				4E1BFD9D22B23B4E002FEA84 /* Console.swift in Sources */,
 			);
