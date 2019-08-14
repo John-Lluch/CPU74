@@ -74,6 +74,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-l -o /Users/joan/Documents-Local/Relay/RelayNou/main.c74 -s  /Users/joan/Documents-Local/Relay/RelayNou/main.s"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-l -o  -s  /Users/joan/Documents-Local/Relay/RelayNou/main.s"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
