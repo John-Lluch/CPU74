@@ -63,7 +63,6 @@ class Operand : CustomDebugStringConvertible
   convenience init ( _ v:Int, ind b:Bool=false, ext e:Bool=false) {
     self.init( v, nil, ind:b, ext:e )
   }
-  
 }
 
 // Register operand
@@ -189,7 +188,6 @@ class Instruction : Hashable, CustomDebugStringConvertible
   }
 }
 
-
 //-------------------------------------------------------------------------------------------
 // Source
 //-------------------------------------------------------------------------------------------
@@ -200,24 +198,80 @@ class Source
 {
   var name = Data()                     // Source name as found by the parser
   var shortName = Data()                // Source name with the extension removed
-  var offset = 0                        // Source code offset in program memory
-  var instructions:[Instruction] = []   // Instructions array
+
+  var instructionsOffset = 0            // Offset of this object in program memory
+  var instructions = [Instruction]()    // Instructions array
   
-  // Returns the current number of instructions in this source.
-  // This essentially tells the memory offset of the next instruction relative to this source
-  func getCount() -> Int
-  {
-    return instructions.count
+  var constantDatasOffset = 0           // Offset of this object's constant data values in memory
+  var constantDatasEnd = 0              // Contant data memory size
+  var constantDatas = [DataValue]()     // Constant datas array
+  
+  var initializedVarsOffset = 0         // Offset of this object's initialized vars in memory
+  var initializedVarsEnd = 0            // Initialized vars memory size
+  var initializedVars = [DataValue]()   // Initialized vars array
+  
+  var uninitializedVarsOffset = 0       // Offset of this object's uninitialized vars in memory
+  var uninitializedVarsEnd = 0          // Uninitialized vars memory size
+  
+  var localSymTable:Dictionary<Data,SymTableInfo> = [:]    // Local symbol table
+  
+  // Absolute address just past the last instruction in program memory
+  func getInstructionsEnd() -> Int {
+    return instructionsOffset + instructions.count
   }
   
-  // Returns the current number of instructions in this source plus the source memory offset
-  // This essentially tells the memory address of the next instruction in program memory
-  func getEnd() -> Int
+  // Absolute address just past the last constant data value in data memory
+  func getConstantDataEnd() -> Int {
+    return constantDatasOffset + constantDatasEnd
+  }
+  
+  // Absolute address just past the last initialized variable in data memory
+  func getInitializedVarsEnd() -> Int {
+    return initializedVarsOffset + initializedVarsEnd
+  }
+  
+  // Absolute address just past the last uninitialized variable in data memory
+  func getUninitializedVarsEnd() -> Int {
+    return uninitializedVarsOffset + uninitializedVarsEnd
+  }
+  
+  // Appends a DataValue at the end of the constant datas array
+  func addConstantData( _ value:DataValue )
   {
-    return offset + instructions.count
+    constantDatas.append(value)
+    constantDatasEnd += value.byteSize
+  }
+  
+  // Adds padding to account for an aligment requirement on constant data
+  func p2AlignConstantData( _ value:Int )
+  {
+    while constantDatasEnd & ~(~0<<value) != 0 {
+      addConstantData( DataValue( 1, OpImm(0) ) )
+    }
+  }
+  
+  // Appends a DataValue at the end of the initialized variables array
+  func addInitializedVar( _ value:DataValue )
+  {
+    initializedVars.append(value)
+    initializedVarsEnd += value.byteSize
+  }
+  
+  // Adds padding to account for an aligment requirement on initialized variables
+  func p2AlignInitializedVar( _ value:Int )
+  {
+    while initializedVarsEnd & ~(~0<<value) != 0 {
+      addInitializedVar( DataValue( 1, OpImm(0) ) )
+    }
+  }
+  
+  // Adds a memory slot for an unitialized variable
+  func addUninitializedVar( size:Int, align:Int  )
+  {
+    uninitializedVarsEnd += uninitializedVarsEnd % align
+    uninitializedVarsEnd += size
   }
 }
-
 
 //-------------------------------------------------------------------------------------------
 // DataValue

@@ -28,13 +28,6 @@ extension Data {
 // Update Assembler object symbol tables
 class SourceParser:PrimitiveParser
 {
-  // We consider the following memory banks
-  enum Bank {
-    case program
-    case constant
-    case variable
-  }
-
   let src:Source           // Destination Source object
   let asm:Assembler        // Destination Assembler object
   var currBank:Bank = .program    // Current memory bank
@@ -53,26 +46,22 @@ class SourceParser:PrimitiveParser
   // Errors just exit the program for now
   func error( _ message:String )
   {
-    out.exitWithError( "\(message), file:\(src.shortName).s line:\(line)" )
+    out.exitWithError( "\(message), file:\(src.shortName.s).s line:\(line)" )
   }
   
   //-------------------------------------------------------------------------------------------
-  // The following code is just a top-down (not particularly recursive) descendant parser
+  // The following code is a top-down (not particularly recursive) descendant parser
   // implemented by hand. The entry funcion is 'parse()'
+  
   
   //-------------------------------------------------------------------------------------------
   func parseAddressToken() -> Data?
   {
     if let token = parseToken() { return token }
-    if let token = parsePrefixedToken( prefix: ".L".d )
-    {
-      var mangled = src.shortName; // Local simbols get prefixed with the current file name
-      mangled.append(token)
-      return mangled
-    }
+    if let token = parsePrefixedToken( prefix: ".L".d ) { return token }
     return nil
   }
-  
+
   //-------------------------------------------------------------------------------------------
   func parseEfectiveAddress() -> (Data,Int)?
   {
@@ -205,7 +194,7 @@ class SourceParser:PrimitiveParser
     {
       if let value =
         [ "eq".d : 0, "ne".d : 1, "uge".d : 2,
-          "ult".d: 3, "lt".d: 4, "ge".d: 5,
+          "ult".d: 3, "ge".d: 4, "lt".d: 5,
           "ugt".d: 6, "gt".d: 7 ][token]
       {
         currInst?.ops.append( OpImm(value, ind:false) )
@@ -245,7 +234,6 @@ class SourceParser:PrimitiveParser
   //-------------------------------------------------------------------------------------------
   func parseInstructionName() -> Bool
   {
-    //if parseMovWordInstruction() { return true }
     if parseConditionalInstruction() { return true }
     if parseAnyInstruction() { return true }
     return false
@@ -331,9 +319,30 @@ class SourceParser:PrimitiveParser
       skipSpTab()
       if let name = parseToken()
       {
-        if currBank == .program { asm.progSyms[name] = src.getEnd() }
-        else if currBank == .constant { asm.constantDataSyms[name] = asm.constantDataEnd }
-        else if currBank == .variable { asm.initializedVarsSyms[name] = asm.initializedVarsEnd }
+        // We do not allow duplicates of global symbols
+        if asm.globalSymTable[name] == nil
+        {
+          let symInfo = SymTableInfo(bank:currBank)
+          asm.globalSymTable[name] = symInfo
+          out.logln()
+          return true
+        }
+        else { error( "Duplicated global symbol \"\(name.s)\"" ) }
+      }
+    }
+    return false
+  }
+
+  //-------------------------------------------------------------------------------------------
+  func parseLocal() -> Bool
+  {
+    if parseConcreteToken(cStr: "local".d )
+    {
+      skipSpTab()
+      if let name = parseToken()
+      {
+        let symInfo = SymTableInfo(bank:currBank)
+        src.localSymTable[name] = symInfo
         out.logln()
         return true
       }
@@ -383,8 +392,9 @@ class SourceParser:PrimitiveParser
       skipSpTab()
       if let align = parseInteger()
       {
-        if currBank == .constant { asm.p2AlignConstantData(align) }
-        else if currBank == .variable { asm.p2AlignInitializedVar(align) }
+        if currBank == .constant { src.p2AlignConstantData(align) }
+        else if currBank == .variable { src.p2AlignInitializedVar(align) }
+        else { error( "Unsuported bank" ) }
         return true
       }
     }
@@ -421,8 +431,9 @@ class SourceParser:PrimitiveParser
   {
     if let op = parseDataOperand()
     {
-      if currBank == .constant { asm.addConstantData( DataValue( size, op ) ) }
-      else if currBank == .variable { asm.addInitializedVar( DataValue( size, op ) ) }
+      if currBank == .constant { src.addConstantData( DataValue( size, op ) ) }
+      else if currBank == .variable { src.addInitializedVar( DataValue( size, op ) ) }
+      else { error( "Unsuported bank" ) }
 
       out.logln( "\t" + String(reflecting:op) )
 
@@ -437,8 +448,9 @@ class SourceParser:PrimitiveParser
     if let op = parseStrOperand(addZeroByte:addZeroByte)
     {
       let size = op.sym!.count
-      if currBank == .constant { asm.addConstantData( DataValue( size, op ) ) }
-      else if currBank == .variable { asm.addInitializedVar( DataValue( size, op ) ) }
+      if currBank == .constant { src.addConstantData( DataValue( size, op ) ) }
+      else if currBank == .variable { src.addInitializedVar( DataValue( size, op ) ) }
+      else { error( "Unsuported bank" ) }
 
       out.logln( "\t" + String(reflecting:op) )
 
@@ -518,8 +530,8 @@ class SourceParser:PrimitiveParser
     }
     return false
   }
-
-  //-------------------------------------------------------------------------------------------
+  
+ //-------------------------------------------------------------------------------------------
   func parseComm() -> Bool
   {
     if parseConcreteToken(cStr: "comm".d )
@@ -527,7 +539,7 @@ class SourceParser:PrimitiveParser
       skipSpTab()
       if let name = parseToken()
       {
-        var length = 0
+        var size = 0
         var align = 1
         skipSpTab()
         if parseChar( UInt8(ascii:",") )
@@ -535,7 +547,7 @@ class SourceParser:PrimitiveParser
           skipSpTab()
           if let len = parseInteger()
           {
-            length = len
+            size = len
             skipSpTab()
             if parseChar( UInt8(ascii:",") )
             {
@@ -547,14 +559,89 @@ class SourceParser:PrimitiveParser
             }
           }
         }
-      
-        asm.addUninitializedVar( name:name, size:length, align:align)
+        
+        if let symInfo = src.localSymTable[name]
+        {
+          // Locally defined symbols just need to be added
+          // and updated
+          src.addUninitializedVar( size:size, align:align)
+          symInfo.bank = .common
+          symInfo.value = src.getUninitializedVarsEnd()-size
+        }
+        else if let symInfo = asm.globalSymTable[name]
+        {
+          // For global comm symbols, only verify that
+          // the symbol is already defined in the .common area
+          // (See TO DO comment below)
+          if symInfo.bank != .common { error( "Duplicated global symbol \"\(name.s)\"" ) }
+        }
+        else
+        {
+          // The symbol was not defined previously, so create it now
+          // and initialize accordingly
+          let symInfo = SymTableInfo(bank:.common)
+          asm.globalSymTable[name] = symInfo
+          src.addUninitializedVar( size:size, align:align)
+          
+          // value must be set after adding to take the align into accout
+          symInfo.value = src.getUninitializedVarsEnd()-size
+        }
+        
+        // TO DO:
+        // Note that the code above is buggy because the .comm directive is supposed
+        // to merge sizes of identically named symbols by using the largest size of them all.
+        // The consequence of not doing this here is potential memory
+        // overlaps if subsequent definitions are of a larger size. However, implementing
+        // this requires some thought because we do not track size information of the
+        // previously added comm symbols
+        
+        out.logln( name.s + ":" )
+ 
         return true
       }
       else { error( "Expecting section name after .section directive" ) }
     }
     return false
   }
+  
+  
+
+//  //-------------------------------------------------------------------------------------------
+//  func parseComm() -> Bool
+//  {
+//    if parseConcreteToken(cStr: "comm".d )
+//    {
+//      skipSpTab()
+//      if let name = parseToken()
+//      {
+//        var length = 0
+//        var align = 1
+//        skipSpTab()
+//        if parseChar( UInt8(ascii:",") )
+//        {
+//          skipSpTab()
+//          if let len = parseInteger()
+//          {
+//            length = len
+//            skipSpTab()
+//            if parseChar( UInt8(ascii:",") )
+//            {
+//              skipSpTab()
+//              if let algn = parseInteger()
+//              {
+//                align = algn
+//              }
+//            }
+//          }
+//        }
+//
+//        asm.addUninitializedVar( name:name, size:length, align:align)   // global si no es diu lo contrari
+//        return true
+//      }
+//      else { error( "Expecting section name after .section directive" ) }
+//    }
+//    return false
+//  }
 
   //-------------------------------------------------------------------------------------------
   func parseInstruction() -> Bool
@@ -586,18 +673,48 @@ class SourceParser:PrimitiveParser
   //-------------------------------------------------------------------------------------------
   func parseLabel() -> Bool
   {
-    if let sym = parseAddressLabel()
+    if let name = parseAddressLabel()
     {
-      if currBank == .program { asm.progSyms[sym] = src.getEnd() }
-      else if currBank == .constant { asm.constantDataSyms[sym] = asm.constantDataEnd }
-      else if currBank == .variable { asm.initializedVarsSyms[sym] = asm.initializedVarsEnd }
- 
-      out.logln( sym.s + ":" )
+      // It it's already in the global table use it,
+      // otherwise create the symbol in the local table
+      var symInfo = asm.globalSymTable[name]
+      if symInfo == nil
+      {
+        symInfo = SymTableInfo(bank:currBank)
+        src.localSymTable[name] = symInfo
+      }
+    
+      // Set the address value
+      switch currBank
+      {
+        case .program  : symInfo!.value = src.getInstructionsEnd()
+        case .constant : symInfo!.value = src.getConstantDataEnd()
+        case .variable : symInfo!.value = src.getInitializedVarsEnd()
+        default : error( "Unsuported bank" )
+      }
+      
+      out.logln( name.s + ":" )
  
       return true
     }
     return false
   }
+  
+//  //-------------------------------------------------------------------------------------------
+//  func parseLabel() -> Bool
+//  {
+//    if let sym = parseAddressLabel()
+//    {
+//      if currBank == .program { asm.progSyms[sym] = src.getEnd() }
+//      else if currBank == .constant { asm.constantDataSyms[sym] = asm.constantDataEnd }         // aqui nomes hauria d'updatar el value
+//      else if currBank == .variable { asm.initializedVarsSyms[sym] = asm.initializedVarsEnd }
+//
+//      out.logln( sym.s + ":" )
+//
+//      return true
+//    }
+//    return false
+//  }
   
   //-------------------------------------------------------------------------------------------
   func parseSet() -> Bool
@@ -611,8 +728,9 @@ class SourceParser:PrimitiveParser
         {
           if currBank == .program
           {
-            let offs = asm.progSyms[tokens[1]]
-            asm.progSyms[tokens[0]] = offs
+//            let offs = asm.progSyms[tokens[1]]
+//            asm.progSyms[tokens[0]] = offs
+            error ( "Dont Know what to do" )
             return true
           }
           else { error( ".set directive issued in non program area" ) }
@@ -628,7 +746,11 @@ class SourceParser:PrimitiveParser
   // Entry function for the parser
   func parse() -> Bool
   {
-    src.offset = asm.getProgEnd()
+    src.instructionsOffset = asm.getInstructionsEnd()
+    src.constantDatasOffset = asm.getConstantDataEnd()
+    src.initializedVarsOffset = asm.getInitializedVarsEnd()
+    src.uninitializedVarsOffset = asm.getUninitializedVarsEnd()
+
     while true
     {
       skip()
@@ -640,6 +762,7 @@ class SourceParser:PrimitiveParser
           if parseText() { continue }
           if parseFile() { continue }
           if parseGlobl() { continue }
+          if parseLocal() { continue }
           if parseSection() { continue }
           if parseP2Align() { continue }
           if parseByte() { continue }
@@ -664,8 +787,8 @@ class SourceParser:PrimitiveParser
     
     if c != end { error( "Extra characters before end of file" ) }
     
-    asm.p2AlignConstantData(1)
-    asm.p2AlignInitializedVar(1)
+    src.p2AlignConstantData(1)
+    src.p2AlignInitializedVar(1)
     return true
   }
 

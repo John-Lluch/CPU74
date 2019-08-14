@@ -12,32 +12,57 @@ import Foundation
 // Assembler
 //-------------------------------------------------------------------------------------------
 
+// Convenience constants
+let _program_memory_prefix = "@"    // We prefix program memory addresses with this
+let _data_memory_prefix = "&"       // We prefix data memory addresses with this
+
+// We consider the following memory banks
+enum Bank
+{
+  case program   // Program memory
+  case constant  // Constant datas memory
+  case variable  // Initialized variables memory
+  case common    // Uninitialized variables memory
+  
+  // Return a prefix suitable for log purposes
+  var prefix:String
+  {
+    switch self
+    {
+      case .program: return _program_memory_prefix   // Program memory
+      case .constant: return _data_memory_prefix     // Data memory
+      case .variable: return _data_memory_prefix     // Data memory
+      case .common: return _data_memory_prefix       // Data memory
+    }
+  }
+}
+
+// Symbol table stored information. Note that it's declared as a class,
+// because we need reference semantics
+class SymTableInfo
+{
+  var bank:Bank
+  var value:Int
+  
+  init( bank b:Bank, value v:Int=0 )
+  {
+    bank = b
+    value = v
+  }
+}
+
 // Assemble an array of Source objects into memory
 class Assembler
 {
+  // Global symbol table
+  var globalSymTable:Dictionary<Data,SymTableInfo> = [:]
+
   // Convenience constants
   let _program_memory_prefix = "@"    // We prefix program memory addresses with this
   let _data_memory_prefix = "&"       // We prefix data memory addresses with this
 
   // Source input instances array
   var sources = [Source]()
-  
-  // Public symbols pointing to addresses in program memory
-  var progSyms:Dictionary<Data,Int> = [:]
-  
-  // Constant data in data memory such as constant strings and jump tables
-  var constantDatas = [DataValue]()
-  var constantDataSyms:Dictionary<Data,Int> = [:]
-  var constantDataEnd:Int = 0
-  
-  // Initialized global variables in data memory
-  var initializedVars = [DataValue]()
-  var initializedVarsSyms:Dictionary<Data,Int> = [:]  // Public symbols pointing to addresses in data memory
-  var initializedVarsEnd:Int = 0
-
-  // Uninitialized global variables in data memory
-  var uninitializedVarsSyms:Dictionary<Data,Int> = [:]  // Public symbols pointing to addresses in data memory
-  var uninitializedVarsEnd:Int = 0
   
   // Resulting assembly code
   var programMemory = Data()
@@ -49,73 +74,59 @@ class Assembler
     sources.append(source)
   }
   
-  // Returns the memory address of the next instruction in program memory
-  func getProgEnd() -> Int
+  // Absolute address just past the last instruction in program memory
+  func getInstructionsEnd() -> Int
   {
-    if sources.count > 0 { return sources.last!.getEnd() }
+    if sources.count > 0 { return sources.last!.getInstructionsEnd() }
     else { return 0 }
   }
   
-  // Appends a DataValue at the end of the constant datas array
-  func addConstantData( _ value:DataValue )
+  // Absolute address just past the last constant data value in data memory
+  func getConstantDataEnd() -> Int
   {
-    constantDatas.append(value)
-    constantDataEnd += value.byteSize
+    if sources.count > 0 { return sources.last!.getConstantDataEnd() }
+    else { return 0 }
   }
   
-  // Adds padding to account for an aligment requirement on constant data
-  func p2AlignConstantData( _ value:Int )
+  // Absolute address just past the last initialized variable in data memory
+  func getInitializedVarsEnd() -> Int
   {
-    while constantDataEnd & ~(~0<<value) != 0 {
-      addConstantData( DataValue( 1, OpImm(0) ) )
-    }
+    if sources.count > 0 { return sources.last!.getInitializedVarsEnd() }
+    else { return 0 }
   }
-  
-  // Appends a DataValue at the end of the initialized variables array
-  func addInitializedVar( _ value:DataValue )
+
+  // Absolute address just past the last uninitialized variable in data memory
+  func getUninitializedVarsEnd() -> Int
   {
-    initializedVars.append(value)
-    initializedVarsEnd += value.byteSize
+    if sources.count > 0 { return sources.last!.getUninitializedVarsEnd() }
+    else { return 0 }
   }
-  
-  // Adds padding to account for an aligment requirement on initialized variables
-  func p2AlignInitializedVar( _ value:Int )
-  {
-    while initializedVarsEnd & ~(~0<<value) != 0 {
-      addInitializedVar( DataValue( 1, OpImm(0) ) )
-    }
-  }
-  
-  // Adds a memory slot for an unitialized variable
-  func addUninitializedVar( name:Data, size:Int, align:Int  )
-  {
-    uninitializedVarsEnd += uninitializedVarsEnd % align
-    uninitializedVarsSyms[name] = uninitializedVarsEnd
-    uninitializedVarsEnd += size
-  }
-  
-  // Returns the program memory address of a symbol in the form of a tuple pair that
+
+  //-------------------------------------------------------------------------------------------
+  // Returns a SymTableInfo object with the updated memory address of a symbol in the form of a tuple pair that
   // also includes the suitable memory prefix string for the symbol
-  func getProgramAddress( sym:Data ) -> (String, Int)?
+  func getMemoryAddress( sym:Data, src:Source ) -> SymTableInfo?
   {
-    if let a = progSyms[sym] { return (_program_memory_prefix, a) }
-    return nil
+    var symInfo = src.localSymTable[sym]
+    if symInfo == nil { symInfo = globalSymTable[sym] }
+    if symInfo == nil { return nil }
+    
+    var value = symInfo!.value
+    let bank = symInfo!.bank
+    
+    switch bank
+    {
+      case .program: break
+      case .constant: break
+      case .variable: value += getConstantDataEnd()
+      case .common: value += getConstantDataEnd() + getInitializedVarsEnd()
+    }
+    return SymTableInfo( bank:bank, value:value )
   }
-  
-  // Returns the memory address of a symbol in the form of a tuple pair that
-  // also includes the suitable memory prefix string for the symbol
-  func getMemoryAddress( sym:Data ) -> (String, Int)?
-  {
-    if let a = constantDataSyms[sym] { return (_data_memory_prefix, a) }
-    if let a = initializedVarsSyms[sym] { return (_data_memory_prefix, constantDataEnd + a) }
-    if let a = uninitializedVarsSyms[sym] { return (_data_memory_prefix, constantDataEnd + initializedVarsEnd + a) }
-    if let a = progSyms[sym] { return (_program_memory_prefix, a) }
-    return nil
-  }
-  
+
   //-------------------------------------------------------------------------------------------
   // Assemble a single Source object
-  func assemble(source:Source) -> Bool
+  func assembleProgram(source:Source) -> Bool
   {
     // Iterate the Instructions array
     out.log( "\nSource: " )
@@ -126,12 +137,12 @@ class Assembler
       let inst = source.instructions[i]
       let mcInst = MachineInstrList.newMachineInst(inst)
       if ( mcInst == nil ) {
-        out.printError( "\(source.shortName.s).s Unrecognised Instruction Pattern: " + String(reflecting:inst) )
+        out.exitWithError( "\(source.shortName.s).s Unrecognised Instruction Pattern: " + String(reflecting:inst) )
         return false
       }
       
       // Initialize some state variables
-      let here =  source.offset + i
+      let here =  source.instructionsOffset + i
       var ra:Int? = nil
       var aa:Int? = nil
       var prefix = ""
@@ -140,15 +151,15 @@ class Assembler
       if let mcrInst = mcInst as? InstPCRelative
       {
         let op = inst.symOp!
-        if let (pf, a) = getProgramAddress(sym: op.sym!)
+        if let symInfo = getMemoryAddress(sym: op.sym!, src:source)
         {
-          prefix = pf
-          ra = a + op.value - here
+          prefix = symInfo.bank.prefix
+          ra = symInfo.value + op.value - here
           mcrInst.setRelative(a:UInt16(truncatingIfNeeded:ra!))
         }
         else
         {
-          out.printError( "\(source.shortName.s).s Unresolved relative symbol: " + op.sym!.s )
+          out.exitWithError( "\(source.shortName.s).s Unresolved relative symbol: " + op.sym!.s )
           return false
         }
       }
@@ -157,15 +168,15 @@ class Assembler
       else if let mcaInst = mcInst as? InstDTAbsolute
       {
         let op = inst.symOp!
-        if let (pf, a) = getMemoryAddress(sym: op.sym!)     // to do: implement absolute program syms
+        if let symInfo = getMemoryAddress(sym: op.sym!, src:source)
         {
-          prefix = pf
-          aa = a + op.value
+          prefix = symInfo.bank.prefix
+          aa = symInfo.value + op.value
           mcaInst.setAbsolute(a:UInt16(truncatingIfNeeded:aa!))
         }
         else
         {
-          out.printError( "\(source.shortName.s).s Unresolved absolute symbol: " + op.sym!.s )
+          out.exitWithError( "\(source.shortName.s).s Unresolved absolute symbol: " + op.sym!.s )
           return false
         }
       }
@@ -194,15 +205,15 @@ class Assembler
     // We are done
     return true
   }
-  
+
   //-------------------------------------------------------------------------------------------
-  // Assemble a single DataValues
-  func assemble(datav:DataValue) -> Bool
+  // Assemble a single DataValue
+  func assembleSingleDatav(datav:DataValue, source:Source) -> Bool
   {
     // Find the unique match of the DataValue to a MachineData
     let mcData:MachineData? = MachineDataList.newMachineData(datav)
     if ( mcData == nil ) {
-      out.printError( "Unrecognised Data Value Pattern: " + String(reflecting:datav) )
+      out.exitWithError( "Unrecognised Data Value Pattern: " + String(reflecting:datav) )
       return false
     }
   
@@ -214,15 +225,15 @@ class Assembler
     if let mcDataAbs = mcData as? InstDTAbsolute
     {
       let op = datav.symOp!
-      if let (pf, a) = getMemoryAddress(sym: op.sym!)
+      if let symInfo = getMemoryAddress(sym: op.sym!, src:source)
       {
-        prefix = pf
-        aa = a + op.value
+        prefix = symInfo.bank.prefix
+        aa = symInfo.value + op.value
         mcDataAbs.setAbsolute(a:UInt16(truncatingIfNeeded:aa!))
       }
       else
       {
-        out.printError( "Unresolved symbol: " + op.sym!.s )
+        out.exitWithError( "Unresolved symbol: " + op.sym!.s )
         return false
       }
     }
@@ -251,41 +262,61 @@ class Assembler
     // We are done
     return true
   }
+  
+  //-------------------------------------------------------------------------------------------
+  // Assemble all constant DataValues
+  func assembleConstantData(source:Source) -> Bool
+  {
+    // Iterate all constant DataValues
+    for datav in source.constantDatas {
+      if !assembleSingleDatav(datav:datav, source:source) { break }
+    }
+    
+    return true
+ }
+ 
+  //-------------------------------------------------------------------------------------------
+  // Assemble all iniitalized DataValues
+  func assembleVariableData(source:Source) -> Bool
+  {
+    // Iterate all initialized DataValues
+    for datav in source.initializedVars {
+      if !assembleSingleDatav(datav:datav, source:source) { break }
+    }
+    
+    return true
+ }
 
-//-------------------------------------------------------------------------------------------
-// Assemble all available Sources and DataValues
+  //-------------------------------------------------------------------------------------------
+  // Assemble all available Sources and DataValues
   func assembleAll()
   {
-    // Iterate all Sources
     out.logln( "\nProgram Code:" )
+    
     for source in sources {
-      if !assemble(source:source) { break }
+      if !assembleProgram(source:source) { break }
     }
     
-    // Iterate all constant DataValues
     out.logln( "\nConstant Data:" )
-    for datav in constantDatas {
-      if !assemble(datav:datav) { break }
+    for source in sources {
+      if !assembleConstantData(source:source) { break }
     }
-    
-    // Iterate all initialized DataValues
+
     out.logln( "\nInitialized Variables:" )
-    for datav in initializedVars {
-      if !assemble(datav:datav) { break }
+    for source in sources {
+      if !assembleVariableData(source:source) { break }
     }
     
     // Unitialized variables do not require any machine code
-    //
     
     // Debug log stuff...
     if out.logEnabled
     {
       out.logln( "\nUnitialized Variables:" )
-      let prStr = String(format:"%05d : %d bytes", constantDataEnd+initializedVarsEnd, uninitializedVarsEnd )
+      let prStr = String(format:"%05d : %d bytes", getConstantDataEnd()+getInitializedVarsEnd(), getUninitializedVarsEnd() )
       out.logln( prStr )
     }
   }
 }
-
 
 
