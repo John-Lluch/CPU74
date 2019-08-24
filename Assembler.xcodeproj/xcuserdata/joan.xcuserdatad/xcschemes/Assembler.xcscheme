@@ -69,8 +69,8 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-l -o /Users/joan/Documents-Local/Relay/RelayNou/main.c74 -s /Users/joan/Documents-Local/Relay/RelayNou/system.s /Users/joan/Documents-Local/Relay/RelayNou/add.s /Users/joan/Documents-Local/Relay/RelayNou/sumes.s /Users/joan/Documents-Local/Relay/RelayNou/main.s"
-            isEnabled = "NO">
+            argument = "-l -o /Users/joan/Documents-Local/Relay/RelayNou/system.c74 -s /Users/joan/Documents-Local/Relay/RelayNou/system.s /Users/joan/Documents-Local/Relay/RelayNou/main.s /Users/joan/Documents-Local/Relay/RelayNou/add.s /Users/joan/Documents-Local/Relay/RelayNou/sumes.s /Users/joan/Documents-Local/Relay/RelayNou/extras.s"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-l -o /Users/joan/Documents-Local/Relay/RelayNou/main.c74 -s  /Users/joan/Documents-Local/Relay/RelayNou/main.s"
@@ -78,7 +78,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-l -o  -s  /Users/joan/Documents-Local/Relay/RelayNou/main.s"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-s pepet. dsfkjh.s -o outp"

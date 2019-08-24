@@ -52,7 +52,7 @@ class Type1:MachineInstr,InstPCRelative
     super.init()
     encoding |= (0b111)              << 13
     encoding |= (0b1 & op)           << 12
-    encoding |= (0b111111111111 & a) << 0
+    encoding |= (0b1111_1111_1111 & a) << 0
   }
   
   required convenience init(op:UInt16, ops:[Operand]) {
@@ -61,8 +61,8 @@ class Type1:MachineInstr,InstPCRelative
   
   func setRelative( a:UInt16 )
   {
-    let mask:UInt16 = 0b111111111111
-    encoding = ~mask
+    let mask:UInt16 = 0b1111_1111_1111
+    encoding &= ~mask
     encoding |= (mask & a)
   }
 }
@@ -75,7 +75,7 @@ class Type2:MachineInstr,InstPCRelative
     super.init()
     encoding |= (0b110)            << 13
     encoding |= (0b111 & cc)       << 10
-    encoding |= (0b11111111 & a )  << 0
+    encoding |= (0b11_1111_1111 & a )  << 0
   }
   
   required convenience init(op:UInt16, ops:[Operand]) {
@@ -84,8 +84,8 @@ class Type2:MachineInstr,InstPCRelative
   
   func setRelative( a:UInt16 )
   {
-    let mask:UInt16 = 0b11111111
-    encoding = ~mask
+    let mask:UInt16 = 0b11_1111_1111
+    encoding &= ~mask
     encoding |= (mask & a)
   }
 }
@@ -98,7 +98,7 @@ class Type3:MachineInstr
     super.init()
     encoding |= (0b10)            << 14
     encoding |= (0b111  & op)     << 11
-    encoding |= (0b11111111 & k)  << 3
+    encoding |= (0b1111_1111 & k)  << 3
     encoding |= (0b111 & rd)      << 0
   }
   
@@ -124,7 +124,7 @@ class Type4:MachineInstr
     super.init()
     encoding |= (0b01)          << 14
     encoding |= (0b11 & op)     << 12
-    encoding |= (0b111111 & k)  << 6
+    encoding |= (0b11_1111 & k)  << 6
     encoding |= (0b111 & rn)    << 3
     encoding |= (0b111 & rd)    << 0
   }
@@ -325,7 +325,8 @@ class TypeS:TypeK,InstDTAbsolute
 // Singleton class for creating MachineInst from Instruction
 class MachineInstrList
 {
-  // Dictionary returning a unique MachineInstr type and opcode for a given Instruction
+
+// Dictionary returning a unique MachineInstr type and opcode for a given Instruction
   static let allInstr:Dictionary<Instruction, (ty:MachineInstr.Type, op:UInt16)> =
   [
     // Type 1
@@ -345,24 +346,24 @@ class MachineInstrList
     Instruction( "xor".d,    [OpReg(), OpImm(), OpReg()] )     : (ty:Type3.self,  op:0b110),
     
     // Type 4
-    Instruction( "ld.w".d,   [OpReg(ind:true), OpImm(ind:true), OpReg()] )    : (ty:Type4.self,  op:0b00),
-    Instruction( "ld.sb".d,  [OpReg(ind:true), OpImm(ind:true), OpReg()] )    : (ty:Type4.self,  op:0b01),
-    Instruction( "st.w".d,   [OpReg(), OpReg(ind:true), OpImm(ind:true)] )    : (ty:Type4b.self, op:0b10),
-    Instruction( "st.b".d,   [OpReg(), OpReg(ind:true), OpImm(ind:true)] )    : (ty:Type4b.self, op:0b11),
+    Instruction( "ld.w".d,   [OpReg(.indirect), OpImm(.indirect), OpReg()] )    : (ty:Type4.self,  op:0b00),
+    Instruction( "ld.sb".d,  [OpReg(.indirect), OpImm(.indirect), OpReg()] )    : (ty:Type4.self,  op:0b01),
+    Instruction( "st.w".d,   [OpReg(), OpReg(.indirect), OpImm(.indirect)] )    : (ty:Type4b.self, op:0b10),
+    Instruction( "st.b".d,   [OpReg(), OpReg(.indirect), OpImm(.indirect)] )    : (ty:Type4b.self, op:0b11),
     
     // Type 5
-    Instruction( "add".d,    [OpReg(), OpReg(), OpReg()] )                    : (ty:Type5.self,  op:0b0000),
-    Instruction( "addc".d,   [OpReg(), OpReg(), OpReg()] )                    : (ty:Type5.self,  op:0b0001),
-    Instruction( "sub".d,    [OpReg(), OpReg(), OpReg()] )                    : (ty:Type5.self,  op:0b0010),
-    Instruction( "subc".d,   [OpReg(), OpReg(), OpReg()] )                    : (ty:Type5.self,  op:0b0011),
-    Instruction( "or".d,     [OpReg(), OpReg(), OpReg()] )                    : (ty:Type5.self,  op:0b0100),
-    Instruction( "and".d,    [OpReg(), OpReg(), OpReg()] )                    : (ty:Type5.self,  op:0b0101),
-    Instruction( "xor".d,    [OpReg(), OpReg(), OpReg()] )                    : (ty:Type5.self,  op:0b0110),
-    Instruction( "ld.w".d,   [OpReg(ind:true), OpReg(ind:true), OpReg()] )    : (ty:Type5.self,  op:0b1000),
-    Instruction( "ld.zb".d,  [OpReg(ind:true), OpReg(ind:true), OpReg()] )    : (ty:Type5.self,  op:0b1010),
-    Instruction( "ld.sb".d,  [OpReg(ind:true), OpReg(ind:true), OpReg()] )    : (ty:Type5.self,  op:0b1011),
-    Instruction( "st.w".d,   [OpReg(), OpReg(ind:true), OpReg(ind:true)] )    : (ty:Type5b.self, op:0b1100),
-    Instruction( "st.b".d,   [OpReg(), OpReg(ind:true), OpReg(ind:true)] )    : (ty:Type5b.self, op:0b1101),
+    Instruction( "add".d,    [OpReg(), OpReg(), OpReg()] )                     : (ty:Type5.self,  op:0b0000),
+    Instruction( "addc".d,   [OpReg(), OpReg(), OpReg()] )                     : (ty:Type5.self,  op:0b0001),
+    Instruction( "sub".d,    [OpReg(), OpReg(), OpReg()] )                     : (ty:Type5.self,  op:0b0010),
+    Instruction( "subc".d,   [OpReg(), OpReg(), OpReg()] )                     : (ty:Type5.self,  op:0b0011),
+    Instruction( "or".d,     [OpReg(), OpReg(), OpReg()] )                     : (ty:Type5.self,  op:0b0100),
+    Instruction( "and".d,    [OpReg(), OpReg(), OpReg()] )                     : (ty:Type5.self,  op:0b0101),
+    Instruction( "xor".d,    [OpReg(), OpReg(), OpReg()] )                     : (ty:Type5.self,  op:0b0110),
+    Instruction( "ld.w".d,   [OpReg(.indirect), OpReg(.indirect), OpReg()] )    : (ty:Type5.self,  op:0b1000),
+    Instruction( "ld.zb".d,  [OpReg(.indirect), OpReg(.indirect), OpReg()] )    : (ty:Type5.self,  op:0b1010),
+    Instruction( "ld.sb".d,  [OpReg(.indirect), OpReg(.indirect), OpReg()] )    : (ty:Type5.self,  op:0b1011),
+    Instruction( "st.w".d,   [OpReg(), OpReg(.indirect), OpReg(.indirect)] )    : (ty:Type5b.self, op:0b1100),
+    Instruction( "st.b".d,   [OpReg(), OpReg(.indirect), OpReg(.indirect)] )    : (ty:Type5b.self, op:0b1101),
     
     // Type 6
     Instruction( "selcc".d,  [OpImm(), OpReg(), OpReg(), OpReg()] )           : (ty:Type6.self, op:0),
@@ -375,7 +376,8 @@ class MachineInstrList
     Instruction( "reti".d,   [] )                    : (ty:Type8.self,  op:0b001),
     Instruction( "dint".d,   [] )                    : (ty:Type8.self,  op:0b010),
     Instruction( "eint".d,   [] )                    : (ty:Type8.self,  op:0b011),
-    Instruction( "call".d,   [OpSym(ext:true)] )     : (ty:Type8.self,  op:0b111),
+    Instruction( "halt".d,   [] )                    : (ty:Type8.self,  op:0b100),
+    Instruction( "call".d,   [OpSym(.extern)] )     : (ty:Type8.self,  op:0b111),
     
     // Type 9
     Instruction( "jmp".d,    [OpReg()] )                              : (ty:Type9.self,  op:0b0000),
@@ -383,47 +385,48 @@ class MachineInstrList
     Instruction( "push".d,   [OpReg()] )                              : (ty:Type9.self,  op:0b0100),
     Instruction( "pop".d,    [OpReg()] )                              : (ty:Type9.self,  op:0b0110),
     
-    Instruction( "mov".d,    [OpImm(ext:true), OpReg()] )             : (ty:Type9b.self, op:0b0001),
-    Instruction( "mov".d,    [OpSym(ext:true), OpReg()] )             : (ty:Type9b.self, op:0b0001),
+    Instruction( "mov".d,    [OpImm(.extern), OpReg()] )              : (ty:Type9b.self, op:0b0001),
+    Instruction( "mov".d,    [OpSym(.extern), OpReg()] )              : (ty:Type9b.self, op:0b0001),
     
-    Instruction( "ld.w".d,   [OpSym(ind:true,ext:true), OpReg()] )    : (ty:Type9b.self, op:0b0011),
-    Instruction( "ld.zb".d,  [OpSym(ind:true,ext:true), OpReg()] )    : (ty:Type9b.self, op:0b0101),
-    Instruction( "ld.sb".d,  [OpSym(ind:true,ext:true), OpReg()] )    : (ty:Type9b.self, op:0b0111),
-    Instruction( "st.w".d,   [OpReg(), OpSym(ind:true,ext:true)] )    : (ty:Type9.self,  op:0b1001),
-    Instruction( "st.b".d,   [OpReg(), OpSym(ind:true,ext:true)] )    : (ty:Type9.self,  op:0b1011),
+    Instruction( "ld.w".d,   [OpSym([.indirect,.extern]), OpReg()] )    : (ty:Type9b.self, op:0b0011),
+    Instruction( "ld.zb".d,  [OpSym([.indirect,.extern]), OpReg()] )    : (ty:Type9b.self, op:0b0101),
+    Instruction( "ld.sb".d,  [OpSym([.indirect,.extern]), OpReg()] )    : (ty:Type9b.self, op:0b0111),
+    Instruction( "st.w".d,   [OpReg(), OpSym([.indirect,.extern])] )    : (ty:Type9.self,  op:0b1001),
+    Instruction( "st.b".d,   [OpReg(), OpSym([.indirect,.extern])] )    : (ty:Type9.self,  op:0b1011),
 
     // Type 10
-    Instruction( "mov".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b00000),
-    Instruction( "cmp".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b00100),
-    Instruction( "zext".d,   [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b01000),
-    Instruction( "sext".d,   [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b01100),
-    Instruction( "bswap".d,  [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b10000),
-    Instruction( "sextw".d,  [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b10100),
-    Instruction( "lsr".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b00001),
-    Instruction( "lsl".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b00101),
-    Instruction( "asr".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b01001),
-    Instruction( "neg".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b10101),
-    Instruction( "not".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b11001),
+    Instruction( "mov".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b000_00),
+    Instruction( "cmp".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b001_00),
+    Instruction( "zext".d,   [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b010_00),
+    Instruction( "sext".d,   [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b011_00),
+    Instruction( "bswap".d,  [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b100_00),
+    Instruction( "sextw".d,  [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b101_00),
+    Instruction( "ld.w".d,   [OpReg(.prgIndirect), OpReg()] )                  : (ty:Type10.self,  op:0b111_00),
+    Instruction( "lsr".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b000_01),
+    Instruction( "lsl".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b001_01),
+    Instruction( "asr".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b010_01),
+    Instruction( "neg".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b101_01),
+    Instruction( "not".d,    [OpReg(), OpReg()] )                              : (ty:Type10.self,  op:0b110_01),
     
-    Instruction( "add".d,    [OpReg(), OpImm(ext:true), OpReg()] )                      : (ty:Type10b.self, op:0b00010),
-    Instruction( "ld.w".d,   [OpReg(ind:true), OpImm(ind:true,ext:true), OpReg()] )     : (ty:Type10b.self, op:0b00110),
-    Instruction( "ld.zb".d,  [OpReg(ind:true), OpImm(ind:true,ext:true), OpReg()] )     : (ty:Type10b.self, op:0b01010),
-    Instruction( "ld.sb".d,  [OpReg(ind:true), OpImm(ind:true,ext:true), OpReg()] )     : (ty:Type10b.self, op:0b01110),
-    Instruction( "st.w".d,   [OpReg(), OpReg(ind:true), OpImm(ind:true,ext:true)] )     : (ty:Type10c.self, op:0b10010),
-    Instruction( "st.b".d,   [OpReg(), OpReg(ind:true), OpImm(ind:true,ext:true)] )     : (ty:Type10c.self, op:0b10110),
+    Instruction( "add".d,    [OpReg(), OpImm(.extern), OpReg()] )                          : (ty:Type10b.self, op:0b000_10),
+    Instruction( "ld.w".d,   [OpReg(.indirect), OpImm([.indirect,.extern]), OpReg()] )     : (ty:Type10b.self, op:0b00110),
+    Instruction( "ld.zb".d,  [OpReg(.indirect), OpImm([.indirect,.extern]), OpReg()] )     : (ty:Type10b.self, op:0b01010),
+    Instruction( "ld.sb".d,  [OpReg(.indirect), OpImm([.indirect,.extern]), OpReg()] )     : (ty:Type10b.self, op:0b01110),
+    Instruction( "st.w".d,   [OpReg(), OpReg(.indirect), OpImm([.indirect,.extern])] )     : (ty:Type10c.self, op:0b10010),
+    Instruction( "st.b".d,   [OpReg(), OpReg(.indirect), OpImm([.indirect,.extern])] )     : (ty:Type10c.self, op:0b10110),
     
-    Instruction( "add".d,    [OpReg(), OpSym(ext:true), OpReg()] )                      : (ty:Type10b.self, op:0b00010),
-    Instruction( "ld.w".d,   [OpReg(ind:true), OpSym(ind:true,ext:true), OpReg()] )     : (ty:Type10b.self, op:0b00110),
-    Instruction( "ld.zb".d,  [OpReg(ind:true), OpSym(ind:true,ext:true), OpReg()] )     : (ty:Type10b.self, op:0b01010),
-    Instruction( "ld.sb".d,  [OpReg(ind:true), OpSym(ind:true,ext:true), OpReg()] )     : (ty:Type10b.self, op:0b01110),
-    Instruction( "st.w".d,   [OpReg(), OpReg(ind:true), OpSym(ind:true,ext:true)] )     : (ty:Type10c.self, op:0b10010),
-    Instruction( "st.b".d,   [OpReg(), OpReg(ind:true), OpSym(ind:true,ext:true)] )     : (ty:Type10c.self, op:0b10110),
+    Instruction( "add".d,    [OpReg(), OpSym(.extern), OpReg()] )                          : (ty:Type10b.self, op:0b00010),
+    Instruction( "ld.w".d,   [OpReg(.indirect), OpSym([.indirect,.extern]), OpReg()] )     : (ty:Type10b.self, op:0b00110),
+    Instruction( "ld.zb".d,  [OpReg(.indirect), OpSym([.indirect,.extern]), OpReg()] )     : (ty:Type10b.self, op:0b01010),
+    Instruction( "ld.sb".d,  [OpReg(.indirect), OpSym([.indirect,.extern]), OpReg()] )     : (ty:Type10b.self, op:0b01110),
+    Instruction( "st.w".d,   [OpReg(), OpReg(.indirect), OpSym([.indirect,.extern])] )     : (ty:Type10c.self, op:0b10010),
+    Instruction( "st.b".d,   [OpReg(), OpReg(.indirect), OpSym([.indirect,.extern])] )     : (ty:Type10c.self, op:0b10110),
 
     // The following represent immediate words that may follow some instructions
-    Instruction( "_imm".d,   [OpImm(ext:true)] )               : (ty:TypeK.self,   op:0),
-    Instruction( "_imm".d,   [OpImm(ind:true,ext:true)] )      : (ty:TypeK.self,   op:0),
-    Instruction( "_imm".d,   [OpSym(ext:true)] )               : (ty:TypeS.self,   op:0),
-    Instruction( "_imm".d,   [OpSym(ind:true,ext:true)] )      : (ty:TypeS.self,   op:0),
+    Instruction( "_imm".d,   [OpImm(.extern)] )                  : (ty:TypeK.self,   op:0),
+    Instruction( "_imm".d,   [OpImm([.indirect,.extern])] )      : (ty:TypeK.self,   op:0),
+    Instruction( "_imm".d,   [OpSym(.extern)] )                  : (ty:TypeS.self,   op:0),
+    Instruction( "_imm".d,   [OpSym([.indirect,.extern])] )      : (ty:TypeS.self,   op:0),
   ]
   
   // Returs a new MachineInstr object initialized with a matching Instruction
@@ -460,7 +463,7 @@ class MachineData
     for _ in 0..<size
     {
       let byte = UInt8(truncatingIfNeeded:(val & 0xff))
-      bytes.append(byte)
+      bytes.append(byte)  // appends in little endian way
       val = val >> 8
     }
   }
@@ -475,7 +478,7 @@ class MachineData
   init( data:Data )
   {
     value = nil
-    bytes = data
+    bytes = data   // appends as provided
   }
   
   // Conveninence initializer that must be implemented by subclases
@@ -508,8 +511,7 @@ class TypeAddr:MachineData, InstDTAbsolute
     self.init( size:size, value:Int(op.u16value) )
   }
   
-  func setAbsolute( a:UInt16 )
-  {
+  func setAbsolute( a:UInt16 ) {
     setBytes(size:2, value:Int(a))
   }
 }

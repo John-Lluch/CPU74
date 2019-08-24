@@ -91,59 +91,65 @@ class SourceParser:PrimitiveParser
   }
  
   //-------------------------------------------------------------------------------------------
-  func parsePrimitiveOperand( ind:Bool ) -> Operand?
+  //func parsePrimitiveOperand( ind:Bool ) -> Operand?
+  func parsePrimitiveOperand( opt:OpOption ) -> Operand?
   {
     // Register
     if parseChar(UInt8(ascii:"r")) || parseChar(UInt8(ascii:"R"))
     {
-      if let value = parseInteger() { return OpReg(value, ind:ind) }
+      if let value = parseInteger() { return OpReg(value, opt) }
       else { error( "Expecting register number" ) }
     }
     
     // Stack pointer
     if parseConcreteToken(cStr: "sp".d) || parseConcreteToken(cStr: "SP".d)
     {
-      return OpReg(7, ind:ind)
+      return OpReg(7, opt)
     }
     
     // Absolute address symbol in data memory
     if parseChar( UInt8(ascii:"&") )
     {
-      if let (addr, offset) = parseEfectiveAddress() { return OpSym(offset, addr, ind:ind, ext:true) }
+      if let (addr, offset) = parseEfectiveAddress() { return OpSym(offset, addr, opt: opt.union(.extern)) }
       else { error( "Expecting efective address" ) }
     }
     
-    // Absolute address in program memory (NOT WORKING)
+    // Absolute address in program memory (NOT WORKING?)
     if parseChar(UInt8(ascii:"@"))
     {
-      if let addr = parseAddressToken() { return OpSym(addr, ind:ind, ext:true) }
+      if let addr = parseAddressToken() { return OpSym(addr, opt.union(.extern)) }
       else { error( "Expecting address token" ) }
     }
     
     // Immediate constant
     if let value = parseImmediate()
     {
-      let ext:Bool = parseChar( UInt8(ascii:"L") ) // Set 'ext' flag if it's a large immediate
-      return OpImm(value, ind:ind, ext:ext)
+      // Set 'extern' flag if it's a large immediate
+      if parseChar( UInt8(ascii:"L") ) { return OpImm(value, opt.union(.extern)) }
+      else { return OpImm(value, opt) }
     }
     
     // Instruction embeeded address symbol that may correspond
     // to a program memory label or jump table address
     if let addr = parseAddressToken()
     {
-      return OpSym(addr, ind:ind)
+      return OpSym(addr, opt)
     }
     
     return nil
   }
   
   //-------------------------------------------------------------------------------------------
-  func parseOperand( ind:Bool ) -> Bool
+  //func parseOperand( ind:Bool ) -> Bool
+  func parseOperand( opt:OpOption ) -> Bool
   {
     if parseIndirectOperand() {
       return true }
     
-    if let op = parsePrimitiveOperand(ind: ind)
+    if parsePrgIndirectOperand() {
+      return true }
+    
+    if let op = parsePrimitiveOperand(opt:opt)
     {
       currInst?.ops.append( op )
       return true
@@ -152,9 +158,10 @@ class SourceParser:PrimitiveParser
   }
   
   //-------------------------------------------------------------------------------------------
-  func parseOperators(ind:Bool) -> Bool
+  //func parseOperators(ind:Bool) -> Bool
+  func parseOperators(opt:OpOption) -> Bool
   {
-    if parseOperand(ind:ind)
+    if parseOperand(opt:opt)
     {
       while true
       {
@@ -162,7 +169,7 @@ class SourceParser:PrimitiveParser
         if parseChar( UInt8(ascii:",") )
         {
           skipSpTab()
-          if parseOperand(ind:ind) { continue }
+          if parseOperand(opt:opt) { continue }
           else { error( "Expecting operator" ) }
         }
         break
@@ -178,10 +185,25 @@ class SourceParser:PrimitiveParser
     if parseChar( UInt8(ascii:"[") )
     {
       skipSpTab()
-      if parseOperators(ind:true)
+      if parseOperators(opt:.indirect)
       {
         skipSpTab()
         if parseChar( UInt8(ascii:"]") ) { return true }
+      }
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  func parsePrgIndirectOperand() -> Bool
+  {
+    if parseChar( UInt8(ascii:"{") )
+    {
+      skipSpTab()
+      if parseOperators(opt:.prgIndirect)
+      {
+        skipSpTab()
+        if parseChar( UInt8(ascii:"}") ) { return true }
       }
     }
     return false
@@ -197,7 +219,7 @@ class SourceParser:PrimitiveParser
           "ult".d: 3, "ge".d: 4, "lt".d: 5,
           "ugt".d: 6, "gt".d: 7 ][token]
       {
-        currInst?.ops.append( OpImm(value, ind:false) )
+        currInst?.ops.append( OpImm(value) )
         return true
       }
     }
@@ -409,7 +431,7 @@ class SourceParser:PrimitiveParser
     
     if let (addr, offset) = parseEfectiveAddress()
     {
-      return OpSym(offset, addr, ind:false, ext:false)
+      return OpSym(offset, addr, opt:[])
     }
     
     return nil
@@ -603,45 +625,6 @@ class SourceParser:PrimitiveParser
     }
     return false
   }
-  
-  
-
-//  //-------------------------------------------------------------------------------------------
-//  func parseComm() -> Bool
-//  {
-//    if parseConcreteToken(cStr: "comm".d )
-//    {
-//      skipSpTab()
-//      if let name = parseToken()
-//      {
-//        var length = 0
-//        var align = 1
-//        skipSpTab()
-//        if parseChar( UInt8(ascii:",") )
-//        {
-//          skipSpTab()
-//          if let len = parseInteger()
-//          {
-//            length = len
-//            skipSpTab()
-//            if parseChar( UInt8(ascii:",") )
-//            {
-//              skipSpTab()
-//              if let algn = parseInteger()
-//              {
-//                align = algn
-//              }
-//            }
-//          }
-//        }
-//
-//        asm.addUninitializedVar( name:name, size:length, align:align)   // global si no es diu lo contrari
-//        return true
-//      }
-//      else { error( "Expecting section name after .section directive" ) }
-//    }
-//    return false
-//  }
 
   //-------------------------------------------------------------------------------------------
   func parseInstruction() -> Bool
@@ -656,7 +639,7 @@ class SourceParser:PrimitiveParser
     if parseInstructionName()
     {
       skipSpTab()
-      if parseOperators(ind:false)
+      if parseOperators(opt:[])
       {
         appendInstr( currInst! )
         if let op = currInst?.exOperand
@@ -699,22 +682,6 @@ class SourceParser:PrimitiveParser
     }
     return false
   }
-  
-//  //-------------------------------------------------------------------------------------------
-//  func parseLabel() -> Bool
-//  {
-//    if let sym = parseAddressLabel()
-//    {
-//      if currBank == .program { asm.progSyms[sym] = src.getEnd() }
-//      else if currBank == .constant { asm.constantDataSyms[sym] = asm.constantDataEnd }         // aqui nomes hauria d'updatar el value
-//      else if currBank == .variable { asm.initializedVarsSyms[sym] = asm.initializedVarsEnd }
-//
-//      out.logln( sym.s + ":" )
-//
-//      return true
-//    }
-//    return false
-//  }
   
   //-------------------------------------------------------------------------------------------
   func parseSet() -> Bool

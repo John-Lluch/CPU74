@@ -27,7 +27,7 @@ import Foundation
 
 class PrimitiveParser
 {
-  private var s:Data
+  private let s:Data
   var line:Int = 1        // Current line number
   var c:Data.Index        // Current character index
   var beg:Data.Index      // First character index in source
@@ -41,16 +41,16 @@ class PrimitiveParser
     c = beg
   }
   
-  //-------------------------------------------------------------------------------------------
-  // Should be called by subclases when the parser is finished to free the source
-  // file memory in case the parser object is keep around for some reason
-  func removeAll()
-  {
-    s.removeAll()
-    beg = s.startIndex
-    end = s.endIndex
-    c = beg
-  }
+//  //-------------------------------------------------------------------------------------------
+//  // Should be called by subclases when the parser is finished to free the source
+//  // file memory in case the parser object is keep around for some reason
+//  func removeAll()
+//  {
+//    s.removeAll()
+//    beg = s.startIndex
+//    end = s.endIndex
+//    c = beg
+//  }
   
   //-------------------------------------------------------------------------------------------
   // Helper function for debugging purposes that will return the next some characters

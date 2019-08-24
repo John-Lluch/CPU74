@@ -15,7 +15,7 @@ import Foundation
 let out = ConsoleIO()
 
 //-------------------------------------------------------------------------------------------
-// C74
+// C74_as
 //
 // Main class for the assembler
 // Assembling is performed in two steps.
@@ -25,81 +25,100 @@ let out = ConsoleIO()
 // combining the internal representation into actual machine code
 //-------------------------------------------------------------------------------------------
 
-class C74
+class C74_as
 {
   // Assembler object instance
   let assembler = Assembler()
+  
+  //-------------------------------------------------------------------------------------------
+  // Process a single source
+  func parseSource(data:Data) -> Bool
+  {
+    // Create a Source instance and
+    let source = Source()
+    
+    // Pass the source along with the assembler object to a
+    // new SourceParser instance for immediate parsing
+    let sourceParser = SourceParser(withData:data, source:source, assembler:assembler)
+
+    // Did it parse correctly?
+    if sourceParser.parse()
+    {
+      // Add the Source to the assembler
+      assembler.addSource( source )
+      out.logln()
+      return true
+    }
+    return false
+  }
 
   //-------------------------------------------------------------------------------------------
   // Process a single source file
-  func processSourceFile( _ sourceURL:URL ) -> Bool
+  func parseSources() -> Bool
   {
-    // Read source file bytes into s Data object
-    if let data:Data = out.read(url: sourceURL)
+    // Create the setup code
+    let setup = assembler.getSetupCode()
+    if !parseSource(data:setup) {
+      out.printError( "Errors parsing setup source" )
+      return false
+    }
+    
+    // Iterate all source files for individual processing
+    for sourceURL in console.sources
     {
       out.logln( "-----" )
       out.logln( "\(sourceURL.absoluteString)" )
       
-      // Create a Source instance and
-      let source = Source()
-      
-      // Pass the source along with the assembler object to a
-      // new SourceParser instance for immediate parsing
-      let sourceParser = SourceParser(withData:data, source:source, assembler:assembler)
-
-      // Did it parse correctly?
-      if sourceParser.parse()
-      {
-        // Add the Source to the assembler
-        assembler.addSource( source )
-        out.logln()
-        return true
+      // Read source file bytes into a Data object
+      if let data:Data = out.read(url: sourceURL) {
+        if parseSource(data:data) { continue }
       }
+
+      out.printError( "Source file not found: \(sourceURL)" )
+      break
     }
     
     // If we get here something went wrong
-    out.printError( "Source file not found: \(sourceURL)" )
     return false
   }
-  
   
   //-------------------------------------------------------------------------------------------
   // Assemble all sources
   func assembleSources()
   {
     out.logln( "-----" )
+    out.logln( "Upon machine reset this will be moved to data memory, see setup code below" )
+  
+    // Invoke the assembler
+    assembler.assembleData()
+    
+    out.logln( "-----" )
     out.logln( "\(console.destination!.absoluteString)" )
     
-    // Just invoque the assembler to do it
-    assembler.assembleAll()
+    // Invoke the assembler
+    assembler.assembleProgram()
   }
   
   //-------------------------------------------------------------------------------------------
   // Designated initializer
   init()
   {
-    // Iterate all source files for individual processing
-    for sourceURL in console.sources
-    {
-      if !processSourceFile( sourceURL ) { break }
-    }
+    // Parse all source files for individual processing
+    _ = parseSources()
     
     // Did we process all sources?
-    if console.sources.count == assembler.sources.count
+    if  assembler.sources.count == console.sources.count + 1
     {
       // Assemble all sources together
       assembleSources()
       
-// TO DO :
-// The CPU74 is a pure Harvard processor. As such it has no random access to program memory.
-// This means that some strategy must be implemented to get constants
-// and initialized variables ready in program memory before program execution begins
-      
       // Write out the machine code to the destination file
       out.write(data: assembler.programMemory, url: console.destination)
 
-      out.writeLog()
     }
+    
+    // Output log file
+    out.writeLog()
   }
 
 } // class C74
@@ -110,7 +129,7 @@ class C74
 //-------------------------------------------------------------------------------------------
 
 let console = Console()
-let c74 = C74();
+let c74_as = C74_as();
 
 
 

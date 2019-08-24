@@ -23,6 +23,7 @@ enum Bank
   case constant  // Constant datas memory
   case variable  // Initialized variables memory
   case common    // Uninitialized variables memory
+  case imm       // Immediate value (internal use)
   
   // Return a prefix suitable for log purposes
   var prefix:String
@@ -33,6 +34,7 @@ enum Bank
       case .constant: return _data_memory_prefix     // Data memory
       case .variable: return _data_memory_prefix     // Data memory
       case .common: return _data_memory_prefix       // Data memory
+      case .imm:    return ""
     }
   }
 }
@@ -63,6 +65,9 @@ class Assembler
 
   // Source input instances array
   var sources = [Source]()
+  
+  // Lengh of the setup code inserted before user program begins
+  var setupDataLength = 0
   
   // Resulting assembly code
   var programMemory = Data()
@@ -116,14 +121,68 @@ class Assembler
     
     switch bank
     {
-      case .program: break
+      case .program: value += setupDataLength // break
       case .constant: break
       case .variable: value += getConstantDataEnd()
       case .common: value += getConstantDataEnd() + getInitializedVarsEnd()
+      case .imm: break
     }
     return SymTableInfo( bank:bank, value:value )
   }
-
+  
+  //-------------------------------------------------------------------------------------------
+  // Insert setup code
+  func getSetupCode() -> Data
+  {
+    let code =
+    """
+      \t.text
+      \t.file "setup"
+      \tmov @setupAddr, r1    # program memory
+      \tmov &dataAddr, r2     # data memory
+      \tmov &wordLength, r0   # counter
+      .LL0:
+      \tcmp r0, 0
+      \tbreq .LL1
+      \tld.w {r1}, r3
+      \tst.w r3, [r2, 0]
+      \tadd r1, 1, r1
+      \tadd r2, 2, r2
+      \tsub r0, 1, r0
+      \tjmp .LL0
+      .LL1:
+      \tcall @main
+      \thalt
+      \t.local setupAddr
+      setupAddr:               # start of setup data
+    """
+    return code.d
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  // Insert setup code
+  func insertSetupData() -> Bool
+  {
+    let setupData = Source()
+    setupData.name = "setupData".d
+    setupData.shortName = "setupData".d
+    sources.insert(setupData, at:1)
+  
+    // Insert data to copy
+    for i in stride(from:0, to:dataMemory.count, by:2)
+    {
+      let value:Int = Int(dataMemory[i]) | Int(dataMemory[i+1]) << 8
+      setupData.instructions.append( Instruction( "_imm".d, [OpImm(value, .extern)] ) )
+    }
+  
+    let setup = sources[0]
+    setup.localSymTable["setupAddr".d] = SymTableInfo(bank:.imm, value:setup.getInstructionsEnd())
+    setup.localSymTable["dataAddr".d] = SymTableInfo(bank:.imm, value:0)
+    setup.localSymTable["wordLength".d] = SymTableInfo(bank:.imm, value:setupDataLength)
+    
+    return true
+  }
+  
   //-------------------------------------------------------------------------------------------
   // Assemble a single Source object
   func assembleProgram(source:Source) -> Bool
@@ -142,7 +201,6 @@ class Assembler
       }
       
       // Initialize some state variables
-      let here =  source.instructionsOffset + i
       var ra:Int? = nil
       var aa:Int? = nil
       var prefix = ""
@@ -150,9 +208,11 @@ class Assembler
       // Check whether the instruction needs a relative address symbol replacement
       if let mcrInst = mcInst as? InstPCRelative
       {
+        let here =  setupDataLength + source.instructionsOffset + i + 1 // add 1 because the PC always points to the next instruction
         let op = inst.symOp!
         if let symInfo = getMemoryAddress(sym: op.sym!, src:source)
         {
+          assert( symInfo.bank == .program, "Should be in program memory" )
           prefix = symInfo.bank.prefix
           ra = symInfo.value + op.value - here
           mcrInst.setRelative(a:UInt16(truncatingIfNeeded:ra!))
@@ -208,7 +268,7 @@ class Assembler
 
   //-------------------------------------------------------------------------------------------
   // Assemble a single DataValue
-  func assembleSingleDatav(datav:DataValue, source:Source) -> Bool
+  func assembleSingleDataValue(datav:DataValue, source:Source) -> Bool
   {
     // Find the unique match of the DataValue to a MachineData
     let mcData:MachineData? = MachineDataList.newMachineData(datav)
@@ -269,7 +329,7 @@ class Assembler
   {
     // Iterate all constant DataValues
     for datav in source.constantDatas {
-      if !assembleSingleDatav(datav:datav, source:source) { break }
+      if !assembleSingleDataValue(datav:datav, source:source) { break }
     }
     
     return true
@@ -281,7 +341,7 @@ class Assembler
   {
     // Iterate all initialized DataValues
     for datav in source.initializedVars {
-      if !assembleSingleDatav(datav:datav, source:source) { break }
+      if !assembleSingleDataValue(datav:datav, source:source) { break }
     }
     
     return true
@@ -289,34 +349,65 @@ class Assembler
 
   //-------------------------------------------------------------------------------------------
   // Assemble all available Sources and DataValues
-  func assembleAll()
+  func assembleData()
   {
-    out.logln( "\nProgram Code:" )
+    // Compute setup data offset
+    setupDataLength = (getConstantDataEnd() + getInitializedVarsEnd()) / 2
     
-    for source in sources {
-      if !assembleProgram(source:source) { break }
-    }
+    // Generate constant data
     
     out.logln( "\nConstant Data:" )
     for source in sources {
       if !assembleConstantData(source:source) { break }
     }
+    
+    if out.logEnabled && getConstantDataEnd() == 0
+    {
+      let prStr = String(format:"%05d : %d bytes", 0, 0)
+      out.logln( prStr )
+    }
+  
+    assert( dataMemory.count == getConstantDataEnd(),
+            "Data memory length should be equal to constant data end" )
 
+    // Generate initialized vars
+    
     out.logln( "\nInitialized Variables:" )
     for source in sources {
       if !assembleVariableData(source:source) { break }
     }
     
-    // Unitialized variables do not require any machine code
-    
-    // Debug log stuff...
+    if out.logEnabled && getInitializedVarsEnd() == 0
+    {
+      let prStr = String(format:"%05d : %d bytes", 0, 0)
+      out.logln( prStr )
+    }
+  
+    assert( dataMemory.count == getConstantDataEnd() + getInitializedVarsEnd(),
+            "Data memory length should be equal to initialized vars end" )
+  
+    // Unitialized variables do not require any machine code, so we are done for now
+    out.logln( "\nUnitialized Variables:" )
     if out.logEnabled
     {
-      out.logln( "\nUnitialized Variables:" )
       let prStr = String(format:"%05d : %d bytes", getConstantDataEnd()+getInitializedVarsEnd(), getUninitializedVarsEnd() )
       out.logln( prStr )
     }
+    
+    out.logln()
   }
+
+  //-------------------------------------------------------------------------------------------
+  // Assemble all available Sources and DataValues
+  func assembleProgram()
+  {
+    _ = insertSetupData()
+  
+    for source in sources {
+      if !assembleProgram(source:source) { break }
+    }
+  }
+  
 }
 
 

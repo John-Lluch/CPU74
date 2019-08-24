@@ -12,14 +12,22 @@ import Foundation
 // Operand
 //-------------------------------------------------------------------------------------------
 
+
+// Operand option flags
+struct OpOption: OptionSet
+{
+  let rawValue:Int
+  static let indirect = OpOption(rawValue: 1 << 0)      // Indirect memory addressing
+  static let prgIndirect = OpOption(rawValue: 1 << 1)   // Indirect program addressing
+  static let extern = OpOption(rawValue: 1 << 2)        // External operand flag
+}
+
 // Base class for assembly instruction operands
 class Operand : CustomDebugStringConvertible
 {
   let value:Int       // Immediate values or register numbers
   let sym:Data?       // Symbolic addresses or raw string bytes
-  let indirect:Bool   // Indirect addressing flag
-  let extern:Bool     // External operand flag. Means that it's in the next word rather
-                      // than embeeded in the instruction
+  let opt:OpOption
   
   // Description string for logging purposes subclases should implement
   var debugDescription: String { return "(no description)" }
@@ -30,38 +38,29 @@ class Operand : CustomDebugStringConvertible
   var u32value:UInt32 { return UInt32(truncatingIfNeeded:value) }
   
   // Designated initializer
-  init ( _ v:Int, _ s:Data?, ind b:Bool, ext e:Bool )
+  init ( _ v:Int, _ s:Data?, opt o:OpOption)
   {
     value = v
     sym = s
-    indirect = b
-    extern = e
+    opt = o
   }
   
   // Convenience initializers
   
   convenience init () {
-    self.init( 0, nil, ind:false, ext:false )
+    self.init( 0, nil, opt:[] )
+  }
+
+  convenience init ( _ o:OpOption ) {
+    self.init( 0, nil, opt:o )
   }
   
-  convenience init ( ind b:Bool ) {
-    self.init( 0, nil, ind:b, ext:false )
+  convenience init ( _ s:Data?, _ o:OpOption=[] ) {
+    self.init( 0, s, opt:o )
   }
   
-  convenience init ( ext e:Bool ) {
-    self.init( 0, nil, ind:false, ext:e )
-  }
-  
-  convenience init ( ind b:Bool, ext e:Bool ) {
-    self.init( 0, nil, ind:b, ext:e )
-  }
-  
-  convenience init ( _ s:Data?, ind b:Bool=false, ext e:Bool=false) {
-    self.init( 0, s, ind:b, ext:e )
-  }
-  
-  convenience init ( _ v:Int, ind b:Bool=false, ext e:Bool=false) {
-    self.init( v, nil, ind:b, ext:e )
+  convenience init ( _ v:Int, _ o:OpOption=[]) {
+    self.init( v, nil, opt:o )
   }
 }
 
@@ -76,7 +75,7 @@ class OpReg : Operand
 class OpImm : Operand
 {
   // Description string for logging purposes
-  override var debugDescription: String { return extern ? "\(value)L" : "\(value)" }
+  override var debugDescription: String { return opt.contains(.extern) ? "\(value)L" : "\(value)" }
 }
 
 // Symbolic address operand
@@ -85,7 +84,7 @@ class OpSym : Operand
   // Description string for logging purposes
   override var debugDescription: String
   {
-    if sym != nil { return (extern ? "&" : "") + sym!.s + (value != 0 ? "+\(value)" : "") }
+    if sym != nil { return (opt.contains(.extern) ? "&" : "") + sym!.s + (value != 0 ? "+\(value)" : "") }
     return "(null)"
   }
 }
@@ -126,8 +125,7 @@ class Instruction : Hashable, CustomDebugStringConvertible
     for i in 0..<lhs.ops.count
     {
       if !( type(of:lhs.ops[i]) == type(of:rhs.ops[i]) ) { return false }
-      if !( lhs.ops[i].indirect == rhs.ops[i].indirect ) { return false }
-      if !( lhs.ops[i].extern == rhs.ops[i].extern ) { return false }
+      if !( lhs.ops[i].opt == rhs.ops[i].opt ) { return false }
     }
     
     return true
@@ -138,18 +136,24 @@ class Instruction : Hashable, CustomDebugStringConvertible
   {
     var str = String(data:name, encoding:.ascii)!
     var indirect = false
+    var prgIndirect = false
     for i in 0..<ops.count
     {
       if i == 0 {str.append(" ") }
-      let isIndirect = ops[i].indirect
+      let isIndirect = ops[i].opt.contains(.indirect)
+      let isPrgIndirect = ops[i].opt.contains(.prgIndirect)
       if indirect && !isIndirect { str.append( "]" ) }
+      if prgIndirect && !isPrgIndirect { str.append( "}" ) }
       if i > 0 { str.append( ", " ) }
       if isIndirect && !indirect { str.append( "[" ) }
+      if isPrgIndirect && !prgIndirect { str.append( "{" ) }
       str.append( String(reflecting:ops[i]) )
       indirect = isIndirect
+      prgIndirect = isPrgIndirect
     }
     
     if indirect { str.append( "]" ) }
+    if prgIndirect { str.append( "}" ) }
     return str
   }
   
@@ -158,7 +162,8 @@ class Instruction : Hashable, CustomDebugStringConvertible
   {
     for op in ops
     {
-      if op.extern { return op }
+      //if op.extern { return op }
+      if op.opt.contains(.extern) { return op }
     }
     return nil
   }
@@ -293,7 +298,8 @@ class DataValue : Hashable, CustomDebugStringConvertible
   static func == (lhs: DataValue, rhs: DataValue) -> Bool
   {
     if !( type(of:lhs.oper) == type(of:rhs.oper) ) { return false }
-    if !( lhs.oper.indirect == rhs.oper.indirect ) { return false }
+    if !( lhs.oper.opt == rhs.oper.opt ) { return false }
+    //if !( lhs.oper.indirect == rhs.oper.indirect ) { return false }
     
     return true
   }
@@ -302,7 +308,8 @@ class DataValue : Hashable, CustomDebugStringConvertible
   var debugDescription: String
   {
     var str = String()
-    let isIndirect = oper.indirect
+    //let isIndirect = oper.indirect
+    let isIndirect = oper.opt.contains(.indirect)
     if isIndirect { str.append( "[" ) }
     str.append( String(reflecting:oper) )
     if isIndirect { str.append( "]" ) }

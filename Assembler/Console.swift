@@ -124,7 +124,7 @@ class Console
   //-------------------------------------------------------------------------------
   // Helper function for debug purposes
   func dump()
-  {
+  { 
       out.println( command );
       out.print( "Destination: ");
       out.println( destination!.absoluteString );
@@ -174,7 +174,7 @@ class Console
   {
     let numArgs = Int(CommandLine.argc)
     var wantsLog = false
-    var currOpt:Character = "\0"
+    var currOpt:Character = "s"
     
     executableName.append( (CommandLine.arguments[0] as NSString).lastPathComponent )
     command.append( executableName )
