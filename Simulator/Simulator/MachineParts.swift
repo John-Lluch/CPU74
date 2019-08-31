@@ -28,28 +28,33 @@ extension UInt16
   init(lo:UInt8, hi:UInt8) { self = UInt16(hi)<<8 | UInt16(lo) }
 }
 
-extension Int16
-{
+extension Int16 {
   var u16:UInt16  { return UInt16(truncatingIfNeeded:self) }
 }
 
-extension Int
-{
+extension Int {
   var u16:UInt16 { return UInt16(truncatingIfNeeded:self) }
 }
 
-extension Bool
-{
+extension Bool {
   var u16:UInt16  { return UInt16(self ? 1 : 0 ) }
+}
+
+extension UInt8 {
+  var u16:UInt16  { return UInt16(truncatingIfNeeded:self) }
 }
 
 //-------------------------------------------------------------------------------------------
 class ProgramMemory
 {
   // Program counter, memory output
-  var pc:UInt16 = 0
-  var value:UInt16 { return self[pc] }
-  
+  var pc:UInt16 = 0        // program counter register
+  var par:UInt16 = 0       // programm address register
+  var parsel:Bool = false  // address register select
+
+  // Memory value at current address
+  var value:UInt16 { return self[parsel ? par:pc] }
+
   // Memory size
   var size:UInt16 { return (memory.count/2).u16 }   // size in words
 
@@ -58,7 +63,7 @@ class ProgramMemory
   private subscript (address: UInt16) -> UInt16 {
     get { return UInt16(lo:memory[address.i*2], hi:memory[address.i*2+1]) }
   }
-  
+
   // Store program utility
   func storeProgram(atAddress address:UInt16, withData data:Data )
   {
@@ -71,34 +76,111 @@ class ProgramMemory
 //-------------------------------------------------------------------------------------------
 class DataMemory
 {
-  private var memory = Data(count:DataMemorySize)
-  var size:UInt16 { return (memory.count).u16 }   // size in bytes
+  // Memory address register
+  var mar:UInt16 = 0
   
-  subscript (address:UInt16) -> UInt16
+  // Memory value at current address (get/set)
+  var value:UInt16 {
+    get {return self[mar]}
+    set(v) {self[mar] = v}
+  }
+
+  // Memory size
+  var size:UInt16 { return (memoryLo.count + memoryHi.count).u16 }   // size in bytes
+  
+  // Memory, private
+  private var memoryLo = Data(count:DataMemorySize/2)
+  private var memoryHi = Data(count:DataMemorySize/2)
+  private subscript (address:UInt16) -> UInt16
   {
-    get {
+    get
+    {
       if ( address % 2 != 0 ) { out.exitWithError( "Unaligned word access to memory" ) }
-      return UInt16(lo:memory[address.i], hi:memory[address.i+1])
+      return UInt16(lo:memoryLo[address.i/2], hi:memoryHi[address.i/2])
     }
-    set (value) {
+    set (v)
+    {
       if ( address % 2 != 0 ) { out.exitWithError( "Unaligned word access to memory" ) }
-      memory[address.i]   = value.lo
-      memory[address.i+1] = value.hi
+      memoryLo[address.i/2]  = v.lo
+      memoryHi[address.i/2] = v.hi
     }
   }
   
-  func sb( _ address:UInt16 ) -> UInt16 {
-    return UInt16(memory[address.i]).sext
+  // Sign extended byte at current address (get)
+  var sb:UInt16 {
+    get { return ( (mar & 1) != 0 ? memoryHi[mar.i/2] : memoryLo[mar.i/2] ).u16.sext }
   }
-
-  func zb( _ address:UInt16 ) -> UInt16 {
-    return UInt16(memory[address.i]).zext
-  }
-
-  func b( _ address:UInt16, _ value:UInt16 ) {
-    memory[address.i] = value.lo
+  
+  // Byte at current address (get/set)
+  var zb:UInt16 {
+    get { return ( (mar & 1) != 0 ? memoryHi[mar.i/2] : memoryLo[mar.i/2] ).u16 }
+    set(v) { if (mar & 1) != 0 { memoryHi[mar.i/2] = v.lo } else { memoryLo[mar.i/2] = v.lo } }
   }
 }
+
+////-------------------------------------------------------------------------------------------
+//class DataMemory
+//{
+//  // Memory address register
+//  var mar:UInt16 = 0
+//
+//  // Memory value at current address (get/set)
+//  var value:UInt16 { get {return self[mar]} set(v) {self[mar] = v} }
+//
+//  // Memory size
+//  var size:UInt16 { return (memory.count).u16 }   // size in bytes
+//
+//  // Memory, private
+//  private var memory = Data(count:DataMemorySize)
+//  private subscript (address:UInt16) -> UInt16
+//  {
+//    get {
+//      if ( address % 2 != 0 ) { out.exitWithError( "Unaligned word access to memory" ) }
+//      return UInt16(lo:memory[address.i], hi:memory[address.i+1])
+//    }
+//    set (v) {
+//      if ( address % 2 != 0 ) { out.exitWithError( "Unaligned word access to memory" ) }
+//      memory[address.i]   = v.lo
+//      memory[address.i+1] = v.hi
+//    }
+//  }
+//
+//  var sb:UInt16
+//  {
+//    get
+//    {
+////      let v = self[mar | ~1]
+////      return ((mar & 1) != 0) ? v.sext(15,8) : v.sext(7,0)
+//      return self[mar].sext
+//    }
+//  }
+//
+//  var zb:UInt16
+//  {
+//    get
+//    {
+//      return self[mar].zext
+//    }
+//    set(v)
+//    {
+//      self[mar] = v[7,0]
+//    }
+//  }
+//
+//
+////  // Byte access functions
+////  func sb( _ address:UInt16 ) -> UInt16 {
+////    return UInt16(memory[address.i]).sext
+////  }
+////
+////  func zb( _ address:UInt16 ) -> UInt16 {
+////    return UInt16(memory[address.i]).zext
+////  }
+////
+////  func b( _ address:UInt16, _ value:UInt16 ) {
+////    memory[address.i] = value.lo
+////  }
+//}
 
 //-------------------------------------------------------------------------------------------
 class Registers : CustomDebugStringConvertible
@@ -110,14 +192,16 @@ class Registers : CustomDebugStringConvertible
   var debugDescription: String
   {
     var str = String()
-    for i in 0..<8
+    for i in 0..<7
     {
-      if ( i != 0 ) { str += ", " }
       str += String(format:"r%d=%d", i, regs[i])
+      str += ", "
     }
+  
+    str += String(format:"sp=%d", regs[7])
     
 //    str += "\n"
-//    for i in stride(from:0, to:8, by:2)
+//    for i in stride(from:0, to:6, by:2)
 //    {
 //      if ( i != 0 ) { str += ", " }
 //      str += String(format:"r%d:r%d=%d", i, i+1, Int(regs[i])<<16 | Int(regs[i+1]) )
