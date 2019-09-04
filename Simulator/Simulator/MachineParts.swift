@@ -76,14 +76,20 @@ class ProgramMemory
 //-------------------------------------------------------------------------------------------
 class DataMemory
 {
-  // Memory address register
+  // Memory address register and data register (write only)
   var mar:UInt16 = 0
+  var mdr:UInt16 = 0
   
-  // Memory value at current address (get/set)
-  var value:UInt16 {
-    get {return self[mar]}
-    set(v) {self[mar] = v}
-  }
+  // Memory value at current address // (get/set)
+  var value:UInt16 {return self[mar]}
+//  {
+//    get {return self[mar]}
+//    //set(v) {self[mar] = v}
+//  }
+  
+  // Memory write
+  func writew() { self[mar] = mdr }
+  func writeb() { if (mar & 1) != 0 { memoryHi[mar.i/2] = mdr.lo } else { memoryLo[mar.i/2] = mdr.lo } }
 
   // Memory size
   var size:UInt16 { return (memoryLo.count + memoryHi.count).u16 }   // size in bytes
@@ -114,7 +120,7 @@ class DataMemory
   // Byte at current address (get/set)
   var zb:UInt16 {
     get { return ( (mar & 1) != 0 ? memoryHi[mar.i/2] : memoryLo[mar.i/2] ).u16 }
-    set(v) { if (mar & 1) != 0 { memoryHi[mar.i/2] = v.lo } else { memoryLo[mar.i/2] = v.lo } }
+    //set(v) { if (mar & 1) != 0 { memoryHi[mar.i/2] = v.lo } else { memoryLo[mar.i/2] = v.lo } }
   }
 }
 
@@ -194,7 +200,7 @@ class Registers : CustomDebugStringConvertible
     var str = String()
     for i in 0..<7
     {
-      str += String(format:"r%d=%d", i, regs[i])
+      str += String(format:"r%d=%d", i, regs[i].i16)
       str += ", "
     }
   

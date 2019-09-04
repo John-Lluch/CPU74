@@ -39,7 +39,7 @@ class Machine
   
   // Type 1
   func jmp_k()     { pc_inhibit=true ; prg.pc = alu.adda( prg.pc, imm ) }
-  func call_k()    { pc_inhibit=true ; reg.sp = alu.deca2( reg.sp ) ; mem.mar = reg.sp /*;  pc_inhibit=true ; mem.value = prg.pc ; prg.pc = alu.adda( prg.pc, imm ) ;*/ }
+  func call_k()    { pc_inhibit=true ; (reg.sp, mem.mar) = (alu.deca2( reg.sp ), alu.deca2( reg.sp )) ; mem.mdr = prg.pc }
   
   // Type 2
   func br_ck()     { if alu.hasCC(cc) { prg.pc = alu.adda( prg.pc, imm) ; br_inhibit=true } }
@@ -54,10 +54,10 @@ class Machine
   func xor_kr()    { reg[rd] = alu.xor( reg[rd], imm ) }
   
   // Type 4
-  func movw_mr()   { mem.mar = alu.add( imm, reg[rs] ) ; reg[rd] = mem.value }
-  func movsb_mr()  { mem.mar = alu.add( imm, reg[rs] ) ; reg[rd] = mem.sb }
-  func movw_rm()   { mem.mar = alu.add( imm, reg[rs] ) ; mem.value = reg[rd] }
-  func movb_rm()   { mem.mar = alu.add( imm, reg[rs] ) ; mem.zb = reg[rd] }
+  func movw_mr()   { pc_inhibit=true ; mem.mar = alu.add( imm, reg[rs] ) }
+  func movsb_mr()  { pc_inhibit=true ; mem.mar = alu.add( imm, reg[rs] ) }
+  func movw_rm()   { pc_inhibit=true ; (mem.mar, mem.mdr) = (alu.add( imm, reg[rs] ), reg[rd]) }
+  func movb_rm()   { pc_inhibit=true ; (mem.mar, mem.mdr) = (alu.add( imm, reg[rs] ), reg[rd]) }
   
   // Type 5
   func add_rrr()   { reg[rd] = alu.add ( reg[rn], reg[rs] ) }
@@ -67,11 +67,11 @@ class Machine
   func or_rrr()    { reg[rd] = alu.or  ( reg[rn], reg[rs] ) }
   func and_rrr()   { reg[rd] = alu.and ( reg[rn], reg[rs] ) }
   func xor_rrr()   { reg[rd] = alu.xor ( reg[rn], reg[rs] ) }
-  func movw_nr()   { mem.mar = alu.add( reg[rn], reg[rs] ) ; reg[rd] = mem.value }
-  func movzb_nr()  { mem.mar = alu.add( reg[rn], reg[rs] ) ; reg[rd] = mem.zb }
-  func movsb_nr()  { mem.mar = alu.add( reg[rn], reg[rs] ) ; reg[rd] = mem.sb }
-  func movw_rn()   { mem.mar = alu.add( reg[rn], reg[rs] ) ; mem.value = reg[rd] }
-  func movb_rn()   { mem.mar = alu.add( reg[rn], reg[rs] ) ; mem.zb = reg[rd] }
+  func movw_nr()   { pc_inhibit=true ; mem.mar = alu.add( reg[rn], reg[rs] ) }
+  func movzb_nr()  { pc_inhibit=true ; mem.mar = alu.add( reg[rn], reg[rs] ) }
+  func movsb_nr()  { pc_inhibit=true ; mem.mar = alu.add( reg[rn], reg[rs] ) }
+  func movw_rn()   { pc_inhibit=true ; (mem.mar, mem.mdr) = (alu.add( reg[rn], reg[rs] ), reg[rd]) }
+  func movb_rn()   { pc_inhibit=true ; (mem.mar, mem.mdr) = (alu.add( reg[rn], reg[rs] ), reg[rd]) }
   
   // Type 6
   func sel_crrr()  { reg[rd] = alu.hasCC(cc) ? reg[rn] : reg[rs] }
@@ -80,26 +80,28 @@ class Machine
   func set_cr()    { reg[rd] = alu.hasCC(cc) ? 1 : 0 }
   
   // Type 8
-  func ret()       { pc_inhibit=true ; mem.mar = reg.sp ; reg.sp = alu.inca2( reg.sp ) /*; pc_inhibit=true ; prg.pc = mem.value */  }
+  //func ret()       { pc_inhibit=true ; mem.mar = reg.sp ; reg.sp = alu.inca2( reg.sp ) }
+  func ret()       { pc_inhibit=true ; (reg.sp, mem.mar) = (alu.inca2( reg.sp ), reg.sp) }
   func reti()      { }
   func dint()      { }
   func eint()      { }
   func halt()      { mc_halt=true }
-  func call_a()    { pc_inhibit=true ; reg.sp = alu.deca2( reg.sp ) ; mem.mar = reg.sp /*;  pc_inhibit=true ; mem.value = prg.pc ; prg.pc = prg.value */}
+  func call_a()    { pc_inhibit=true ; (reg.sp, mem.mar) = (alu.deca2( reg.sp ), alu.deca2( reg.sp )) ; mem.mdr = alu.adda( prg.pc, 1 ) }
   
   // Type 9
   func jmp_r()     { pc_inhibit=true ; prg.pc = reg[rd] }
-  func call_r()    { pc_inhibit=true ; reg.sp = alu.deca2( reg.sp ) ; mem.mar = reg.sp /*; pc_inhibit=true ; mem.value = prg.pc; prg.pc = reg[rd]*/ }
-  func push_r()    { pc_inhibit=true ; reg.sp = alu.deca2( reg.sp ) ; mem.mar = reg.sp /*; mem.value = reg[rd]*/ }
-  func pop_r()     { pc_inhibit=true ; mem.mar = reg.sp ; reg.sp = alu.inca2( reg.sp ) /*; reg[rd] = mem.value*/ }
+  func call_r()    { pc_inhibit=true ; (reg.sp, mem.mar) = (alu.deca2( reg.sp ), alu.deca2( reg.sp )) ; mem.mdr = prg.pc }
+  func push_r()    { pc_inhibit=true ; (reg.sp, mem.mar) = (alu.deca2( reg.sp ), alu.deca2( reg.sp )) ; mem.mdr = reg[rd] }
+  //func pop_r()     { pc_inhibit=true ; mem.mar = reg.sp ; reg.sp = alu.inca2( reg.sp ) }
+  func pop_r()     { pc_inhibit=true ; (reg.sp, mem.mar) = (alu.inca2( reg.sp ), reg.sp) }
   func mov_sr()    { }
   func mov_rs()    { }
   func mov_lr()    { reg[rd] = prg.value }
-  func movw_ar()   { pc_inhibit=true ; mem.mar = prg.value /*; reg[rd] = mem.value*/ }
-  func movzb_ar()  { pc_inhibit=true ; mem.mar = prg.value /*; reg[rd] = mem.zb*/ }
-  func movsb_ar()  { pc_inhibit=true ; mem.mar = prg.value /*; reg[rd] = mem.sb*/ }
-  func movw_ra()   { pc_inhibit=true ; mem.mar = prg.value /*; mem.value = reg[rd]*/ }
-  func movb_ra()   { pc_inhibit=true ; mem.mar = prg.value /*; mem.zb = reg[rd]*/ }
+  func movw_ar()   { mem.mar = prg.value /*; reg[rd] = mem.value*/ }
+  func movzb_ar()  { mem.mar = prg.value /*; reg[rd] = mem.zb*/ }
+  func movsb_ar()  { mem.mar = prg.value /*; reg[rd] = mem.sb*/ }
+  func movw_ra()   { (mem.mar, mem.mdr) = (prg.value, reg[rd]) }
+  func movb_ra()   { (mem.mar, mem.mdr) = (prg.value, reg[rd]) }
   
   // Type 10
   func mov_rr()    { reg[rd] = reg[rs] }
@@ -117,12 +119,12 @@ class Machine
   func asr_rr()    { reg[rd] = alu.asr( reg[rs] ) }
   func neg_rr()    { reg[rd] = alu.neg( reg[rs] ) }
   func not_rr()    { reg[rd] = alu.not( reg[rs] ) }
-  func add_rlr()   { reg[rd] = alu.adda( prg.value, reg[rs] ) }
-  func movw_qr()   { mem.mar = alu.add( prg.value, reg[rs] ) /*; reg[rd] = mem.value*/ }
-  func movzb_qr()  { mem.mar = alu.add( prg.value, reg[rs] ) /*; reg[rd] = mem.zb*/ }
-  func movsb_qr()  { mem.mar = alu.add( prg.value, reg[rs] ) /*; reg[rd] = mem.sb*/ }
-  func movw_rq()   { mem.mar = alu.add( imm, reg[rs] ) /*; mem.value = reg[rd]*/ }
-  func movb_rq()   { mem.mar = alu.add( imm, reg[rs] ) /*; mem.zb = reg[rd]*/ }
+//  func add_rlr()   { reg[rd] = alu.adda( prg.value, reg[rs] ) }
+//  func movw_qr()   { mem.mar = alu.add( prg.value, reg[rs] ) /*; reg[rd] = mem.value*/ }
+//  func movzb_qr()  { mem.mar = alu.add( prg.value, reg[rs] ) /*; reg[rd] = mem.zb*/ }
+//  func movsb_qr()  { mem.mar = alu.add( prg.value, reg[rs] ) /*; reg[rd] = mem.sb*/ }
+//  func movw_rq()   { mem.mar = alu.add( imm, reg[rs] ) /*; mem.value = reg[rd]*/ }
+//  func movb_rq()   { mem.mar = alu.add( imm, reg[rs] ) /*; mem.zb = reg[rd]*/ }
   func nop()       { }
   
   // Micro
@@ -130,11 +132,11 @@ class Machine
   func load_w()    { reg[rd] = mem.value }
   func load_zb()   { reg[rd] = mem.zb }
   func load_sb()   { reg[rd] = mem.sb }
-  func store_w()   { mem.value = reg[rd] }
-  func store_b()   { mem.zb = reg[rd] }
-  func call_k1()   { pc_inhibit=true ; mem.value = prg.pc ; prg.pc = alu.adda( prg.pc, imm ) }
-  func call_a1()   { pc_inhibit=true ; mem.value = prg.pc ; prg.pc = prg.value }
-  func call_r1()   { pc_inhibit=true ; mem.value = prg.pc ; prg.pc = reg[rd] }
+  func store_w()   { mem.writew() }
+  func store_b()   { mem.writeb() }
+  func call_k1()   { pc_inhibit=true ; mem.writew() ; prg.pc = alu.adda( prg.pc, imm ) }
+  func call_a1()   { pc_inhibit=true ; mem.writew() ; prg.pc = prg.value }
+  func call_r1()   { pc_inhibit=true ; mem.writew() ; prg.pc = reg[rd] }
   func ret1()      { pc_inhibit=true ; prg.pc = mem.value }
  
   // Instruction Encodings
@@ -173,16 +175,16 @@ class Machine
     MCExt.me_call_r1.rawValue   : (call_r1,   .me_wait),
     MCExt.me_ret1.rawValue      : (ret1,      .me_wait),
 
-    // E6b 110_xxxxxxx
+    // T2, E6b 110_xxxxxxx
     0b110_0010  :  (br_ck,     .me_end),
 
-    // E6a 000_xxx_1_xxx
+    // T6, E6a 000_xxx_1_xxx
     0b110_0001  :  (sel_crrr,  .me_end),
 
-    // E6 000_xxx_0111
+    // T7, E6 000_xxx_0111
     0b110_0000  :  (set_cr,    .me_end),
 
-    // E5a  10_ooo_xxxxx
+    // T3, E5a  10_ooo_xxxxx
     0b101_1_000 :  (mov_kr,    .me_end),
     0b101_1_001 :  (cmp_rk,    .me_end),
     0b101_1_010 :  (add_kr,    .me_end),
@@ -192,13 +194,13 @@ class Machine
     0b101_1_110 :  (xor_kr,    .me_end),
     0b101_1_111 :  (nop,       .me_end),
 
-    // E5  01_oo_xxxxxx
-    0b101_00_00 :  (movw_mr,   .me_end),
-    0b101_00_01 :  (movsb_mr,  .me_end),
-    0b101_00_10 :  (movw_rm,   .me_end),
-    0b101_00_11 :  (movb_rm,   .me_end),
+    // T4, E5  01_oo_xxxxxx
+    0b101_00_00 :  (movw_mr,   .me_load_w),
+    0b101_00_01 :  (movsb_mr,  .me_load_sb),
+    0b101_00_10 :  (movw_rm,   .me_store_w),
+    0b101_00_11 :  (movb_rm,   .me_store_b),
 
-    // E4  001_oooo_xxx
+    // T5, E4  001_oooo_xxx
     0b100_0000  :  (add_rrr,   .me_end),
     0b100_0001  :  (addc_rrr,  .me_end),
     0b100_0010  :  (sub_rrr,   .me_end),
@@ -209,19 +211,19 @@ class Machine
     0b100_0111  :  (nop,       .me_end),
 
     0b100_1000  :  (nop,       .me_end),
-    0b100_1001  :  (movw_nr,   .me_end),
-    0b100_1010  :  (movzb_nr,  .me_end),
-    0b100_1011  :  (movsb_nr,  .me_end),
-    0b100_1100  :  (movw_rn,   .me_end),
-    0b100_1101  :  (movb_rn,   .me_end),
+    0b100_1001  :  (movw_nr,   .me_load_w),
+    0b100_1010  :  (movzb_nr,  .me_load_zb),
+    0b100_1011  :  (movsb_nr,  .me_load_sb),
+    0b100_1100  :  (movw_rn,   .me_store_w),
+    0b100_1101  :  (movb_rn,   .me_store_b),
     0b100_1110  :  (nop,       .me_end),
     0b100_1111  :  (nop,       .me_end),
 
-    // E3a  111_o_xxxxxx
+    // T1, E3a  111_o_xxxxxx
     0b011_100_0 :  (jmp_k,     .me_wait),
     0b011_100_1 :  (call_k,    .me_call_k1),
 
-    // E3   000_ooo_0110
+    // T8, E3   000_ooo_0110
     0b011_0_000 :  (ret,       .me_ret1),
     0b011_0_001 :  (reti,      .me_wait), // revisar
     0b011_0_010 :  (dint,      .me_end),
@@ -231,7 +233,7 @@ class Machine
     0b011_0_110 :  (nop,       .me_end),
     0b011_0_111 :  (call_a,    .me_call_a1),
 
-    // E2  000_ooo_010_o
+    // T9, E2  000_ooo_010_o
     0b010_000_0 :  (jmp_r,     .me_wait),
     0b010_001_0 :  (call_r,    .me_call_r1),
     0b010_010_0 :  (push_r,    .me_store_w),
@@ -250,7 +252,7 @@ class Machine
     0b010_110_1 :  (nop,       .me_end),
     0b010_111_1 :  (nop,       .me_end),
 
-    // E0  000_ooo_000_o
+    // T10, E0  000_ooo_000_o
     0b000_000_0 :  (mov_rr,    .me_end),
     0b000_001_0 :  (cmp_rr,    .me_end),
     0b000_010_0 :  (zext_rr,   .me_end),
@@ -269,24 +271,24 @@ class Machine
     0b000_110_1 :  (not_rr,    .me_end),
     0b000_111_1 :  (nop,       .me_end),
 
-    // E1 000_ooo_001_o
-    0b001_000_0 :  (add_rlr,   .me_wait),
-    0b001_001_0 :  (movw_qr,   .me_load_w),
-    0b001_010_0 :  (movzb_qr,  .me_load_zb),
-    0b001_011_0 :  (movsb_qr,  .me_load_sb),
-    0b001_100_0 :  (movw_rq,   .me_store_w),
-    0b001_101_0 :  (movb_rq,   .me_store_b),
-    0b001_110_0 :  (nop,       .me_end),
-    0b001_111_0 :  (nop,       .me_end),
-
-    0b001_000_1 :  (nop,       .me_end),
-    0b001_001_1 :  (nop,       .me_end),
-    0b001_010_1 :  (nop,       .me_end),
-    0b001_011_1 :  (nop,       .me_end),
-    0b001_100_1 :  (nop,       .me_end),
-    0b001_101_1 :  (nop,       .me_end),
-    0b001_110_1 :  (nop,       .me_end),
-    0b001_111_1 :  (nop,       .me_end),
+    // T10, E1 000_ooo_001_o
+//    0b001_000_0 :  (add_rlr,   .me_wait),
+//    0b001_001_0 :  (movw_qr,   .me_load_w),
+//    0b001_010_0 :  (movzb_qr,  .me_load_zb),
+//    0b001_011_0 :  (movsb_qr,  .me_load_sb),
+//    0b001_100_0 :  (movw_rq,   .me_store_w),
+//    0b001_101_0 :  (movb_rq,   .me_store_b),
+//    0b001_110_0 :  (nop,       .me_end),
+//    0b001_111_0 :  (nop,       .me_end),
+//
+//    0b001_000_1 :  (nop,       .me_end),
+//    0b001_001_1 :  (nop,       .me_end),
+//    0b001_010_1 :  (nop,       .me_end),
+//    0b001_011_1 :  (nop,       .me_end),
+//    0b001_100_1 :  (nop,       .me_end),
+//    0b001_101_1 :  (nop,       .me_end),
+//    0b001_110_1 :  (nop,       .me_end),
+//    0b001_111_1 :  (nop,       .me_end),
   ]
   
   //-------------------------------------------------------------------------------------------
