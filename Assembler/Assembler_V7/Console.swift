@@ -61,8 +61,6 @@ class ConsoleIO
   func log( _ s:String )
   {
     if logData == nil { return }
-    
-    print( s );
     logData!.append( s )
   }
   

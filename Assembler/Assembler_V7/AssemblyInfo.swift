@@ -13,13 +13,13 @@ import Foundation
 //-------------------------------------------------------------------------------------------
 
 
-// Operand attribute flags
+// Operand option flags
 struct OpOption: OptionSet
 {
   let rawValue:Int
   static let indirect = OpOption(rawValue: 1 << 0)      // Indirect memory addressing
   static let prgIndirect = OpOption(rawValue: 1 << 1)   // Indirect program addressing
-  static let isSP = OpOption(rawValue: 1 << 4)          // SP flag for register operands
+  static let extern = OpOption(rawValue: 1 << 2)        // External operand flag
 }
 
 // Base class for assembly instruction operands
@@ -27,7 +27,7 @@ class Operand : CustomDebugStringConvertible
 {
   let value:Int       // Immediate values or register numbers
   let sym:Data?       // Symbolic addresses or raw string bytes
-  var opt:OpOption
+  let opt:OpOption
   
   // Description string for logging purposes subclases should implement
   var debugDescription: String { return "(no description)" }
@@ -68,14 +68,14 @@ class Operand : CustomDebugStringConvertible
 class OpReg : Operand
 {
   // Description string for logging purposes
-  override var debugDescription: String { return value == 7 ? "SP" : "r\(value)" }
+  override var debugDescription: String { return value == 7 ? "sp" : "r\(value)" }
 }
 
 // Immediate value operand
 class OpImm : Operand
 {
   // Description string for logging purposes
-  override var debugDescription: String { return "\(value)" }
+  override var debugDescription: String { return opt.contains(.extern) ? "\(value)L" : "\(value)" }
 }
 
 // Symbolic address operand
@@ -84,7 +84,7 @@ class OpSym : Operand
   // Description string for logging purposes
   override var debugDescription: String
   {
-    if sym != nil { return /*"&" +*/ sym!.s + (value != 0 ? "+\(value)" : "") }
+    if sym != nil { return (opt.contains(.extern) ? "&" : "") + sym!.s + (value != 0 ? "+\(value)" : "") }
     return "(null)"
   }
 }
@@ -109,9 +109,6 @@ class Instruction : Hashable, CustomDebugStringConvertible
 {
   let name:Data         // Instruction name represented in raw UTF8 bytes
   var ops:[Operand]     // Operands
-  var label:Data?       // Instruction entry label or nil
-  var hasPfix:Bool
-  var mcInst:MachineInstr?   // Machine Instruction or nil
   
   // Hash stuff for object use as a dictionary key
   var hashValue: Int
@@ -160,17 +157,14 @@ class Instruction : Hashable, CustomDebugStringConvertible
     return str
   }
   
-  // Return an immediate or symbol operand, subjected to be prefixed, if any
+  // Return the external operand of this instruction if any
   var exOperand:Operand?
   {
-    if !hasPfix { return nil }
-    
     for op in ops
     {
-      if op is OpSym { return op }
-      if op is OpImm { return op }
+      //if op.extern { return op }
+      if op.opt.contains(.extern) { return op }
     }
-
     return nil
   }
   
@@ -184,23 +178,11 @@ class Instruction : Hashable, CustomDebugStringConvertible
     return nil
   }
   
-  // Return the SP operand for this instruction if any
-  var opSP:OpReg?
-  {
-    for op in ops
-    {
-      if let opReg = op as? OpReg {
-        if opReg.opt.contains(.isSP) { return opReg } }
-    }
-    return nil
-  }
-  
   // Designated initializer, zero operands
   init( _ n:Data )
   {
     name = n
     ops = []
-    hasPfix = false
   }
   
   // Initialize with operands list
@@ -223,7 +205,6 @@ class Source
   var shortName = Data()                // Source name with the extension removed
 
   var instructionsOffset = 0            // Offset of this object in program memory
-  var instructionsEnd = 0               // Instructions memory size
   var instructions = [Instruction]()    // Instructions array
   
   var constantDatasOffset = 0           // Offset of this object's constant data values in memory
@@ -239,31 +220,24 @@ class Source
   
   var localSymTable:Dictionary<Data,SymTableInfo> = [:]    // Local symbol table
   
-  
-
-// Absolute address just past the last instruction in program memory
+  // Absolute address just past the last instruction in program memory
   func getInstructionsEnd() -> Int {
-    return instructionsOffset + instructionsEnd }
-
+    return instructionsOffset + instructions.count
+  }
+  
   // Absolute address just past the last constant data value in data memory
   func getConstantDataEnd() -> Int {
-    return constantDatasOffset + constantDatasEnd }
+    return constantDatasOffset + constantDatasEnd
+  }
   
   // Absolute address just past the last initialized variable in data memory
   func getInitializedVarsEnd() -> Int {
-    return initializedVarsOffset + initializedVarsEnd }
+    return initializedVarsOffset + initializedVarsEnd
+  }
   
   // Absolute address just past the last uninitialized variable in data memory
   func getUninitializedVarsEnd() -> Int {
-    return uninitializedVarsOffset + uninitializedVarsEnd }
-  
-  // Appends an Instruction at the end of the instructions array
-  func addInstruction( _ instr:Instruction )
-  {
-    instr.mcInst = MachineInstrList.newMachineInst(instr)
-    instructions.append(instr)
-    instructionsEnd += ( instr.hasPfix ? 2 : 1 )
-    //instructionsEnd += ( instr.hasExOperand ? 2 : 1 )
+    return uninitializedVarsOffset + uninitializedVarsEnd
   }
   
   // Appends a DataValue at the end of the constant datas array
@@ -277,7 +251,8 @@ class Source
   func p2AlignConstantData( _ value:Int )
   {
     while constantDatasEnd & ~(~0<<value) != 0 {
-      addConstantData( DataValue( 1, OpImm(0) ) ) }
+      addConstantData( DataValue( 1, OpImm(0) ) )
+    }
   }
   
   // Appends a DataValue at the end of the initialized variables array
@@ -291,7 +266,8 @@ class Source
   func p2AlignInitializedVar( _ value:Int )
   {
     while initializedVarsEnd & ~(~0<<value) != 0 {
-      addInitializedVar( DataValue( 1, OpImm(0) ) ) }
+      addInitializedVar( DataValue( 1, OpImm(0) ) )
+    }
   }
   
   // Adds a memory slot for an unitialized variable
@@ -313,14 +289,17 @@ class DataValue : Hashable, CustomDebugStringConvertible
   var oper:Operand             // Operand representation of the DataValue
   
   // Hash stuff for object use as a dictionary key
-  var hashValue: Int {
-      return ObjectIdentifier(type(of:oper)).hashValue }
+  var hashValue: Int
+  {
+      return ObjectIdentifier(type(of:oper)).hashValue
+  }
 
   // Equal operator implementation for object use as a dictionary key
   static func == (lhs: DataValue, rhs: DataValue) -> Bool
   {
     if !( type(of:lhs.oper) == type(of:rhs.oper) ) { return false }
     if !( lhs.oper.opt == rhs.oper.opt ) { return false }
+    //if !( lhs.oper.indirect == rhs.oper.indirect ) { return false }
     
     return true
   }

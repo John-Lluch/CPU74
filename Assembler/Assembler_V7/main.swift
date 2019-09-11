@@ -82,7 +82,22 @@ class C74_as
     return false
   }
   
-
+  //-------------------------------------------------------------------------------------------
+  // Assemble all sources
+  func assembleSources()
+  {
+    out.logln( "-----" )
+    out.logln( "Upon machine reset this will be moved to data memory, see setup code below" )
+  
+    // Invoke the assembler
+    assembler.assembleData()
+    
+    out.logln( "-----" )
+    out.logln( "\(console.destination!.absoluteString)" )
+    
+    // Invoke the assembler
+    assembler.assembleProgram()
+  }
   
   //-------------------------------------------------------------------------------------------
   // Designated initializer
@@ -95,8 +110,7 @@ class C74_as
     if  assembler.sources.count == console.sources.count + 1
     {
       // Assemble all sources together
-      //assembleSources()
-      assembler.assemble()
+      assembleSources()
       
       // Write out the machine code to the destination file
       out.write(data: assembler.programMemory, url: console.destination)
@@ -104,8 +118,6 @@ class C74_as
     }
     
     // Output log file
-    out.logln()
-    out.logln( "Assembly completed" )
     out.writeLog()
   }
 

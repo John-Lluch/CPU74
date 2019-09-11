@@ -13,10 +13,12 @@ import Foundation
 //-------------------------------------------------------------------------------------------
 
 extension String {
-  var d:Data { return self.data(using:.utf8)! } }
+  var d:Data { return self.data(using:.utf8)! }
+}
 
 extension Data {
-  var s:String { return String(data:self, encoding:.utf8)! } }
+  var s:String { return String(data:self, encoding:.utf8)! }
+}
 
 //-------------------------------------------------------------------------------------------
 // SourceParser
@@ -30,7 +32,6 @@ class SourceParser:PrimitiveParser
   let asm:Assembler        // Destination Assembler object
   var currBank:Bank = .program    // Current memory bank
   var currInst:Instruction?       // Current instruction
-  var currLabel:Data?             // Current label
 
   //-------------------------------------------------------------------------------------------
   // Designated initializer, withData contains the actual source file
@@ -82,39 +83,41 @@ class SourceParser:PrimitiveParser
   //-------------------------------------------------------------------------------------------
   func parseImmediate() -> Int?
   {
-    if let value = parseInteger() {
-      return value }
-    
+    if let value = parseInteger()
+    {
+      return value
+    }
     return nil
   }
  
   //-------------------------------------------------------------------------------------------
-  func parsePrimitiveOperand( opt:OpOption ) -> (Operand, Bool)?
+  //func parsePrimitiveOperand( ind:Bool ) -> Operand?
+  func parsePrimitiveOperand( opt:OpOption ) -> Operand?
   {
     // Register
     if parseChar(UInt8(ascii:"r")) || parseChar(UInt8(ascii:"R"))
     {
-      if let value = parseInteger() { return (value == 7 ? OpReg(value, opt.union(.isSP)) : OpReg(value, opt) , false)}
+      if let value = parseInteger() { return OpReg(value, opt) }
       else { error( "Expecting register number" ) }
     }
     
     // Stack pointer
     if parseConcreteToken(cStr: "sp".d) || parseConcreteToken(cStr: "SP".d)
     {
-      return (OpReg(7, opt.union(.isSP)), false)
+      return OpReg(7, opt)
     }
     
     // Absolute address symbol in data memory
     if parseChar( UInt8(ascii:"&") )
     {
-      if let (addr, offset) = parseEfectiveAddress() { return (OpSym(offset, addr, opt:opt) , true) }
+      if let (addr, offset) = parseEfectiveAddress() { return OpSym(offset, addr, opt: opt.union(.extern)) }
       else { error( "Expecting efective address" ) }
     }
     
     // Absolute address in program memory (NOT WORKING?)
     if parseChar(UInt8(ascii:"@"))
     {
-      if let addr = parseAddressToken() { return (OpSym(addr, opt) , true) }
+      if let addr = parseAddressToken() { return OpSym(addr, opt.union(.extern)) }
       else { error( "Expecting address token" ) }
     }
     
@@ -122,21 +125,22 @@ class SourceParser:PrimitiveParser
     if let value = parseImmediate()
     {
       // Set 'extern' flag if it's a large immediate
-      if parseChar( UInt8(ascii:"L") ) { return (OpImm(value, opt) , true) }
-      else { return (OpImm(value, opt) , false) }
+      if parseChar( UInt8(ascii:"L") ) { return OpImm(value, opt.union(.extern)) }
+      else { return OpImm(value, opt) }
     }
     
     // Instruction embeeded address symbol that may correspond
     // to a program memory label or jump table address
     if let addr = parseAddressToken()
     {
-      return (OpSym(addr, opt) , false)
+      return OpSym(addr, opt)
     }
     
     return nil
   }
   
   //-------------------------------------------------------------------------------------------
+  //func parseOperand( ind:Bool ) -> Bool
   func parseOperand( opt:OpOption ) -> Bool
   {
     if parseIndirectOperand() {
@@ -145,16 +149,16 @@ class SourceParser:PrimitiveParser
     if parsePrgIndirectOperand() {
       return true }
     
-    if let (op, hasPrefix) = parsePrimitiveOperand(opt:opt)
+    if let op = parsePrimitiveOperand(opt:opt)
     {
       currInst?.ops.append( op )
-      if hasPrefix { currInst?.hasPfix = true }
       return true
     }
     return false
   }
   
   //-------------------------------------------------------------------------------------------
+  //func parseOperators(ind:Bool) -> Bool
   func parseOperators(opt:OpOption) -> Bool
   {
     if parseOperand(opt:opt)
@@ -425,8 +429,10 @@ class SourceParser:PrimitiveParser
     if let value = parseImmediate() {
       return OpImm( value ) }
     
-    if let (addr, offset) = parseEfectiveAddress() {
-      return OpSym(offset, addr, opt:[]) }
+    if let (addr, offset) = parseEfectiveAddress()
+    {
+      return OpSym(offset, addr, opt:[])
+    }
     
     return nil
   }
@@ -469,6 +475,7 @@ class SourceParser:PrimitiveParser
       else { error( "Unsuported bank" ) }
 
       out.logln( "\t" + String(reflecting:op) )
+
       return true
     }
     
@@ -623,22 +630,10 @@ class SourceParser:PrimitiveParser
   func parseInstruction() -> Bool
   {
     currInst = nil;
-
-    func appendInstr( _ inst:Instruction )
-    {
-      // Log
+    
+    let appendInstr = { ( inst:Instruction ) in
+      self.src.instructions.append( inst )
       out.logln( "\t" + String(reflecting:inst) )
-      
-      // Get the machine instruction
-      src.addInstruction( inst )
-
-      // Bail out if no suitable match was found
-      if ( inst.mcInst == nil ) {
-        error( "Unrecognised Instruction Pattern: " + String(reflecting:inst) ) }
-      
-      // Set the current label to the instruction
-      inst.label = currLabel
-      currLabel = nil
     }
     
     if parseInstructionName()
@@ -647,8 +642,13 @@ class SourceParser:PrimitiveParser
       if parseOperators(opt:[])
       {
         appendInstr( currInst! )
+        if let op = currInst?.exOperand
+        {
+          let inst = Instruction( "_imm".d, [op] )
+          appendInstr( inst )
+        }
         return true
-      } // <- zero operand instructions are legal, so no errors can't go here
+      } // <- zero operand instructions are legal, so no errors here
     }
     return false
   }
@@ -670,13 +670,11 @@ class SourceParser:PrimitiveParser
       // Set the address value
       switch currBank
       {
-        case .program  : break //; symInfo!.value = src.getInstructionsEnd()
+        case .program  : symInfo!.value = src.getInstructionsEnd()
         case .constant : symInfo!.value = src.getConstantDataEnd()
         case .variable : symInfo!.value = src.getInitializedVarsEnd()
         default : error( "Unsuported bank" )
       }
-      
-      currLabel = name
       
       out.logln( name.s + ":" )
  
