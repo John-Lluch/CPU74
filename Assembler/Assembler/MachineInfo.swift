@@ -63,7 +63,7 @@ class InstWithImmediate:MachineInstr
   
   func setValue( a:UInt16 )
   {
-    encoding &= ~mask << offs
+    encoding &= ~(mask << offs)
     encoding |= (mask & a) << offs
   }
   
@@ -217,7 +217,8 @@ class TypeJ:InstWithImmediate
   init( op:UInt16, a:UInt16, rk:ReferenceKind )
   {
     super.init(mask:0b1_1111_1111, offs:0, rk:rk)
-    encoding |= (0b001_1111)         << 9
+    encoding |= (0b001_111)          << 10
+    encoding |= (0b1 & op)           << 9
     encoding |= (mask & a)           << offs
   }
   
@@ -228,11 +229,17 @@ class TypeJ:InstWithImmediate
     return signExtendRange( v ) }
 }
 
+class TypeJ_kq:TypeJ
+{
+  required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
+    self.init( op:op, a:ops[1].u16value, rk:rk ) }
+}
+
 // Type R1
 
 class TypeR1:MachineInstr
 {
-  init( op:UInt16, rn:UInt16, rs:UInt16, rd:UInt16, rk:ReferenceKind )
+  init( op:UInt16, rs:UInt16, rn:UInt16, rd:UInt16, rk:ReferenceKind )
   {
     super.init(rk)
     encoding |= (0b001)        << 13
@@ -243,7 +250,7 @@ class TypeR1:MachineInstr
   }
   
   required convenience init( op:UInt16, ops:[Operand], rk:ReferenceKind = [] ) {
-    self.init( op:op, rn:ops[0].u16value, rs:ops[1].u16value, rd:ops[2].u16value, rk:rk ) }
+    self.init( op:op, rs:ops[0].u16value, rn:ops[1].u16value, rd:ops[2].u16value, rk:rk ) }
 }
 
 // Same as TypeR1, but the assembly operands
@@ -251,19 +258,19 @@ class TypeR1:MachineInstr
 class TypeR1b:TypeR1
 {
   required convenience init( op:UInt16, ops:[Operand], rk:ReferenceKind = [] ) {
-    self.init( op:op, rn:ops[2].u16value, rs:ops[0].u16value, rd:ops[1].u16value, rk:rk ) }
+    self.init( op:op, rs:ops[2].u16value, rn:ops[0].u16value, rd:ops[1].u16value, rk:rk ) }
 }
 
 // Same as TypeR1, but ignores rd
 class TypeR1c:TypeR1
 {
   required convenience init( op:UInt16, ops:[Operand], rk:ReferenceKind = [] ) {
-    self.init( op:op, rn:ops[0].u16value, rs:ops[1].u16value, rd:0, rk:rk ) }
+    self.init( op:op, rs:ops[0].u16value, rn:ops[1].u16value, rd:0, rk:rk ) }
 }
 
 class TypeR1_cc:MachineInstr
 {
-  init( cc:UInt16, rn:UInt16, rs:UInt16, rd:UInt16, rk:ReferenceKind )
+  init( cc:UInt16, rs:UInt16, rn:UInt16, rd:UInt16, rk:ReferenceKind )
   {
     super.init(rk)
     encoding |= (0b0001)      << 12
@@ -274,7 +281,7 @@ class TypeR1_cc:MachineInstr
   }
   
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
-    self.init( cc:ops[0].u16value, rn:ops[1].u16value, rs:ops[2].u16value, rd:ops[3].u16value, rk:rk ) }
+    self.init( cc:ops[0].u16value, rs:ops[1].u16value, rn:ops[2].u16value, rd:ops[3].u16value, rk:rk ) }
 }
 
 // Type R2
@@ -398,29 +405,31 @@ class MachineInstrList
     Instruction( "and".d,    [OpReg(), OpImm(), OpReg()] )     : (ty:TypeI2.self,  rk:[], op:0b01110),
     
     Instruction( "ld.w".d,   [OpSym(.indirect), OpReg()] )     : (ty:TypeI2b.self,  rk:.absolute, op:0b01111),
-    Instruction( "ld.zb".d,  [OpSym(.indirect), OpReg()] )     : (ty:TypeI2b.self,  rk:.absolute, op:0b10000),
+    Instruction( "ld.sb".d,  [OpSym(.indirect), OpReg()] )     : (ty:TypeI2b.self,  rk:.absolute, op:0b10000),
     Instruction( "st.w".d,   [OpReg(), OpSym(.indirect)] )     : (ty:TypeI2.self,   rk:.absolute, op:0b10001),
     Instruction( "st.b".d,   [OpReg(), OpSym(.indirect)] )     : (ty:TypeI2.self,   rk:.absolute, op:0b10010),
     
     Instruction( "lea".d,    [OpReg(.isSP), OpImm(), OpReg()] )                         : (ty:TypeI2c.self, rk:[], op:0b10011),
     Instruction( "ld.w".d,   [OpReg([.isSP,.indirect]), OpImm(.indirect), OpReg()] )    : (ty:TypeI2c.self, rk:[], op:0b10100),
-    Instruction( "ld.zb".d,  [OpReg([.isSP,.indirect]), OpImm(.indirect), OpReg()] )    : (ty:TypeI2c.self, rk:[], op:0b10101),
+    Instruction( "ld.sb".d,  [OpReg([.isSP,.indirect]), OpImm(.indirect), OpReg()] )    : (ty:TypeI2c.self, rk:[], op:0b10101),
     Instruction( "st.w".d,   [OpReg(), OpReg([.isSP,.indirect]), OpImm(.indirect)] )    : (ty:TypeI2d.self, rk:[], op:0b10110),
     Instruction( "st.b".d,   [OpReg(), OpReg([.isSP,.indirect]), OpImm(.indirect)] )    : (ty:TypeI2d.self, rk:[], op:0b10111),
 
     // Type J_cc, Type J
-    Instruction( "brcc".d,   [OpImm(), OpSym()] )              : (ty:TypeJ_cc.self, rk:.relative, op:0),
-    Instruction( "jmp".d,    [OpSym()] )                       : (ty:TypeJ.self,    rk:.relative, op:0),
+    Instruction( "brcc".d,   [OpImm(), OpSym()] )                       : (ty:TypeJ_cc.self, rk:.relative, op:0),
+    Instruction( "add".d,    [OpReg(.isSP), OpImm(), OpReg(.isSP)] )    : (ty:TypeJ_kq.self,    rk:[],        op:0b0),
+    Instruction( "jmp".d,    [OpSym()] )                                : (ty:TypeJ.self,    rk:.relative, op:0b1),
     
     // Type R1
-    Instruction( "add".d,    [OpReg(), OpReg(), OpReg()] )                     : (ty:TypeR1.self,  rk:[], op:0b0000),
-    Instruction( "addc".d,   [OpReg(), OpReg(), OpReg()] )                     : (ty:TypeR1.self,  rk:[], op:0b0001),
+    Instruction( "cmp".d,    [OpReg(), OpReg()] )                              : (ty:TypeR1c.self, rk:[], op:0b0000),
+    Instruction( "cmpc".d,   [OpReg(), OpReg()] )                              : (ty:TypeR1c.self, rk:[], op:0b0001),
     Instruction( "sub".d,    [OpReg(), OpReg(), OpReg()] )                     : (ty:TypeR1.self,  rk:[], op:0b0010),
     Instruction( "subc".d,   [OpReg(), OpReg(), OpReg()] )                     : (ty:TypeR1.self,  rk:[], op:0b0011),
     Instruction( "or".d,     [OpReg(), OpReg(), OpReg()] )                     : (ty:TypeR1.self,  rk:[], op:0b0100),
     Instruction( "and".d,    [OpReg(), OpReg(), OpReg()] )                     : (ty:TypeR1.self,  rk:[], op:0b0101),
     Instruction( "xor".d,    [OpReg(), OpReg(), OpReg()] )                     : (ty:TypeR1.self,  rk:[], op:0b0110),
-    Instruction( "cmp".d,    [OpReg(), OpReg()] )                              : (ty:TypeR1c.self, rk:[], op:0b0111),
+    Instruction( "addc".d,   [OpReg(), OpReg(), OpReg()] )                     : (ty:TypeR1.self,  rk:[], op:0b0111),
+    Instruction( "add".d,    [OpReg(), OpReg(), OpReg()] )                     : (ty:TypeR1.self,  rk:[], op:0b1000),
     Instruction( "ld.w".d,   [OpReg(.indirect), OpReg(.indirect), OpReg()] )   : (ty:TypeR1.self,  rk:[], op:0b1001),
     Instruction( "ld.zb".d,  [OpReg(.indirect), OpReg(.indirect), OpReg()] )   : (ty:TypeR1.self,  rk:[], op:0b1010),
     Instruction( "ld.sb".d,  [OpReg(.indirect), OpReg(.indirect), OpReg()] )   : (ty:TypeR1.self,  rk:[], op:0b1011),
@@ -434,27 +443,29 @@ class MachineInstrList
     Instruction( "setcc".d,  [OpImm(), OpReg()] )              : (ty:TypeR2_cc.self, rk:[], op:0),
     
     // Type R2_0
-    Instruction( "ret".d,    [] )                              : (ty:TypeR2_0.self,  rk:[], op:0b000_110),
-    Instruction( "reti".d,   [] )                              : (ty:TypeR2_0.self,  rk:[], op:0b001_110),
-    Instruction( "dint".d,   [] )                              : (ty:TypeR2_0.self,  rk:[], op:0b010_110),
-    Instruction( "eint".d,   [] )                              : (ty:TypeR2_0.self,  rk:[], op:0b011_110),
-    Instruction( "halt".d,   [] )                              : (ty:TypeR2_0.self,  rk:[], op:0b100_110),
+    Instruction( "ret".d,    [] )                              : (ty:TypeR2_0.self,  rk:[], op:0b000_011),
+    Instruction( "reti".d,   [] )                              : (ty:TypeR2_0.self,  rk:[], op:0b001_011),
+    Instruction( "dint".d,   [] )                              : (ty:TypeR2_0.self,  rk:[], op:0b010_011),
+    Instruction( "eint".d,   [] )                              : (ty:TypeR2_0.self,  rk:[], op:0b011_011),
+    Instruction( "halt".d,   [] )                              : (ty:TypeR2_0.self,  rk:[], op:0b100_011),
     
     // Type R2_1
-    Instruction( "jmp".d,    [OpReg()] )                       : (ty:TypeR2_1.self,  rk:[], op:0b000_100),
-    Instruction( "call".d,   [OpReg()] )                       : (ty:TypeR2_1.self,  rk:[], op:0b001_100),
-    Instruction( "push".d,   [OpReg()] )                       : (ty:TypeR2_1.self,  rk:[], op:0b010_100),
-    Instruction( "pop".d,    [OpReg()] )                       : (ty:TypeR2_1.self,  rk:[], op:0b011_100),
+    Instruction( "jmp".d,    [OpReg()] )                       : (ty:TypeR2_1.self,  rk:[], op:0b000_010),
+    Instruction( "call".d,   [OpReg()] )                       : (ty:TypeR2_1.self,  rk:[], op:0b001_010),
+    Instruction( "push".d,   [OpReg()] )                       : (ty:TypeR2_1.self,  rk:[], op:0b010_010),
+    Instruction( "pop".d,    [OpReg()] )                       : (ty:TypeR2_1.self,  rk:[], op:0b011_010),
 
     // Type R2_2
     Instruction( "mov".d,    [OpReg(), OpReg()] )                              : (ty:TypeR2_2.self,  rk:[], op:0b000_000),
+    Instruction( "mov".d,    [OpReg(), OpReg(.isSP)] )                         : (ty:TypeR2_2.self,  rk:[], op:0b001_000),
     Instruction( "zext".d,   [OpReg(), OpReg()] )                              : (ty:TypeR2_2.self,  rk:[], op:0b010_000),
     Instruction( "sext".d,   [OpReg(), OpReg()] )                              : (ty:TypeR2_2.self,  rk:[], op:0b011_000),
     Instruction( "bswap".d,  [OpReg(), OpReg()] )                              : (ty:TypeR2_2.self,  rk:[], op:0b100_000),
     Instruction( "sextw".d,  [OpReg(), OpReg()] )                              : (ty:TypeR2_2.self,  rk:[], op:0b101_000),
     Instruction( "ld.w".d,   [OpReg(.prgIndirect), OpReg()] )                  : (ty:TypeR2_2.self,  rk:[], op:0b111_000),
+    
     Instruction( "lsr".d,    [OpReg(), OpReg()] )                              : (ty:TypeR2_2.self,  rk:[], op:0b000_001),
-    Instruction( "lsl".d,    [OpReg(), OpReg()] )                              : (ty:TypeR2_2.self,  rk:[], op:0b001_001),
+    Instruction( "lsrc".d,   [OpReg(), OpReg()] )                              : (ty:TypeR2_2.self,  rk:[], op:0b001_001),
     Instruction( "asr".d,    [OpReg(), OpReg()] )                              : (ty:TypeR2_2.self,  rk:[], op:0b010_001),
     Instruction( "neg".d,    [OpReg(), OpReg()] )                              : (ty:TypeR2_2.self,  rk:[], op:0b101_001),
     Instruction( "not".d,    [OpReg(), OpReg()] )                              : (ty:TypeR2_2.self,  rk:[], op:0b110_001),
@@ -473,11 +484,11 @@ class MachineInstrList
       let machineInst = t.ty.init(op:t.op, ops:inst.ops, rk:t.rk)
       return machineInst
     }
-    else if let opReg = inst.opSP
-    {
-      opReg.opt.remove(.isSP)
-      return newMachineInst( inst )
-    }
+//    else if let opReg = inst.opSP
+//    {
+//      opReg.opt.remove(.isSP)
+//      return newMachineInst( inst )
+//    }
 
     return nil
   }

@@ -72,8 +72,14 @@ class Assembler
   var dataMemory = Data()
   
   // Add an input Source object
-  func addSource( _ source:Source) {
-    sources.append(source) }
+  func addSource( _ source:Source)
+  {
+    source.instructionsOffset = getInstructionsEnd()
+    source.constantDatasOffset = getConstantDataEnd()
+    source.initializedVarsOffset = getInitializedVarsEnd()
+    source.uninitializedVarsOffset = getUninitializedVarsEnd()
+    sources.append(source)
+  }
   
   // Absolute address just past the last instruction in program memory
   func getInstructionsEnd() -> Int
@@ -171,9 +177,10 @@ class Assembler
     assert( getConstantDataEnd() + getInitializedVarsEnd() == dataMemory.count, "Data Memory size mismatch" )
     
     let setupSrc = Source()
+    addSource(setupSrc)
+    
     setupSrc.name = "setupData".d
     setupSrc.shortName = "setupData".d
-    addSource(setupSrc)
     
     // Insert data to copy
     for i in stride(from:0, to:dataMemory.count, by:2)
@@ -212,26 +219,29 @@ class Assembler
         return false
       }
 
-      // Account for prefixed instructions
+      // Get the instruction size
+      //let instSize = inst.size
+      
+      // Get the instruction as an InstWithImmediate,
+      // so we can replace references or prefixed immediates
+      let theInst = mcInst as? InstWithImmediate
+      
+      // Account for possible prefixed instruction
       var thePrefix:TypeP? = nil
-      var pfixOffs = 0
       if let op = inst.exOperand
       {
         thePrefix = TypeP( op:1, ops:[op], rk:[] )
         thePrefix!.setPrefixValue(a:op.u16value)   // Set the prefix address bits
-        pfixOffs = 1
+        theInst?.setPrefixedValue(a:op.u16value)   // Update the prefixed immediate
       }
       
-      // Initialize some state variables
+      // Initialize some variables.
+      // These are used only for log purposes
       var isRelative = false
       var aa:Int? = nil
       var bankStr = ""
       
-      // Get the instruction as an InstWithImmediate,
-      // so we can replace references if needed
-      let theInst = mcInst as? InstWithImmediate
-      
-      // If we indeed have references to replace, proceed now
+      // If we have references we need to replace them by actual values
       if ( theInst != nil && theInst!.refKind.isDisjoint(with:[.relative, .absolute]) == false )
       {
         var here = 0;
@@ -241,7 +251,7 @@ class Assembler
         if theInst!.refKind.contains(.relative)
         {
           isRelative = true
-          here = source.instructionsOffset + memIdx + pfixOffs + 1 // add 1 because the PC always points to the next instruction
+          here = source.instructionsOffset + memIdx + /*pfixOffs + 1*/ inst.size // add inst.size because the PC always points to the next instruction
         }
         
         // Compute the destination address
@@ -395,16 +405,83 @@ class Assembler
   func optimizeImmediates() -> Bool
   {
     let setup = sources[0]
-    setup.localSymTable["setupAddr".d]?.value = getInstructionsEnd()
+    let instend = getInstructionsEnd()
+    setup.localSymTable["setupAddr".d]?.value = instend
     setup.localSymTable["dataAddr".d]?.value = 0
     setup.localSymTable["wordLength".d]?.value = (getConstantDataEnd() + getInitializedVarsEnd()) / 2
   
-    // Compute source offsets and symbol values
+    // Replace instructions that must be optimized
     
+    var madeChange = false
     for j in 0..<sources.count
     {
       let source = sources[j]
-      source.instructionsOffset = (j > 0 ? sources[j-1].getInstructionsEnd() : 0)
+      var memIdx = 0
+      for inst in source.instructions
+      {
+        var aa = 0
+        let instSize = inst.size
+        let mcInst = inst.mcInst;
+        let theInst = mcInst as? InstWithImmediate
+        
+        // We are only interested on intructions with
+        // relative offsets or absolute values/addresses
+        if ( theInst != nil && theInst!.refKind.isDisjoint(with:[.relative, .absolute]) == false )
+        {
+          var here = 0;
+          
+          if theInst!.refKind.contains(.relative) {
+            here =  source.instructionsOffset + memIdx + instSize } // add instSize because the PC always points to the next instruction
+          
+          // Compute the destination address
+          assert( inst.symOp != nil, "Instruction should have a symOp" )
+          let op = inst.symOp!
+          if let symInfo = getMemoryAddress(sym: op.sym!, src:source) {
+            aa = symInfo.value + op.value - here }
+          
+          // Get the acceptable range for this instruction
+          let inCoreRange = theInst!.inRange(aa)
+          
+          // Replace the instruction if appropiate
+          
+          if ( inst.hasPfix && inCoreRange ) { inst.hasPfix = false }
+          else if ( !inst.hasPfix && !inCoreRange ) {inst.hasPfix = true }
+          let instSizeDif = inst.size - instSize
+
+          // Did we replace the instruction?
+          if instSizeDif != 0
+          {
+            // The size of a new instruction is different from the old one, so we need
+            // to update this source size and correct all following source offsets.
+            // This is not perfect because it won't acount for absolute references
+            // whithin the same source, but it will reduce the total
+            // number of replacement iterations
+            madeChange = true
+            source.instructionsEnd += instSizeDif
+            for k in stride(from:j+1, to:sources.count, by:1) {
+              sources[k].instructionsOffset += instSizeDif }
+          }
+        }
+        
+        memIdx += instSize
+      }
+    }
+    
+    // Return early if we did not make changes
+    if ( !madeChange ) {
+      return false }
+    
+   // Compute symbol values
+   
+    /* FIX ME:
+    This is quite an uneficient way of doing it. It would be better to maintain
+    a sequential array of SymInfos, with the symbol tables only pointing
+    to element indexes in the array. This way we could quickly update
+    the symInfo values without having to touch the symboltables at all
+    */
+    for j in 0..<sources.count
+    {
+      let source = sources[j]
       var memIdx = 0
       
       for inst in source.instructions
@@ -423,70 +500,13 @@ class Assembler
             default : out.exitWithError( "Unsuported bank" )
           }
         }
-        
-        if inst.hasPfix { memIdx += 1 }
-        memIdx += 1
+        memIdx += inst.size
       }
       
-      source.instructionsEnd = memIdx
+      //source.instructionsEnd = memIdx
     }
     
-    // Replace instructions that must be optimized
-    
-    var madeChange = false
-    for j in 0..<sources.count
-    {
-      let source = sources[j]
-      var memIdx = 0
-      for inst in source.instructions
-      {
-        var aa = 0
-        let hasPfix = inst.hasPfix
-        let mcInst = inst.mcInst;
-        let theInst = mcInst as? InstWithImmediate
-        
-        // We are only interested on intructions with
-        // relative offsets or absolute values/addresses
-        if ( theInst != nil && theInst!.refKind.isDisjoint(with:[.relative, .absolute]) == false )
-        {
-          var here = 0;
-          let pfixOffs = (hasPfix ? 1 : 0);
-          
-          if theInst!.refKind.contains(.relative) {
-            here =  source.instructionsOffset + memIdx + pfixOffs + 1 } // add 1 because the PC always points to the next instruction
-          
-          // Compute the destination address
-          let op = inst.symOp!
-          if let symInfo = getMemoryAddress(sym: op.sym!, src:source) {
-            aa = symInfo.value + op.value - here }
-          
-          // Get the acceptable range for this instruction
-          let inCoreRange = theInst!.inRange(aa)
-          
-          // Replace the instruction if appropiate
-          var instSizeDif = 0
-          if ( hasPfix && inCoreRange ) { inst.hasPfix = false ; instSizeDif = -1 }
-          else if ( !hasPfix && !inCoreRange ) {inst.hasPfix = true ; instSizeDif = 1 }
-
-          // Did we replace the instruction?
-          if instSizeDif != 0
-          {
-            // The size of a new instruction is different from the old one, so we need
-            // to correct all source offsets. This is not perfect because it doesn't acount
-            // for absolute references whithin the same source, but it will reduce the total
-            // number of replacement iterations
-            madeChange = true
-            for k in stride(from:j+1, to:sources.count, by:1) {
-              sources[k].instructionsOffset += instSizeDif }
-          }
-        }
-        
-        if hasPfix { memIdx += 1 }
-        memIdx += 1
-      }
-    }
-    
-    return madeChange
+    return true
  }
 
   //-------------------------------------------------------------------------------------------
@@ -514,7 +534,7 @@ class Assembler
 
     // Generate initialized vars
     
-    out.logln( "\nInitialized Variables:" )
+    out.logln( "\nInitialised Variables:" )
     for source in sources {
       if !assembleVariableData(source:source) { break }
     }
@@ -530,7 +550,7 @@ class Assembler
   
     // Unitialized variables do not require any machine code, so only some log for them
     
-    out.logln( "\nUnitialized Variables:" )
+    out.logln( "\nUnitialised Variables:" )
     if out.logEnabled
     {
       let prStr = String(format:"%05d : %d bytes", getConstantDataEnd()+getInitializedVarsEnd(), getUninitializedVarsEnd() )
@@ -544,15 +564,12 @@ class Assembler
   // Assemble all available Sources and DataValues
   func assembleProgram()
   {
-    appendSetupData()
-  
     for source in sources {
       if !assembleProgram(source:source) { break }
     }
   }
   
-  
-    //-------------------------------------------------------------------------------------------
+  //-------------------------------------------------------------------------------------------
   // Assemble all sources
   func assemble()
   {
@@ -564,6 +581,8 @@ class Assembler
   
     // Invoke the assembler
     assembleData()
+    
+    appendSetupData()
     
     out.logln( "-----" )
     out.logln( "\(console.destination!.absoluteString)" )

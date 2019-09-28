@@ -18,12 +18,7 @@ let out = ConsoleIO()
 //-------------------------------------------------------------------------------------------
 // C74_sim
 //
-// Main class for the assembler
-// Assembling is performed in two steps.
-// - First step is a single pass source file parsing with generation
-// of an internal representation of Sources including symbol table generation
-// - Second step is the generation of the actual machine code by visiting and
-// combining the internal representation into actual machine code
+// Main class for the simulator
 //-------------------------------------------------------------------------------------------
 
 class C74_sim

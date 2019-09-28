@@ -37,6 +37,9 @@ class C74_as
     // Create a Source instance and
     let source = Source()
     
+    // Add the Source to the assembler
+    assembler.addSource( source )
+    
     // Pass the source along with the assembler object to a
     // new SourceParser instance for immediate parsing
     let sourceParser = SourceParser(withData:data, source:source, assembler:assembler)
@@ -45,7 +48,7 @@ class C74_as
     if sourceParser.parse()
     {
       // Add the Source to the assembler
-      assembler.addSource( source )
+      //assembler.addSource( source )
       out.logln()
       return true
     }

@@ -12,7 +12,6 @@ import Foundation
 // Operand
 //-------------------------------------------------------------------------------------------
 
-
 // Operand attribute flags
 struct OpOption: OptionSet
 {
@@ -68,7 +67,7 @@ class Operand : CustomDebugStringConvertible
 class OpReg : Operand
 {
   // Description string for logging purposes
-  override var debugDescription: String { return value == 7 ? "SP" : "r\(value)" }
+  override var debugDescription: String { return value == 11 ? "SP" : "r\(value)" }
 }
 
 // Immediate value operand
@@ -114,10 +113,8 @@ class Instruction : Hashable, CustomDebugStringConvertible
   var mcInst:MachineInstr?   // Machine Instruction or nil
   
   // Hash stuff for object use as a dictionary key
-  var hashValue: Int
-  {
-      return name.hashValue
-  }
+  var hashValue: Int {
+      return name.hashValue }
 
   // Equal operator implementation for object use as a dictionary key
   static func == (lhs: Instruction, rhs: Instruction) -> Bool
@@ -132,6 +129,12 @@ class Instruction : Hashable, CustomDebugStringConvertible
     }
     
     return true
+  }
+  
+  var size: Int
+  {
+    if hasPfix { return 2 }
+    return 1
   }
   
   // Description string for logging purposes
@@ -238,10 +241,9 @@ class Source
   var uninitializedVarsEnd = 0          // Uninitialized vars memory size
   
   var localSymTable:Dictionary<Data,SymTableInfo> = [:]    // Local symbol table
-  
-  
+  var defsTable:Dictionary<Data,Int> = [:] // Register defs table
 
-// Absolute address just past the last instruction in program memory
+  // Absolute address just past the last instruction in program memory
   func getInstructionsEnd() -> Int {
     return instructionsOffset + instructionsEnd }
 
@@ -262,7 +264,7 @@ class Source
   {
     instr.mcInst = MachineInstrList.newMachineInst(instr)
     instructions.append(instr)
-    instructionsEnd += ( instr.hasPfix ? 2 : 1 )
+    instructionsEnd += instr.size //( instr.hasPfix ? 2 : 1 )
     //instructionsEnd += ( instr.hasExOperand ? 2 : 1 )
   }
   

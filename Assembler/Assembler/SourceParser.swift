@@ -87,21 +87,35 @@ class SourceParser:PrimitiveParser
     
     return nil
   }
- 
+  
   //-------------------------------------------------------------------------------------------
-  func parsePrimitiveOperand( opt:OpOption ) -> (Operand, Bool)?
+  func parseRegisterOperand( opt:OpOption ) -> Int?
   {
-    // Register
+   // Register
+   let svsc = c
     if parseChar(UInt8(ascii:"r")) || parseChar(UInt8(ascii:"R"))
     {
-      if let value = parseInteger() { return (value == 7 ? OpReg(value, opt.union(.isSP)) : OpReg(value, opt) , false)}
-      else { error( "Expecting register number" ) }
+      if let value = parseInteger() { return value }
+      else { c = svsc }
+      //else { error( "Expecting register number" ) }
     }
     
     // Stack pointer
     if parseConcreteToken(cStr: "sp".d) || parseConcreteToken(cStr: "SP".d)
     {
-      return (OpReg(7, opt.union(.isSP)), false)
+      return 11
+    }
+    
+    return nil
+  }
+ 
+  //-------------------------------------------------------------------------------------------
+  func parsePrimitiveOperand( opt:OpOption ) -> (Operand, Bool)?
+  {
+    // Register
+    if let regNum = parseRegisterOperand( opt:opt )
+    {
+       return (regNum == 11 ? OpReg(regNum, opt.union(.isSP)) : OpReg(regNum, opt) , false)
     }
     
     // Absolute address symbol in data memory
@@ -128,9 +142,20 @@ class SourceParser:PrimitiveParser
     
     // Instruction embeeded address symbol that may correspond
     // to a program memory label or jump table address
-    if let addr = parseAddressToken()
+    if let addr = parsePrefixedToken( prefix: ".L".d )
     {
       return (OpSym(addr, opt) , false)
+    }
+    
+    // Symbol that may correspond to a register def
+    let svsc = c
+    if let tokenDef = parseToken()
+    {
+      if let regNum = src.defsTable[tokenDef] {
+        return (regNum == 11 ? OpReg(regNum, opt.union(.isSP)) : OpReg(regNum, opt) , false) }
+      
+      else { error( "Expecting register or register def" ) }
+      c = svsc
     }
     
     return nil
@@ -670,7 +695,7 @@ class SourceParser:PrimitiveParser
       // Set the address value
       switch currBank
       {
-        case .program  : break //; symInfo!.value = src.getInstructionsEnd()
+        case .program  : symInfo!.value = src.getInstructionsEnd()
         case .constant : symInfo!.value = src.getConstantDataEnd()
         case .variable : symInfo!.value = src.getInitializedVarsEnd()
         default : error( "Unsuported bank" )
@@ -712,14 +737,35 @@ class SourceParser:PrimitiveParser
   }
   
   //-------------------------------------------------------------------------------------------
+  func parseDef() -> Bool
+  {
+    if parseConcreteToken(cStr: ".def".d )
+    {
+      skipSpTab()
+      if let token = parseToken()
+      {
+        skipSpTab()
+        if parseChar( UInt8(ascii:"=") )
+        {
+          skipSpTab()
+          if let regNum = parseRegisterOperand(opt:[])
+          {
+            src.defsTable[token] = regNum
+            return true
+          }
+          else { error ( "Expected register operand" ) }
+        }
+        else { error( "Expected '=' after def token" ) }
+      }
+      else { error( "Expected def token") }
+    }
+    return false
+  }
+  
+  //-------------------------------------------------------------------------------------------
   // Entry function for the parser
   func parse() -> Bool
   {
-    src.instructionsOffset = asm.getInstructionsEnd()
-    src.constantDatasOffset = asm.getConstantDataEnd()
-    src.initializedVarsOffset = asm.getInitializedVarsEnd()
-    src.uninitializedVarsOffset = asm.getUninitializedVarsEnd()
-
     while true
     {
       skip()
@@ -744,12 +790,13 @@ class SourceParser:PrimitiveParser
           error( "Unknown assembler directive" )
         }
         if parseInstruction() { continue }
-        break;
+        continue // allow empty lines after a tab
       }
       else
       {
         if parseLabel() { continue }
         if parseSet() { continue }
+        if parseDef() { continue }
         break
       }
     }

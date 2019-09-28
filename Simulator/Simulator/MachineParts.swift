@@ -12,6 +12,7 @@ private let ProgramMemorySize = 0x10000*2     // 128 kb program memory
 private let DataMemorySize    = 0x10000       // 64 kb data memory
 
 //-------------------------------------------------------------------------------------------
+// Extension utilities
 extension UInt16
 {
   var i16:Int16    { return Int16(truncatingIfNeeded:self) }
@@ -20,8 +21,14 @@ extension UInt16
   var i:Int        { return Int(self) }
   var b:Bool       { return (self != 0) }
   var s:Bool       { return (self & 0x8000) != 0 }
-  subscript( end:UInt16, beg:UInt16 ) -> UInt16 { get { return (self << (15-end)) >> (15-end+beg) } }
-  subscript( bit:UInt16 ) -> Bool { get { return (self & (1<<bit)) != 0 } }
+  
+  subscript( end:UInt16, beg:UInt16 ) -> UInt16 {
+    get { return (self << (15-end)) >> (15-end+beg) } }
+  
+  subscript( bit:UInt16 ) -> Bool {
+    get { return (self & (1<<bit)) != 0 }
+    set(v) { self = ( self & ~(1<<bit)) | (v.u16<<bit) } }
+
   func sext( _ end:UInt16, _ beg:UInt16 ) -> UInt16 { return ((self.i16 << (15-end)) >> (15-end+beg)).u16 }
   var zext:UInt16  { return self[7,0] }
   var sext:UInt16  { return sext(7,0) }
@@ -82,10 +89,6 @@ class DataMemory
   
   // Memory value at current address // (get/set)
   var value:UInt16 {return self[mar]}
-//  {
-//    get {return self[mar]}
-//    //set(v) {self[mar] = v}
-//  }
   
   // Memory write
   func writew() { self[mar] = mdr }
@@ -124,94 +127,31 @@ class DataMemory
   }
 }
 
-////-------------------------------------------------------------------------------------------
-//class DataMemory
-//{
-//  // Memory address register
-//  var mar:UInt16 = 0
-//
-//  // Memory value at current address (get/set)
-//  var value:UInt16 { get {return self[mar]} set(v) {self[mar] = v} }
-//
-//  // Memory size
-//  var size:UInt16 { return (memory.count).u16 }   // size in bytes
-//
-//  // Memory, private
-//  private var memory = Data(count:DataMemorySize)
-//  private subscript (address:UInt16) -> UInt16
-//  {
-//    get {
-//      if ( address % 2 != 0 ) { out.exitWithError( "Unaligned word access to memory" ) }
-//      return UInt16(lo:memory[address.i], hi:memory[address.i+1])
-//    }
-//    set (v) {
-//      if ( address % 2 != 0 ) { out.exitWithError( "Unaligned word access to memory" ) }
-//      memory[address.i]   = v.lo
-//      memory[address.i+1] = v.hi
-//    }
-//  }
-//
-//  var sb:UInt16
-//  {
-//    get
-//    {
-////      let v = self[mar | ~1]
-////      return ((mar & 1) != 0) ? v.sext(15,8) : v.sext(7,0)
-//      return self[mar].sext
-//    }
-//  }
-//
-//  var zb:UInt16
-//  {
-//    get
-//    {
-//      return self[mar].zext
-//    }
-//    set(v)
-//    {
-//      self[mar] = v[7,0]
-//    }
-//  }
-//
-//
-////  // Byte access functions
-////  func sb( _ address:UInt16 ) -> UInt16 {
-////    return UInt16(memory[address.i]).sext
-////  }
-////
-////  func zb( _ address:UInt16 ) -> UInt16 {
-////    return UInt16(memory[address.i]).zext
-////  }
-////
-////  func b( _ address:UInt16, _ value:UInt16 ) {
-////    memory[address.i] = value.lo
-////  }
-//}
-
 //-------------------------------------------------------------------------------------------
 class Registers : CustomDebugStringConvertible
 {
   var regs = [UInt16](repeating:0, count:8)
+  var sp = UInt16(0)
   subscript(r:UInt16) -> UInt16 { get { return regs[r.i] } set(v) { regs[r.i] = v } }
-  var sp:UInt16 { get { return regs[7] } set(v) { regs[7] = v } }
+  //var sp:UInt16 { get { return regs[7] } set(v) { regs[7] = v } }
   
   var debugDescription: String
   {
     var str = String()
-    for i in 0..<7
+    for i in 0..<8
     {
-      str += String(format:"r%d=%d", i, regs[i].i16)
+      str += String(format:"\tr%d=%d", i, regs[i].i16)
       str += ", "
     }
   
-    str += String(format:"sp=%d", regs[7])
+    str += String(format:"sp=%d", sp)
     
-//    str += "\n"
-//    for i in stride(from:0, to:6, by:2)
-//    {
-//      if ( i != 0 ) { str += ", " }
-//      str += String(format:"r%d:r%d=%d", i, i+1, Int(regs[i])<<16 | Int(regs[i+1]) )
-//    }
+    str += "\n\t\t\t\t\t\t\t\t\t"
+    for i in stride(from:0, to:8, by:2)
+    {
+      if ( i != 0 ) { str += ", " }
+      str += String(format:"\tr%d:r%d=%d", i, i+1, Int(regs[i]) | Int(regs[i+1])<<16 )
+    }
     
     return str
   }
@@ -219,10 +159,22 @@ class Registers : CustomDebugStringConvertible
 }
 
 //-------------------------------------------------------------------------------------------
+class PrefixRegister
+{
+  private var _value:UInt16 = 0
+  private var _enable = false
+  var value:UInt16
+  {
+    get { let v = _enable ? _value : 0 ; _enable = false ; return v }
+    set(v) { _value = v ; _enable = true }
+  }
+}
+
+//-------------------------------------------------------------------------------------------
 class Status
 {
-  var az:Bool = false
-  var ac:Bool = false
+//  var az:Bool = false
+//  var ac:Bool = false
   var z:Bool = false
   var c:Bool = false
   var s:Bool = false
@@ -238,14 +190,26 @@ class ALU
 {
   var sr = Status()
   
-  // Set arithmetic flags based on operands and result
-  func seta( _ a:UInt16, _ b:UInt16, _ res:UInt16, ar:Bool=true )
+  // Adder, returns result and flags
+  func adder( _ a:UInt16, _ b:UInt16, c:Bool, z:Bool=true) -> (res:UInt16, st:Status)
   {
-    sr.z = res == 0
-    sr.c = (res < a) || (res < b)
-    sr.s = res.s
-    sr.v = (!a.s && !b.s && res.s) || (a.s && b.s && !res.s )
-    if ar { sr.az = sr.z ; sr.ac = sr.c }
+    let st = Status()
+    let res32 = UInt32(a) + UInt32(b) + UInt32(c.u16)
+    let res = UInt16(truncatingIfNeeded:res32)
+    st.z = z && (res == 0)
+    st.c = res32 > 0xffff
+    st.s = res.s
+    st.v = (!a.s && !b.s && res.s) || (a.s && b.s && !res.s )
+    return ( res, st )
+  }
+  
+  // Set the status register based on passed in flags
+  func seta( _ st:Status /*, ar:Bool=true*/ )
+  {
+    sr.z = st.z
+    sr.c = st.c
+    sr.s = st.s
+    sr.v = st.v
   }
   
   // Set logical operation flags based on result
@@ -275,21 +239,26 @@ class ALU
   }
   
   // Operations
-  func cmp   ( _ a:UInt16, _ b:UInt16 ) { let res = a &+ ~b &+ 1 ; seta(a,b,res) }
   
-  func adda  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a &+ b ; return res }
-  func add   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a &+ b ; seta(a,b,res) ; return res }
-  func addc  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a &+ b &+ sr.c.u16 ; seta(a,b,res) ; return res }
-  func suba  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a &+ ~b &+ 1 ; return res }
-  func sub   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a &+ ~b &+ 1 ; seta(a,b,res) ; return res }
-  func subc  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a &+ ~b &+ sr.c.u16 ; seta(a,b,res) ; return res }
+  func cmp   ( _ a:UInt16, _ b:UInt16 ) { let res = adder(a,~b, c:true) ; seta(res.st) }
+  func cmpc  ( _ a:UInt16, _ b:UInt16 ) { let res = adder(a,~b, c:sr.c, z:sr.z) ; seta(res.st) }
+  
+  func sub   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,~b, c:true); seta(res.st) ; return res.res }
+  func subc  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,~b, c:sr.c, z:sr.z); seta(res.st) ; return res.res }
+  
+  func add   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,b, c:false); seta(res.st) ; return res.res }
+  func addc  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,b, c:sr.c, z:sr.z); seta(res.st) ; return res.res }
+  
+  func adda  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,b, c:false); return res.res }
+  func suba  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,~b, c:true); return res.res }
+  
   func or    ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a | b ; setl(res) ; return res }
   func and   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a & b ; setl(res) ; return res }
   func xor   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a ^ b ; setl(res) ; return res }
   
-  func lsr   ( _ a:UInt16 ) -> UInt16 { let res = a >> 1 ; return res }
-  func lsl   ( _ a:UInt16 ) -> UInt16 { let res = a << 1 ; return res }
-  func asr   ( _ a:UInt16 ) -> UInt16 { let res = (a.i16>>1).u16 ; return res }
+  func lsr   ( _ a:UInt16 ) -> UInt16 { let res = a >> 1 ; setl(res); sr.c = a[0]; return res }
+  func lsrc  ( _ a:UInt16 ) -> UInt16 { var res = a >> 1 ; res[15] = sr.c; setl(res); sr.c = a[0]; return res }
+  func asr   ( _ a:UInt16 ) -> UInt16 { var res = a >> 1 ; res[15] = a[15]; setl(res); sr.c = a[0]; return res }
   func neg   ( _ a:UInt16 ) -> UInt16 { let res = sub( 0, a ) ; return res }
   func not   ( _ a:UInt16 ) -> UInt16 { let res = ~a ; setl(res) ; return res }
   func inca2 ( _ a:UInt16 ) -> UInt16 { let res = adda( a, 2 ) ; return res }
@@ -298,45 +267,7 @@ class ALU
   func sext  ( _ a:UInt16 ) -> UInt16 { let res = a.sext ; return res }
   func bswap ( _ a:UInt16 ) -> UInt16 { let res = UInt16(lo:a.hi, hi:a.lo) ; return res }
   func sextw ( _ a:UInt16 ) -> UInt16 { let res = (a.i16>>15).u16 ; return res }
-
-//  func two( _ op:ALUOp2, _ a:UInt16, _ b:UInt16 ) -> UInt16
-//  {
-//    var res:UInt16
-//    switch op
-//    {
-//      case .adda : res = a &+ b
-//      case .add  : res = a &+ b ; seta(a,b,res)
-//      case .addc : res = a &+ b &+ sr.c.u16 ; seta(a,b,res)
-//      case .suba : res = a &+ ~b &+ 1
-//      case .sub  : res = a &+ ~b &+ 1 ; seta(a,b,res)
-//      case .subc : res = a &+ ~b &+ sr.c.u16 ; seta(a,b,res)
-//      case .cmp  : res = a &+ ~b &+ 1 ; seta(a,b,res,ar:false)
-//      case .or   : res = a | b ; setl(res)
-//      case .and  : res = a & b ; setl(res)
-//      case .xor  : res = a ^ b ; setl(res)
-//    }
-//    return res
-//  }
-//
-//  func one( _ op:ALUOp1, _ a:UInt16 ) -> UInt16
-//  {
-//    var res:UInt16
-//    switch op
-//    {
-//      case .lsr  : res = a >> 1
-//      case .lsl  : res = a << 1
-//      case .asr  : res = (a.i16>>1).u16
-//      case .neg  : res = self.two(.sub, 0, a) ; seta(0,a,res)
-//      case .not  : res = ~a ; setl(res)
-//      case .inca : res = self.two(.adda, a, 1)
-//      case .deca : res = self.two(.suba, a, 1)
-//      case .zext : res = a.zext
-//      case .sext : res = a.sext
-//      case .bswap : res = UInt16(lo:a.hi, hi:a.lo)
-//      case .sextw : res = (a.i16>>15).u16
-//    }
-//    return res
-//  }
+  
 }
 
 
