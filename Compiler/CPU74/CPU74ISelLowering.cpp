@@ -15,7 +15,6 @@
 
 #include "CPU74InstrInfo.h"
 #include "CPU74MachineFunctionInfo.h"
-//#include "CPU74Subtarget.h"
 #include "CPU74TargetMachine.h"
 #include "llvm/CodeGen/CallingConvLower.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
@@ -53,14 +52,14 @@ CPU74TargetLowering::CPU74TargetLowering(const CPU74TargetMachine &TM /*jlz, con
   setBooleanVectorContents(ZeroOrOneBooleanContent); // FIXME: Is this correct?
 
   // We have post-incremented loads / stores.
-//  setIndexedLoadAction(ISD::POST_INC, MVT::i8, Legal);   // JLZ
+//  setIndexedLoadAction(ISD::POST_INC, MVT::i8, Legal);
 //  setIndexedLoadAction(ISD::POST_INC, MVT::i16, Legal);
 
   for (MVT VT : MVT::integer_valuetypes())
   {
-    setLoadExtAction(ISD::EXTLOAD,  VT, MVT::i1,  Promote);
-    setLoadExtAction(ISD::SEXTLOAD, VT, MVT::i1,  Promote);
-    setLoadExtAction(ISD::ZEXTLOAD, VT, MVT::i1,  Promote);
+//    setLoadExtAction(ISD::EXTLOAD,  VT, MVT::i1,  Promote);
+//    setLoadExtAction(ISD::SEXTLOAD, VT, MVT::i1,  Promote);
+//    setLoadExtAction(ISD::ZEXTLOAD, VT, MVT::i1,  Promote);
     // JLZ setLoadExtAction(ISD::SEXTLOAD, VT, MVT::i8,  Expand);
     // JLZ setLoadExtAction(ISD::SEXTLOAD, VT, MVT::i16, Expand);
     
@@ -73,28 +72,19 @@ CPU74TargetLowering::CPU74TargetLowering(const CPU74TargetMachine &TM /*jlz, con
   
   
   setOperationAction(ISD::SHL_PARTS,        MVT::i16,   Expand);
-  //setOperationAction(ISD::SHL_PARTS,        MVT::i32,   Expand);
   setOperationAction(ISD::SRL_PARTS,        MVT::i16,   Expand);
-  //setOperationAction(ISD::SRL_PARTS,        MVT::i32,   Expand);
   setOperationAction(ISD::SRA_PARTS,        MVT::i16,   Expand);
-  //setOperationAction(ISD::SRA_PARTS,        MVT::i32,   Expand);
 
   setOperationAction(ISD::SRA,              MVT::i16,   Custom);
   setOperationAction(ISD::SHL,              MVT::i16,   Custom);
   setOperationAction(ISD::SRL,              MVT::i16,   Custom);
-  //setOperationAction(ISD::SRA,              MVT::i32,   Expand); // aqui
-  //setOperationAction(ISD::SHL,              MVT::i32,   Expand); // aqui
-  //setOperationAction(ISD::SRL,              MVT::i32,   Expand); // aqui
   
-//  setOperationAction(ISD::SRA,              MVT::i16,   LibCall);
-//  setOperationAction(ISD::SHL,              MVT::i16,   LibCall);
-//  setOperationAction(ISD::SRL,              MVT::i16,   LibCall);
+  setOperationAction(ISD::SRA,              MVT::i32,   Custom); // Custom lower 32 bit shifts
+  setOperationAction(ISD::SHL,              MVT::i32,   Custom); // aqui
+  setOperationAction(ISD::SRL,              MVT::i32,   Custom); // aqui
   
   setOperationAction(ISD::ROTL,             MVT::i16,   Expand);
   setOperationAction(ISD::ROTR,             MVT::i16,   Expand);
-  
-
-  
   
   setOperationAction(ISD::CTTZ,             MVT::i16,   Custom);
   //setOperationAction(ISD::CTTZ,             MVT::i16,   LibCall);
@@ -109,16 +99,29 @@ CPU74TargetLowering::CPU74TargetLowering(const CPU74TargetMachine &TM /*jlz, con
   setOperationAction(ISD::ExternalSymbol,   MVT::i16,   Custom);
   setOperationAction(ISD::BlockAddress,     MVT::i16,   Custom);
   setOperationAction(ISD::JumpTable,        MVT::i16,   Custom);
-  
+   
 // JLZ afegit
-    setOperationAction(ISD::SELECT,           MVT::i16,   Expand);
-    setOperationAction(ISD::BRCOND,           MVT::Other, Expand);
+  setOperationAction(ISD::SELECT,           MVT::i16,   Expand);
+  setOperationAction(ISD::SELECT,           MVT::i32,   Expand);
     
-    setOperationAction(ISD::SETCC,            MVT::i16,   Custom);
-    setOperationAction(ISD::SELECT_CC,        MVT::i16,   Custom);
-    setOperationAction(ISD::BR_CC,            MVT::i16,   Custom);
+  setOperationAction(ISD::BRCOND,           MVT::Other, Expand);
     
-    setOperationAction(ISD::BR_JT,            MVT::Other, Expand);
+  setOperationAction(ISD::SETCC,            MVT::i1,   Custom);  // no se segur si cal
+  setOperationAction(ISD::SETCC,            MVT::i16,   Custom);
+  setOperationAction(ISD::SELECT_CC,        MVT::i16,   Custom);
+  setOperationAction(ISD::BR_CC,            MVT::i16,   Custom);
+    
+  setOperationAction(ISD::SETCC,            MVT::i32,   Custom);
+  setTargetDAGCombine(ISD::ZERO_EXTEND);  // custom combine zero extends from SETCC nodes
+    
+  setOperationAction(ISD::SELECT_CC,        MVT::i32,   Custom);
+  setTargetDAGCombine(ISD::SELECT);        // custom combine i32 SELECT into SELECT_CC
+    
+  setOperationAction(ISD::BR_CC,            MVT::i32,   Custom);
+  setTargetDAGCombine(ISD::BRCOND);       // custom combine i32 BRCOND into BR_CC
+  
+  setOperationAction(ISD::BR_JT,            MVT::Other, Expand);
+
 
   //setOperationAction(ISD::SIGN_EXTEND,      MVT::i16,   Custom);
   //setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i16, Expand);
@@ -126,8 +129,10 @@ CPU74TargetLowering::CPU74TargetLowering(const CPU74TargetMachine &TM /*jlz, con
   setOperationAction(ISD::STACKSAVE, MVT::Other, Expand);
   setOperationAction(ISD::STACKRESTORE, MVT::Other, Expand);
 
+  // This is needed to handle i1 bit results from setcc instructions
   setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i1,   Expand);
   
+  setOperationAction(ISD::ADD,               MVT::i32, Custom);  // Custom lower 32 bit adds
   setOperationAction(ISD::UADDO,             MVT::i16, Custom);
   setOperationAction(ISD::USUBO,             MVT::i16, Custom);
   setOperationAction(ISD::ADDCARRY,          MVT::i16, Custom);
@@ -152,12 +157,10 @@ CPU74TargetLowering::CPU74TargetLowering(const CPU74TargetMachine &TM /*jlz, con
   setOperationAction(ISD::VAEND,            MVT::Other, Expand);
   setOperationAction(ISD::VACOPY,           MVT::Other, Expand);
 
-
   // Compute derived properties from the register classes
   // This is tells LLVM the native/allowed data types for this target
   const CPU74Subtarget &STI = *TM.getSubtargetImpl();
   computeRegisterProperties(STI.getRegisterInfo());
-  
   
   struct LibCallsStruct
   {
@@ -252,7 +255,7 @@ CPU74TargetLowering::CPU74TargetLowering(const CPU74TargetMachine &TM /*jlz, con
   // We have target-specific dag combine patterns for the following nodes:
 //  setTargetDAGCombine(ISD::LOAD);
 //  setTargetDAGCombine(ISD::STORE);
-  setTargetDAGCombine(ISD::SELECT_CC);
+//  setTargetDAGCombine(ISD::SELECT_CC);
   
   //Memset memcpy memcmp behaviour
   MaxStoresPerMemset = 4;
@@ -263,6 +266,11 @@ CPU74TargetLowering::CPU74TargetLowering(const CPU74TargetMachine &TM /*jlz, con
   MaxStoresPerMemmoveOptSize = 4;
   MaxLoadsPerMemcmp = 4;
   MaxLoadsPerMemcmpOptSize = 4;
+  
+  // This is required to tell llvm that we don't want branches to be agressivelly
+  // optimized into selects
+  PredictableSelectIsExpensive = true;
+  setJumpIsExpensive(false);
 
   // On CPU74 arguments smaller than 2 bytes are extended, so all arguments
   // are at least 2 bytes aligned.
@@ -270,7 +278,6 @@ CPU74TargetLowering::CPU74TargetLowering(const CPU74TargetMachine &TM /*jlz, con
   setMinFunctionAlignment(2);
   setPrefFunctionAlignment(2);
 }
-
 
 bool CPU74TargetLowering::allowsMisalignedMemoryAccesses(EVT VT, unsigned AddrSpace,
                                         unsigned Align,
@@ -288,7 +295,6 @@ bool CPU74TargetLowering::allowsMisalignedMemoryAccesses(EVT VT, unsigned AddrSp
 //  }
   return false;
 }
-
 
 EVT CPU74TargetLowering::getOptimalMemOpType(uint64_t Size, unsigned DstAlign, unsigned SrcAlign,
                           bool IsMemset, bool ZeroMemset, bool MemcpyStrSrc,
@@ -311,7 +317,30 @@ EVT CPU74TargetLowering::getOptimalMemOpType(uint64_t Size, unsigned DstAlign, u
     return MVT::Other;
 }
 
+bool CPU74TargetLowering::shouldFormOverflowOp(unsigned Opcode, EVT VT) const
+{
+  // This indicates whether llvm should try to convert math with an
+  // overflow comparison into the corresponding DAG,
+  // We always return false to prevent adds with overflow to be converted
+  // into uaddo comparisons, as we already optimise this in getCMPNode
+  return false;
+}
 
+bool CPU74TargetLowering::shouldConvertConstantLoadToIntImm(const APInt &Imm, Type *Ty) const
+{
+  // We prefer immediate constant loads over constant pool loads
+  // (Used by the default memset implementation)
+  return true;
+}
+
+bool CPU74TargetLowering::isSExtCheaperThanZExt(EVT SrcVT, EVT DstVT) const
+{
+  // This is possibly rather irrelevant as most instructions already
+  // have implicit zero or sign extend semantics, but we favour signextension
+  // over zero extension as a rule of thumb
+  // (Used by integer promotion code around BR_CC, SELECT_CC and SETCC)
+  return true;
+}
 
 bool CPU74TargetLowering::isLegalAddImmediate(int64_t Immed) const
 {
@@ -326,27 +355,14 @@ bool CPU74TargetLowering::isLegalICmpImmediate(int64_t Immed) const
   return valid;
 }
 
-
-//bool CPU74TargetLowering::isLegalAddressingMode(const DataLayout &DL,
-//                                              const AddrMode &AM, Type *Ty,
-//                                              unsigned AS, Instruction *I) const
-//{
-////  if ( !CPU74Imm::isImm6_d( AM.BaseOffs ) || !CPU74Imm::isImm8u( AM.BaseOffs ))
-////    return false;
-//
-//  return TargetLoweringBase::isLegalAddressingMode(DL, AM, Ty, AS, I);
-//}
-
-
-
 bool CPU74TargetLowering::isLegalAddressingMode(const DataLayout &DL,
                                               const AddrMode &AM, Type *Ty,
                                               unsigned AS, Instruction *I) const
 {
 
   // Allows immediate fields
-  if ( !CPU74Imm::isImm6_d( AM.BaseOffs ) || !CPU74Imm::isImm8u( AM.BaseOffs ))
-    return false;
+//  if ( !CPU74Imm::isImm5_d( AM.BaseOffs ) || !CPU74Imm::isImm8u( AM.BaseOffs ))
+//    return false;
 
   // Global vars as allowed provided no immediates or registers.
   if (AM.BaseGV)
@@ -400,7 +416,7 @@ CPU74TargetLowering::getRegForInlineAsmConstraint(
   if (Constraint.size() == 1) {
     // GCC Constraint Letters
     switch (Constraint[0]) {
-    default: break;
+    default: break; 
     case 'r':   // GENERAL_REGS
 //JLZ      if (VT == MVT::i8)
 //JLZ        return std::make_pair(0U, &CPU74::GR8RegClass);
@@ -413,61 +429,156 @@ CPU74TargetLowering::getRegForInlineAsmConstraint(
 }
 
 
+
 //===----------------------------------------------------------------------===//
 //                      32 bit
 //===----------------------------------------------------------------------===//
 
+void CPU74TargetLowering::ReplaceNodeResults(SDNode *N,
+                                              SmallVectorImpl<SDValue> &Results,
+                                              SelectionDAG &DAG) const
+{
+  EVT VT = N->getValueType(0);
+  unsigned Opc = N->getOpcode();
+  SDValue Res;
 
-//void CPU74TargetLowering::ReplaceNodeResults(SDNode *N,
-//                                              SmallVectorImpl<SDValue> &Results,
-//                                              SelectionDAG &DAG) const
-//{
-//  EVT VT = N->getValueType(0);
-//  if ( VT != MVT::i32 )
-//    return;
-//
-//  unsigned Opc = N->getOpcode();
-//
-//  switch (Opc)
-//  {
-//    case ISD::ADD:
-//      SDValue Op = SDValue(N, 0);
-//      SDValue RES = LowerADD(Op, DAG);
-//      Results.push_back(RES);
-//      break;
-//  }
-//  return;
-//}
+  if ( VT != MVT::i32 )
+    return;
 
-//SDValue CPU74TargetLowering::LowerADDSUBCARRY(SDValue Op, SelectionDAG &DAG) const
-//{
-//  const SDLoc &dl(Op);
-//  unsigned Opc = Op.getOpcode();
-//}
+  switch (Opc)
+  {
+    case ISD::ADD:
+      Res = ExpandADD32(N, DAG);
+      break;
+      
+    case ISD::SRL:
+    case ISD::SRA:
+    case ISD::SHL:
+      Res = ExpandSHIFT32(N,DAG);
+      break;
+  }
+  
+  if ( Res.getNode() )
+      Results.push_back(Res);
+}
+
+SDValue CPU74TargetLowering::ExpandADD32(SDNode *N, SelectionDAG &DAG) const
+{
+  EVT VT = N->getValueType(0);
+  SDLoc dl(N);
+  
+  assert( VT == MVT::i32 && "Should be i32 entering here" );
+  
+  SDValue LHS = N->getOperand(0);
+  SDValue RHS = N->getOperand(1);
+  
+  if ( ConstantSDNode *RHSC = dyn_cast<ConstantSDNode>(RHS.getNode()) )
+  {
+    int value = -RHSC->getZExtValue();
+    if ( CPU74Imm::isImm8u( value ) )
+    {
+      SDValue negated = DAG.getConstant( value, dl, VT);
+      return DAG.getNode( ISD::SUB, dl, VT, LHS, negated );
+    }
+  }
+  return SDValue();
+}
+
+SDValue CPU74TargetLowering::ExpandSHIFT32(SDNode *N, SelectionDAG &DAG) const
+{
+  EVT VT = N->getValueType(0);
+  SDLoc dl(N);
+  
+  assert( VT == MVT::i32 && "Should be i32 entering here" );
+  
+  SDValue Amount = N->getOperand(1);
+
+  // We only want to lower constant shifts
+  ConstantSDNode *AmtC = dyn_cast<ConstantSDNode>(Amount.getNode());
+  if ( AmtC == NULL )
+    return SDValue();
+
+  // We will only lower particular constants
+  int shift = AmtC->getZExtValue();
+
+  // For exactly 8 bit and above 16 shifts
+  // use the standard lowering procedure
+  if ( shift >= 16 || shift == 8 )
+    return SDValue();
+
+  // Obtain the new opcodes for lowering
+  unsigned Opc = N->getOpcode();
+  unsigned Opc0 = 0, Opc1 = 0;
+  switch ( Opc )
+  {
+  
+    case ISD::SRL: Opc0 = CPU74ISD::LSR; Opc1 = CPU74ISD::LSRC; break;
+    case ISD::SRA: Opc0 = CPU74ISD::ASR; Opc1 = CPU74ISD::LSRC; break;
+    case ISD::SHL: Opc0 = CPU74ISD::LSL; Opc1 = CPU74ISD::LSLC; break;
+    default: assert( 1 && "Should be a 32 bit shift" );
+  }
+  
+  SDValue Target = N->getOperand(0);
+  
+  // Create a shift by 8
+  if ( shift & 8 )
+  {
+    // This will be later standard lowered
+    Target = DAG.getNode(Opc, dl, VT, Target,
+                    DAG.getConstant(8, dl, MVT::i16));
+  }
+  
+  // Create a series of long shifts by 1, lowered into shift and rotate pairs
+  for (int i = (shift & 7); i != 0; --i )
+  {
+    SDValue Lo = DAG.getNode(ISD::EXTRACT_ELEMENT, dl, MVT::i16, Target,
+                            DAG.getConstant(0, dl, MVT::i16));
+    SDValue Hi = DAG.getNode(ISD::EXTRACT_ELEMENT, dl, MVT::i16, Target,
+                            DAG.getConstant(1, dl, MVT::i16));
+
+    SDVTList VTs = DAG.getVTList(MVT::i16, MVT::i16);
+    
+    if ( Opc == ISD::SHL ) 
+    {
+      Lo = DAG.getNode( Opc0, dl, VTs, Lo );
+      Hi = DAG.getNode( Opc1, dl, VTs, Hi, Lo.getValue(1) );
+    }
+    else
+    {
+      Hi = DAG.getNode( Opc0, dl, VTs, Hi );
+      Lo = DAG.getNode( Opc1, dl, VTs, Lo, Hi.getValue(1) );
+    }
+    
+    Target = DAG.getNode(ISD::BUILD_PAIR, dl, VT, Lo, Hi);
+  }
+  
+  return Target;
+}
 
 SDValue CPU74TargetLowering::LowerUALUO(SDValue Op, SelectionDAG &DAG) const
 {
-  MVT VT = Op.getSimpleValueType();
+  EVT VT = Op.getValueType();
   SDLoc dl(Op);
   
   unsigned Opc = 0;
   switch ( Op.getOpcode() )
   {
     default : llvm_unreachable("Invalid UADDSUBO Opcode");
-    case ISD::UADDO : Opc = CPU74ISD::ADDO ; break;
-    case ISD::USUBO : Opc = CPU74ISD::SUBO ; break;
+    case ISD::UADDO : Opc = CPU74ISD::ADD ; break;
+    case ISD::USUBO : Opc = CPU74ISD::SUB ; break;
   }
   
   SDVTList VTs = DAG.getVTList(VT, MVT::i16);
   SDValue Result = DAG.getNode(Opc, dl, VTs, Op.getOperand(0), Op.getOperand(1) );
-  SDValue Carry = Result.getValue(1); 
+  //SDValue Carry = Result.getValue(1);
 
-  return DAG.getNode(ISD::MERGE_VALUES, dl, Op.getNode()->getVTList(), Result, Carry);
+  return Result;
+  //return DAG.getNode(ISD::MERGE_VALUES, dl, Op.getNode()->getVTList(), Result, Carry);
 }
 
 SDValue CPU74TargetLowering::LowerADDSUBCARRY(SDValue Op, SelectionDAG &DAG) const
 {
-  MVT VT = Op.getSimpleValueType();
+  EVT VT = Op.getValueType();
   SDLoc dl(Op);
 
   unsigned Opc = 0;
@@ -482,17 +593,18 @@ SDValue CPU74TargetLowering::LowerADDSUBCARRY(SDValue Op, SelectionDAG &DAG) con
   
   SDVTList VTs = DAG.getVTList(VT, MVT::i16);
   SDValue Result = DAG.getNode(Opc, dl, VTs, Op.getOperand(0), Op.getOperand(1), Carry);
-  Carry = Result.getValue(1);
+  //Carry = Result.getValue(1);
 
-  return DAG.getNode(ISD::MERGE_VALUES, dl, Op.getNode()->getVTList(), Result, Carry);
+  return Result;
+  //return DAG.getNode(ISD::MERGE_VALUES, dl, Op.getNode()->getVTList(), Result, Carry);
 }
+
 
 //===----------------------------------------------------------------------===//
 //                      Calling Convention Implementation
 //===----------------------------------------------------------------------===//
 
 #include "CPU74GenCallingConv.inc"
-
 
 //transform physical registers into virtual registers and
 /// generate load operations for arguments places on the stack.
@@ -638,8 +750,6 @@ SDValue CPU74TargetLowering::LowerFormalArguments(
   return Chain;
   
 }
-
-
 
 /// LowerCallResult - Lower the result values of a call into the
 /// appropriate copies out of appropriate physical registers.
@@ -829,17 +939,17 @@ SDValue CPU74TargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
     {
       assert(VA.isMemLoc());
       
-      if (!StackPtr.getNode())
-        StackPtr = DAG.getCopyFromReg(Chain, dl, CPU74::SP, PtrVT);    // aqui aqui
-
-      SDValue PtrOff = DAG.getNode(ISD::ADD, dl, PtrVT, StackPtr,
-              DAG.getIntPtrConstant(VA.getLocMemOffset(), dl));
-      
-      
-//      SDValue ArgLoc = DAG.getNode( CPU74ISD::CallArgLoc, dl, PtrVT );
+//      if (!StackPtr.getNode())
+//        StackPtr = DAG.getCopyFromReg(Chain, dl, CPU74::SP, PtrVT);    // aqui aqui
 //
-//      SDValue PtrOff = DAG.getNode(ISD::ADD, dl, PtrVT, ArgLoc,
+//      SDValue PtrOff = DAG.getNode(ISD::ADD, dl, PtrVT, StackPtr,
 //              DAG.getIntPtrConstant(VA.getLocMemOffset(), dl));
+      
+      
+      SDValue ArgLoc = DAG.getNode( CPU74ISD::CallArgLoc, dl, PtrVT );
+
+      SDValue PtrOff = DAG.getNode(ISD::ADD, dl, PtrVT, ArgLoc,
+              DAG.getIntPtrConstant(VA.getLocMemOffset(), dl));
       
       ISD::ArgFlagsTy Flags = Outs[i].Flags;
       
@@ -881,10 +991,9 @@ SDValue CPU74TargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   SDValue InFlag;
   for (unsigned i = 0, e = RegsToPass.size(); i != e; ++i)
   {
-    unsigned theReg = RegsToPass[i].first;
-    SDValue theValue = RegsToPass[i].second;
-  
-  
+//    unsigned theReg = RegsToPass[i].first;
+//    SDValue theValue = RegsToPass[i].second;
+
     Chain = DAG.getCopyToReg(Chain, dl, RegsToPass[i].first, RegsToPass[i].second, InFlag);
     InFlag = Chain.getValue(1);
   }
@@ -1091,7 +1200,7 @@ SDValue CPU74TargetLowering::LowerGlobalAddress(SDValue Op, SelectionDAG &DAG) c
   const GlobalValue *GV = cast<GlobalAddressSDNode>(Op)->getGlobal();
   int64_t offset = cast<GlobalAddressSDNode>(Op)->getOffset();
   MVT PtrVT = getPointerTy(DAG.getDataLayout());
-  Type *type = GV->getValueType();
+  //Type *type = GV->getValueType();
 
   SDLoc dl(Op);
 
@@ -1128,17 +1237,6 @@ SDValue CPU74TargetLowering::LowerJumpTable(SDValue Op, SelectionDAG &DAG) const
   return DAG.getNode(CPU74ISD::AggregateWrapper, dl, PtrVT, tjtN);
 }
 
-//SDValue CPU74TargetLowering::LowerGlobalAddress(SDValue Op,
-//                                                 SelectionDAG &DAG) const {
-//  const GlobalValue *GV = cast<GlobalAddressSDNode>(Op)->getGlobal();
-//  int64_t Offset = cast<GlobalAddressSDNode>(Op)->getOffset();
-//  auto PtrVT = getPointerTy(DAG.getDataLayout());
-//
-//  // Create the TargetGlobalAddress node, folding in the constant offset.
-//  SDValue Result = DAG.getTargetGlobalAddress(GV, SDLoc(Op), PtrVT, Offset);
-//  return DAG.getNode(CPU74ISD::Wrapper, SDLoc(Op), PtrVT, Result);
-//}
-
 SDValue CPU74TargetLowering::LowerExternalSymbol(SDValue Op,
                                                   SelectionDAG &DAG) const {
   SDLoc dl(Op);
@@ -1160,8 +1258,6 @@ SDValue CPU74TargetLowering::LowerBlockAddress(SDValue Op,
   //return DAG.getNode(CPU74ISD::SingleValWrapper, dl, PtrVT, Result);
   return DAG.getNode(CPU74ISD::AggregateWrapper, dl, PtrVT, Result);
 }
-
-
 
 static bool isSupportedCondition( CPU74CC::CondCodes CondCode )
 {
@@ -1185,8 +1281,6 @@ static bool isSupportedCondition( CPU74CC::CondCodes CondCode )
         return false;
   }
 }
-
-
 
 static bool isPreferredCondition( CPU74CC::CondCodes CondCode )
 {
@@ -1245,96 +1339,6 @@ static CPU74CC::CondCodes ISDCCToCPU74CC(ISD::CondCode CC)
   }
 }
 
-
-//
-//static SDValue EmitCMP(SDValue &LHS, SDValue &RHS, SDValue &TargetCC,
-//                       ISD::CondCode CC, const SDLoc &dl, SelectionDAG &DAG) {
-//  // FIXME: Handle bittests someday
-//  assert(!LHS.getValueType().isFloatingPoint() && "We don't handle FP yet");
-//
-//  // FIXME: Handle jump negative someday
-//  CPU74CC::CondCodes TCC = CPU74CC::COND_INVALID;
-//  switch (CC) {
-//  default: llvm_unreachable("Invalid integer condition!");
-//  case ISD::SETEQ:
-//    TCC = CPU74CC::COND_E;     // aka COND_Z
-//    // Minor optimization: if LHS is a constant, swap operands, then the
-//    // constant can be folded into comparison.
-//    if (LHS.getOpcode() == ISD::Constant)
-//      std::swap(LHS, RHS);
-//    break;
-//  case ISD::SETNE:
-//    TCC = CPU74CC::COND_NE;    // aka COND_NZ
-//    // Minor optimization: if LHS is a constant, swap operands, then the
-//    // constant can be folded into comparison.
-//    if (LHS.getOpcode() == ISD::Constant)
-//      std::swap(LHS, RHS);
-//    break;
-//  case ISD::SETULE:
-//    std::swap(LHS, RHS);
-//    LLVM_FALLTHROUGH;
-//  case ISD::SETUGE:
-//    // Turn lhs u>= rhs with lhs constant into rhs u< lhs+1, this allows us to
-//    // fold constant into instruction.
-//    if (const ConstantSDNode * C = dyn_cast<ConstantSDNode>(LHS)) {
-//      LHS = RHS;
-//      RHS = DAG.getConstant(C->getSExtValue() + 1, dl, C->getValueType(0));
-//      TCC = CPU74CC::COND_LO;
-//      break;
-//    }
-//    TCC = CPU74CC::COND_HS;    // aka COND_C
-//    break;
-//  case ISD::SETUGT:
-//    std::swap(LHS, RHS);
-//    LLVM_FALLTHROUGH;
-//  case ISD::SETULT:
-//    // Turn lhs u< rhs with lhs constant into rhs u>= lhs+1, this allows us to
-//    // fold constant into instruction.
-//    if (const ConstantSDNode * C = dyn_cast<ConstantSDNode>(LHS)) {
-//      LHS = RHS;
-//      RHS = DAG.getConstant(C->getSExtValue() + 1, dl, C->getValueType(0));
-//      TCC = CPU74CC::COND_HS;
-//      break;
-//    }
-//    TCC = CPU74CC::COND_LO;    // aka COND_NC
-//    break;
-//  case ISD::SETLE:
-//    std::swap(LHS, RHS);
-//    LLVM_FALLTHROUGH;
-//  case ISD::SETGE:
-//    // Turn lhs >= rhs with lhs constant into rhs < lhs+1, this allows us to
-//    // fold constant into instruction.
-//    if (const ConstantSDNode * C = dyn_cast<ConstantSDNode>(LHS)) {
-//      LHS = RHS;
-//      RHS = DAG.getConstant(C->getSExtValue() + 1, dl, C->getValueType(0));
-//      TCC = CPU74CC::COND_L;
-//      break;
-//    }
-//    TCC = CPU74CC::COND_GE;
-//    break;
-//  case ISD::SETGT:
-//    std::swap(LHS, RHS);
-//    LLVM_FALLTHROUGH;
-//  case ISD::SETLT:
-//    // Turn lhs < rhs with lhs constant into rhs >= lhs+1, this allows us to
-//    // fold constant into instruction.
-//    if (const ConstantSDNode * C = dyn_cast<ConstantSDNode>(LHS)) {
-//      LHS = RHS;
-//      RHS = DAG.getConstant(C->getSExtValue() + 1, dl, C->getValueType(0));
-//      TCC = CPU74CC::COND_GE;
-//      break;
-//    }
-//    TCC = CPU74CC::COND_L;
-//    break;
-//  }
-//
-//  TargetCC = DAG.getConstant(TCC, dl, MVT::i8);
-//  return DAG.getNode(CPU74ISD::CMP, dl, MVT::Glue, LHS, RHS);
-//}
-//
-//
-
-
 // Tweak operands and branch conditions to get a preferred
 // branch chain that can be optimized later in CPU74InstrInfo::analyzeBranch
 static void optimizeBranchOperands( SDValue &LHS, SDValue &RHS,
@@ -1385,7 +1389,6 @@ static void optimizeBranchOperands( SDValue &LHS, SDValue &RHS,
   }
 }
 
-
 // Get constant CC node.
 // Makes changes to LHS or RHS to account for unsupported CCs
 static SDValue getCCNode( SDValue &LHS, SDValue &RHS, const SDLoc &dl, SelectionDAG &DAG,
@@ -1406,6 +1409,7 @@ static SDValue getCCNode( SDValue &LHS, SDValue &RHS, const SDLoc &dl, Selection
   // by supported, preferred ones
   if ( ConstantSDNode *RHSC = dyn_cast<ConstantSDNode>(RHS.getNode()) )
   {
+      EVT VT = RHS.getValueType();
       int64_t C = RHSC->getSExtValue();
       uint64_t UC = RHSC->getZExtValue();
     
@@ -1418,22 +1422,22 @@ static SDValue getCCNode( SDValue &LHS, SDValue &RHS, const SDLoc &dl, Selection
 
             case CPU74CC::COND_UGT:   // supported, not preferred
                 CondCode = CPU74CC::COND_UGE;
-                RHS = DAG.getConstant(UC+1, dl, MVT::i16);
+                RHS = DAG.getConstant(UC+1, dl, VT);
                 break;
               
             case CPU74CC::COND_GT:    // supported, not preferred
                 CondCode = CPU74CC::COND_GE;
-                RHS = DAG.getConstant(C+1, dl, MVT::i16);
+                RHS = DAG.getConstant(C+1, dl, VT);
                 break;
 
             case CPU74CC::COND_ULE:   // not supported
                 CondCode = CPU74CC::COND_ULT;
-                RHS = DAG.getConstant(UC+1, dl, MVT::i16);
+                RHS = DAG.getConstant(UC+1, dl, VT);
                 break;
               
             case CPU74CC::COND_LE:    // not supported
                 CondCode = CPU74CC::COND_LT;
-                RHS = DAG.getConstant(C+1, dl, MVT::i16);
+                RHS = DAG.getConstant(C+1, dl, VT);
                 break;
           }
       }
@@ -1452,6 +1456,25 @@ static SDValue getCCNode( SDValue &LHS, SDValue &RHS, const SDLoc &dl, Selection
   return DAG.getConstant(CondCode, dl, MVT::i16);
 }
 
+
+static SDValue ExpandCMP32(SDValue &LHS, SDValue &RHS, SelectionDAG &DAG)
+{
+  SDLoc dl(LHS);
+
+  SDValue LHSLo = DAG.getNode(ISD::EXTRACT_ELEMENT, SDLoc(LHS), MVT::i16, LHS,
+                            DAG.getConstant(0, dl, MVT::i16));
+  SDValue LHSHi = DAG.getNode(ISD::EXTRACT_ELEMENT, SDLoc(LHS), MVT::i16, LHS,
+                            DAG.getConstant(1, dl, MVT::i16));
+
+  SDValue RHSLo = DAG.getNode(ISD::EXTRACT_ELEMENT, SDLoc(RHS), MVT::i16, RHS,
+                            DAG.getConstant(0, dl, MVT::i16));
+  SDValue RHSHi = DAG.getNode(ISD::EXTRACT_ELEMENT, SDLoc(RHS), MVT::i16, RHS,
+                            DAG.getConstant(1, dl, MVT::i16));
+
+  SDValue First = DAG.getNode(CPU74ISD::CMP, dl, MVT::i16, LHSLo, RHSLo);
+  return DAG.getNode(CPU74ISD::CMPC, dl, MVT::i16, LHSHi, RHSHi, First );
+}
+
 // Get a new CMP node or a replacement for an existing one
 // that will produce comparision flags
 static SDValue getCMPNode(SDValue &LHS, SDValue &RHS, const SDLoc &dl,
@@ -1466,6 +1489,18 @@ static SDValue getCMPNode(SDValue &LHS, SDValue &RHS, const SDLoc &dl,
       if ( 1 && (CC == ISD::CondCode::SETEQ || CC == ISD::CondCode::SETNE)
            && RHSC->getZExtValue() == 0 )
     {
+      if ( LHS.getValueType() == MVT::i32 )
+      {
+        SDValue LHSLo = DAG.getNode(ISD::EXTRACT_ELEMENT, SDLoc(LHS), MVT::i16, LHS,
+                            DAG.getConstant(0, dl, MVT::i16));
+        SDValue LHSHi = DAG.getNode(ISD::EXTRACT_ELEMENT, SDLoc(LHS), MVT::i16, LHS,
+                            DAG.getConstant(1, dl, MVT::i16));
+      
+        SDVTList VTs = DAG.getVTList(LHSLo.getValueType(), MVT::i16);
+        SDValue Replacement = DAG.getNode(CPU74ISD::OR, dl, VTs, LHSLo, LHSHi);
+        return Replacement.getValue(1);
+      }
+      
       unsigned OpCode = LHS.getOpcode();
       switch ( OpCode )
       {
@@ -1487,15 +1522,18 @@ static SDValue getCMPNode(SDValue &LHS, SDValue &RHS, const SDLoc &dl,
     SDVTList VTs = DAG.getVTList(LHS.getValueType(), MVT::i16);
     SDValue Replacement = DAG.getNode(newOpcode, dl, VTs, LHS.getOperand(0), LHS.getOperand(1));
     DAG.ReplaceAllUsesOfValueWith( LHS, Replacement );
-    return SDValue( Replacement.getNode(), 1);
+    return Replacement.getValue(1);
   }
+  
+  if ( LHS.getValueType() == MVT::i32 )
+    return ExpandCMP32( LHS, RHS, DAG );
+  
   return DAG.getNode(CPU74ISD::CMP, dl, MVT::i16, LHS, RHS);
 }
 
 
 SDValue CPU74TargetLowering::LowerSETCC(SDValue Op, SelectionDAG &DAG) const
 {
-  EVT VT = Op.getValueType();
   SDLoc dl(Op);
 
   SDValue LHS = Op.getOperand(0);
@@ -1505,18 +1543,7 @@ SDValue CPU74TargetLowering::LowerSETCC(SDValue Op, SelectionDAG &DAG) const
   SDValue TargetCC = getCCNode(LHS, RHS, dl, DAG, CC);
   SDValue CMPNode = getCMPNode(LHS, RHS, dl, DAG, CC);
   
-//  MVT CMPNodeTy = CMPNode.getSimpleValueType();
-//  unsigned opCode = (CMPNodeTy == MVT::Glue ? CPU74ISD::SET_CC_g : CPU74ISD::SET_CC_i);
-  //unsigned opCode = CPU74ISD::SET_CC;
-  
-  return DAG.getNode(CPU74ISD::SET_CC, dl, VT, TargetCC, CMPNode);
-
-//  SDVTList VTs = DAG.getVTList(VT, CMPNodeTy);
-//  SDValue OPs[] = {TargetCC, CMPNode};
-//
-//  return DAG.getNode(opCode, dl, VTs, OPs);
-  
-//  return DAG.getNode(CPU74ISD::SET_CC, dl, VT, TargetCC, CMPNode);
+  return DAG.getNode(CPU74ISD::SET_CC, dl, MVT::i16, TargetCC, CMPNode);
 }
 
 
@@ -1553,7 +1580,6 @@ SDValue CPU74TargetLowering::LowerSETCC(SDValue Op, SelectionDAG &DAG) const
 //}
 
 
-
 SDValue CPU74TargetLowering::LowerSELECT_CC(SDValue Op,
                                              SelectionDAG &DAG) const
 {
@@ -1583,18 +1609,8 @@ SDValue CPU74TargetLowering::LowerSELECT_CC(SDValue Op,
   SDValue TargetCC = DAG.getConstant(CondCode, dl, MVT::i16);
   SDValue CMPNode = getCMPNode(LHS, RHS, dl, DAG, CC);
   
-//  MVT CMPNodeTy = CMPNode.getSimpleValueType();
-//  unsigned opCode = (CMPNodeTy == MVT::Glue ? CPU74ISD::SEL_CC_g : CPU74ISD::SEL_CC_i);
-//  unsigned opCode = CPU74ISD::SEL_CC;
-  
   return DAG.getNode(CPU74ISD::SEL_CC, dl, VT, TrueV, FalseV, TargetCC, CMPNode );
-
-//  SDVTList VTs = DAG.getVTList(VT, CMPNodeTy);
-//  SDValue OPs[] = {TrueV, FalseV, TargetCC, CMPNode};
-//
-//  return DAG.getNode(opCode, dl, VTs, OPs  );
 }
-
 
 
 SDValue CPU74TargetLowering::LowerBR_CC(SDValue Op, SelectionDAG &DAG) const
@@ -1614,24 +1630,6 @@ SDValue CPU74TargetLowering::LowerBR_CC(SDValue Op, SelectionDAG &DAG) const
 
   return DAG.getNode(CPU74ISD::BR_CC, dl, VT, Chain, Dest, TargetCC, CMPNode);
 }
-
-
-//SDValue CPU74TargetLowering::LowerSHL_PARTS(SDValue Op, SelectionDAG &DAG) const
-//{
-//  EVT VT = Op.getValueType();
-//  SDLoc dl(Op);
-//
-//  SDValue Lo = Op.getOperand(0);
-//  SDValue Hi = Op.getOperand(1);
-//  SDValue Amt = Op.getOperand(2);
-//  EVT AmtVT = Amt.getValueType();
-//
-//  SDValue LoShift = DAG.getNode( CPU74ISD::LSLO, dl, VT, Lo);
-//  SDValue Result = DAG.getNode( CPU74ISD::LSLC, dl, VT, Hi, LoShift.getValue(1));
-//
-//  return  Result;
-//}
-
 
 SDValue CPU74TargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const
 {
@@ -1663,7 +1661,7 @@ SDValue CPU74TargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const
   // Expand constant shifts into sequence of shifts.
   
   uint64_t ShiftAmount = cast<ConstantSDNode>(RHS)->getZExtValue();
-  SDValue Victim = LHS;
+ // SDValue Victim = LHS;
   
   unsigned tOpc = 0;
   switch (Opc)
@@ -1674,6 +1672,7 @@ SDValue CPU74TargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const
     default: llvm_unreachable("Invalid shift opcode!");
   }
   
+  
   // the front-end will not allow constant shifs above 16, but just in case...
   if ( ShiftAmount >= 16 )
     switch (tOpc)
@@ -1682,7 +1681,7 @@ SDValue CPU74TargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const
       case CPU74ISD::LSL:
       case CPU74ISD::LSR:
           // return zero
-          return DAG.getNode( ISD::AND, dl, VT, Victim, DAG.getConstant( 0x0000, dl, VT));
+          return DAG.getNode( ISD::AND, dl, VT, LHS, DAG.getConstant( 0x0000, dl, VT));
         
       case CPU74ISD::ASR:
           // handle in >=15 code
@@ -1690,7 +1689,9 @@ SDValue CPU74TargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const
     }
   
   
-  if ( ShiftAmount >= 15 )
+  if ( 1 && ShiftAmount >= 15 )
+  {
+    SDValue Zero = DAG.getConstant(0, dl, MVT::i16);
     switch (tOpc)
     {
       default: llvm_unreachable("Invalid shift opcode!");
@@ -1699,40 +1700,67 @@ SDValue CPU74TargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const
           // handle in >=8 code
           //break;
           
-          // AND Victim, 1, Rx
+          // AND lhs, 1, Rx
           // SELEQ 8000L, 0, Result
   
-          SDValue Zero = DAG.getConstant(0, dl, MVT::i16);
-          SDValue One = DAG.getConstant(1, dl, MVT::i16);
-          SDValue Shift = DAG.getConstant(0x8000, dl, MVT::i16);
-          SDVTList VTs = DAG.getVTList(VT, MVT::i16);
-          SDValue And = DAG.getNode(CPU74ISD::AND, dl, VTs, Victim, One);
-          SDValue CMPNode = SDValue( And.getNode(), 1);
-          SDValue TargetCC = DAG.getConstant(CPU74CC::COND_EQ, dl, MVT::i16);
-          return DAG.getNode(CPU74ISD::SEL_CC, dl, VT, Zero, Shift, TargetCC, CMPNode );
+//          SDValue One = DAG.getConstant(1, dl, MVT::i16);
+//          SDValue Shift = DAG.getConstant(0x8000, dl, MVT::i16);
+//          SDVTList VTs = DAG.getVTList(VT, MVT::i16);
+//          SDValue And = DAG.getNode(CPU74ISD::AND, dl, VTs, LHS, One);
+//          SDValue TargetCC = DAG.getConstant(CPU74CC::COND_EQ, dl, MVT::i16);
+//          return DAG.getNode(CPU74ISD::SEL_CC, dl, VT, Zero, Shift, TargetCC, And.getValue(1) );
         
+          SDValue One = DAG.getConstant(1, dl, MVT::i16);
+          SDValue And = DAG.getNode(ISD::AND, dl, VT, LHS, One);
+          SDValue Shift = DAG.getConstant(0x8000, dl, MVT::i16);
+        
+          return DAG.getNode( ISD::SELECT_CC, dl, VT,
+                And, Zero, Zero, Shift, DAG.getCondCode(ISD::SETEQ));
         }
       case CPU74ISD::LSR:
         {
-          // if we are here ShiftAmount is exactly 15, expand to
-          //    CMP Victim, 0
-          //    SETLT Result
-          SDValue Zero = DAG.getConstant(0, dl, VT);
-          SDValue TargetCC = DAG.getConstant(CPU74CC::COND_LT, dl, MVT::i16);
-          SDValue CMPNode = getCMPNode(Victim, Zero, dl, DAG);
+//          // if we are here ShiftAmount is exactly 15, expand to
+//          //    CMP lhs, 0
+//          //    SETLT Result
+//          // however, if the shift was preceded by XOR Val, -1 then use this
+//          //    CMP Val, 0
+//          //    SETGE Result
+//          unsigned Cond = CPU74CC::COND_LT;
+//          if ( LHS.getOpcode() == ISD::XOR )
+//            if ( ConstantSDNode *LHSOp1 = dyn_cast<ConstantSDNode>(LHS.getOperand(1)) )
+//              if ( LHSOp1->getSExtValue() == -1 ) {
+//                Cond = CPU74CC::COND_GE;
+//                LHS = LHS->getOperand(0);
+//              }
+//
+//          SDValue Zero = DAG.getConstant(0, dl, VT);
+//          SDValue TargetCC = DAG.getConstant(Cond, dl, MVT::i16);
+//          SDValue CMPNode = getCMPNode(LHS, Zero, dl, DAG);
+//
+//          return DAG.getNode(CPU74ISD::SET_CC, dl, VT, TargetCC, CMPNode );
 
-          //SDValue SetCC = DAG.getNode(CPU74ISD::SET_CC_g, dl, VT, TargetCC, CMPNode );
-          return DAG.getNode(CPU74ISD::SET_CC, dl, VT, TargetCC, CMPNode );
+          // if we are here ShiftAmount is exactly 15, expand to
+          //    SETCC  lhs, 0, setlt
+          // however, if the shift was preceded by XOR Val, -1 then use this
+          //    SETCC  Val, 0, setge
+          ISD::CondCode Cond = ISD::SETLT;
+          if ( LHS.getOpcode() == ISD::XOR )
+            if ( ConstantSDNode *LHSOp1 = dyn_cast<ConstantSDNode>(LHS.getOperand(1)) )
+              if ( LHSOp1->getSExtValue() == -1 )
+                Cond = ISD::SETGE, LHS = LHS->getOperand(0);
+    
+          return DAG.getNode( ISD::SETCC, dl, VT,
+              LHS, Zero, DAG.getCondCode(Cond));
         }
         
       case CPU74ISD::ASR:
           // expand to
-          //    SEXTW Victim, Result
-          return DAG.getNode(CPU74ISD::SEXTW, dl, VT, Victim);
+          //    SEXTW lhs, Result
+          return DAG.getNode(CPU74ISD::SEXTW, dl, VT, LHS);
     }
-  
+  }
   // Create Swap/extend combinations for shift amounts above 7
-  
+  SDValue Result = LHS;
   if ( ShiftAmount >= 8 )
   {
     ShiftAmount -= 8;
@@ -1742,30 +1770,31 @@ SDValue CPU74TargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const
       default: llvm_unreachable("Invalid shift opcode!");
       case CPU74ISD::LSL:
           // zero-extend then swap
-          ExNode = DAG.getNode( ISD::AND, dl, VT, Victim, DAG.getConstant( 0x00ff, dl, VT));
-          Victim = DAG.getNode( ISD::BSWAP, dl, VT, ExNode);
+          ExNode = DAG.getNode( ISD::AND, dl, VT, LHS, DAG.getConstant( 0x00ff, dl, VT));
+          Result = DAG.getNode( ISD::BSWAP, dl, VT, ExNode);
           break;
    
       case CPU74ISD::LSR:
           // swap then zero-extend
-          ExNode = DAG.getNode( ISD::BSWAP, dl, VT, Victim);
-          Victim = DAG.getNode( ISD::AND, dl, VT, ExNode, DAG.getConstant( 0x00ff, dl, VT));
+          ExNode = DAG.getNode( ISD::BSWAP, dl, VT, LHS);
+          Result = DAG.getNode( ISD::AND, dl, VT, ExNode, DAG.getConstant( 0x00ff, dl, VT));
           break;
         
       case CPU74ISD::ASR:
           // swap then sign-extend
-          ExNode = DAG.getNode( ISD::BSWAP, dl, VT, Victim);
-          Victim = DAG.getNode( ISD::SIGN_EXTEND_INREG, dl, VT, ExNode, DAG.getValueType(MVT::i8));
+          ExNode = DAG.getNode( ISD::BSWAP, dl, VT, LHS);
+          Result = DAG.getNode( ISD::SIGN_EXTEND_INREG, dl, VT, ExNode, DAG.getValueType(MVT::i8));
           break;
     }
   }
   
   // Expand the remaining shift amount into a series of single bit shifts
 
+  SDVTList VTs = DAG.getVTList(VT, MVT::i16);
   while (ShiftAmount--)
-    Victim = DAG.getNode(tOpc, dl, VT, Victim);
+    Result = DAG.getNode(tOpc, dl, VTs, Result);
   
-  return Victim;
+  return Result;
 }
 
 //SDValue CPU74TargetLowering::LowerUDIVREM(SDValue Op, SelectionDAG &DAG) const
@@ -1865,7 +1894,7 @@ SDValue CPU74TargetLowering::LowerFRAMEADDR(SDValue Op, SelectionDAG &DAG) const
   EVT VT = Op.getValueType();
   SDLoc dl(Op);
   unsigned Depth = cast<ConstantSDNode>(Op.getOperand(0))->getZExtValue();
-  SDValue FrameAddr = DAG.getCopyFromReg(DAG.getEntryNode(), dl, CPU74::R6, VT);
+  SDValue FrameAddr = DAG.getCopyFromReg(DAG.getEntryNode(), dl, CPU74::R7, VT);
   while (Depth--)
     FrameAddr = DAG.getLoad(VT, dl, DAG.getEntryNode(), FrameAddr, MachinePointerInfo());
 
@@ -1884,25 +1913,24 @@ SDValue CPU74TargetLowering::LowerDYNAMIC_STACKALLOC(SDValue Op, SelectionDAG &D
   SDValue Size  = Op.getOperand(1);
   unsigned align = cast<ConstantSDNode>(Op.getOperand(2))->getZExtValue();
 
+  // mov SP, SPcopy
+  // sub SPcopy, Size, Ri
+  // mov Ri, SP
   
-  SDValue SP = DAG.getRegister(CPU74::SP, VT);
-  
-//  SDValue SP = DAG.getCopyFromReg(Chain, dl, CPU74::SP, VT);
-//  Chain = SP.getValue(1);
-  
-  SP = DAG.getNode(ISD::SUB, dl, MVT::i16, SP, Size);
+  SDValue SPCopy = DAG.getCopyFromReg(Chain, dl, CPU74::SP, VT);
+  SDValue Ri = DAG.getNode(ISD::SUB, dl, VT, SPCopy, Size);
   if (align)
   {
     SDValue constN = DAG.getConstant(-(uint16_t)align, dl, VT);
-    SP = DAG.getNode(ISD::AND, dl, VT, SP.getValue(0), constN);
+    Ri = DAG.getNode(ISD::AND, dl, VT, Ri, constN);
   }
-
-  Chain = DAG.getCopyToReg(Chain, dl, CPU74::SP, SP);
   
-  SDValue Ops[2] = { SP, Chain };
-  return DAG.getMergeValues(Ops, dl);
+  Chain = DAG.getCopyToReg(Chain, dl, CPU74::SP, Ri);
+  
+  SDVTList VTs = DAG.getVTList(VT, MVT::Other);
+  return DAG.getNode(ISD::MERGE_VALUES, dl, VTs, Ri, Chain);
+  
 }
-
 
 SDValue CPU74TargetLowering::LowerVASTART(SDValue Op, SelectionDAG &DAG) const
 {
@@ -1966,433 +1994,181 @@ const char *CPU74TargetLowering::getTargetNodeName(unsigned Opcode) const
   case CPU74ISD::ASR:                return "CPU74ISD::ASR";
   case CPU74ISD::LSL:                return "CPU74ISD::LSL";
   case CPU74ISD::LSR:                return "CPU74ISD::LSR";
+  case CPU74ISD::LSLC:                return "CPU74ISD::LSLC";
+  case CPU74ISD::LSRC:                return "CPU74ISD::LSRC";
   case CPU74ISD::SEXTW:                return "CPU74ISD::SEXTW";
-  //case CPU74ISD::CallArgLoc:          return "CPU74ISD::CallArgLoc";
+  case CPU74ISD::CallArgLoc:          return "CPU74ISD::CallArgLoc";
   case CPU74ISD::CALL:               return "CPU74ISD::CALL";
   //case CPU74ISD::SingleValWrapper:    return "CPU74ISD::SingleValWrapper";
   case CPU74ISD::AggregateWrapper:    return "CPU74ISD::AggregateWrapper";
   case CPU74ISD::CMP:                return "CPU74ISD::CMP";
+  case CPU74ISD::CMPC:                return "CPU74ISD::CMPC";
   case CPU74ISD::ADD:                return "CPU74ISD::ADD";
   case CPU74ISD::SUB:                return "CPU74ISD::SUB";
   case CPU74ISD::AND:                return "CPU74ISD::AND";
   case CPU74ISD::OR:                 return "CPU74ISD::OR";
   case CPU74ISD::XOR:                return "CPU74ISD::XOR";
-  case CPU74ISD::ADDO:                return "CPU74ISD::ADDO";
-  case CPU74ISD::SUBO:                return "CPU74ISD::SUBO";
   case CPU74ISD::ADDC:                return "CPU74ISD::ADDC";
   case CPU74ISD::SUBC:                return "CPU74ISD::SUBC";
   case CPU74ISD::BR_CC:              return "CPU74ISD::BR_CC";
   case CPU74ISD::SET_CC:             return "CPU74ISD::SET_CC";
   case CPU74ISD::SEL_CC:             return "CPU74ISD::SEL_CC";
-//  case CPU74ISD::SWAP:               return "CPU74ISD::SWAP";
   }
   return nullptr;
 }
 
-// Comentat JLZ
-//bool CPU74TargetLowering::isTruncateFree(Type *Ty1,
-//                                          Type *Ty2) const {
-//  if (!Ty1->isIntegerTy() || !Ty2->isIntegerTy())
-//    return false;
-//
-//  return (Ty1->getPrimitiveSizeInBits() > Ty2->getPrimitiveSizeInBits());
-//}
-//
-//bool CPU74TargetLowering::isTruncateFree(EVT VT1, EVT VT2) const {
-//  if (!VT1.isInteger() || !VT2.isInteger())
-//    return false;
-//
-//  return (VT1.getSizeInBits() > VT2.getSizeInBits());
-//}
-//
-//bool CPU74TargetLowering::isZExtFree(Type *Ty1, Type *Ty2) const {
-//  // CPU74 implicitly zero-extends 8-bit results in 16-bit registers.
-//  return 0 && Ty1->isIntegerTy(8) && Ty2->isIntegerTy(16);
-//}
-//
-//bool CPU74TargetLowering::isZExtFree(EVT VT1, EVT VT2) const {
-//  // CPU74 implicitly zero-extends 8-bit results in 16-bit registers.
-//  return 0 && VT1 == MVT::i8 && VT2 == MVT::i16;
-//}
-//
-//bool CPU74TargetLowering::isZExtFree(SDValue Val, EVT VT2) const {
-//  return isZExtFree(Val.getValueType(), VT2);
-//}
 
-//===----------------------------------------------------------------------===//
-//  Other Lowering Code
-//===----------------------------------------------------------------------===//
-
-
-//MachineBasicBlock *
-//CPU74TargetLowering::EmitSelectCC(MachineInstr &MI, MachineBasicBlock *BB) const
-//{
-//  const TargetInstrInfo &TII = *BB->getParent()->getSubtarget().getInstrInfo();
-//  DebugLoc dl = MI.getDebugLoc();
-//
-// //JLZ assert((Opc == CPU74::Select16 || Opc == CPU74::Select8) && "Unexpected instr type to insert");
-// // assert((Opc == CPU74::Select16 ) && "Unexpected instr type to insert");
-//
-//  // To "insert" a SELECT instruction, we actually have to insert the diamond
-//  // control-flow pattern.  The incoming instruction knows the destination vreg
-//  // to set, the condition code register to branch on, the true/false values to
-//  // select between, and a branch opcode to use.
-//  const BasicBlock *LLVM_BB = BB->getBasicBlock();
-//  MachineFunction::iterator I = ++BB->getIterator();
-//
-//  //  thisMBB:
-//  //  ...
-//  //   TrueVal = ...
-//  //   cmpTY ccX, r1, r2
-//  //   jCC copy1MBB
-//  //   fallthrough --> copy0MBB
-//  MachineBasicBlock *thisMBB = BB;
-//  MachineFunction *F = BB->getParent();
-//  MachineBasicBlock *copy0MBB = F->CreateMachineBasicBlock(LLVM_BB);
-//  MachineBasicBlock *copy1MBB = F->CreateMachineBasicBlock(LLVM_BB);
-//  F->insert(I, copy0MBB);
-//  F->insert(I, copy1MBB);
-//  // Update machine-CFG edges by transferring all successors of the current
-//  // block to the new block which will contain the Phi node for the select.
-//  copy1MBB->splice(copy1MBB->begin(), BB,
-//                   std::next(MachineBasicBlock::iterator(MI)), BB->end());
-//  copy1MBB->transferSuccessorsAndUpdatePHIs(BB);
-//  // Next, add the true and fallthrough blocks as its successors.
-//  BB->addSuccessor(copy0MBB);
-//  BB->addSuccessor(copy1MBB);
-//
-//  BuildMI(BB, dl, TII.get(CPU74::JCC))
-//      .addMBB(copy1MBB)
-//      .addImm(MI.getOperand(3).getImm());
-//
-//  //  copy0MBB:
-//  //   %FalseValue = ...
-//  //   # fallthrough to copy1MBB
-//  BB = copy0MBB;
-//
-//  // Update machine-CFG edges
-//  BB->addSuccessor(copy1MBB);
-//
-//  //  copy1MBB:
-//  //   %Result = phi [ %FalseValue, copy0MBB ], [ %TrueValue, thisMBB ]
-//  //  ...
-//  BB = copy1MBB;
-//  BuildMI(*BB, BB->begin(), dl, TII.get(CPU74::PHI), MI.getOperand(0).getReg())
-//      .addReg(MI.getOperand(2).getReg())
-//      .addMBB(copy0MBB)
-//      .addReg(MI.getOperand(1).getReg())
-//      .addMBB(thisMBB);
-//
-//  MI.eraseFromParent(); // The pseudo instruction is gone now.
-//  return BB;
-//}
-
-
-// Comentat JLZ
-//MachineBasicBlock *
-//CPU74TargetLowering::EmitConstantShiftInstr(MachineInstr &MI,
-//                                     MachineBasicBlock *BB) const
-//
-//{
-//
-//  unsigned Imm = MI.getOperand(1).getImm();
-//  unsigned DstReg = MI.getOperand(0).getReg();
-//
-//  unsigned Opc;
-//  const TargetRegisterClass * RC;
-//  switch (MI.getOpcode())
-//  {
-//    default: llvm_unreachable("Invalid shift opcode!");
-//    case CPU74::Shl16:
-//        Opc = CPU74::LSLrr16;
-//        RC = &CPU74::GR16RegClass;
-//        break;
-//    case CPU74::Sra16:
-//        Opc = CPU74::ASRrr16;
-//        RC = &CPU74::GR16RegClass;
-//        break;
-//    case CPU74::Srl16:
-//   //Opc = CPU74::SAR16r1c;
-//        Opc = CPU74::LSRCrr16;
-//        RC = &CPU74::GR16RegClass;
-//        break;
-//  }
-//  return BB;
-//}
-
-
-
-
-//MachineBasicBlock *
-//CPU74TargetLowering::EmitShiftInstr(MachineInstr &MI,
-//                                     MachineBasicBlock *BB) const {
-//
-////   if ( MI.getOperand(0).isImm() )
-////   {
-////      return EmitConstantShiftInstr( MI, BB );
-////   }
-//
-//// Pseudo shift instructions with a non constant shift amount are expanded
-//// into a loop.
-//
-//  MachineFunction *F = BB->getParent();
-//  MachineRegisterInfo &RI = F->getRegInfo();
-//  DebugLoc dl = MI.getDebugLoc();
-//  const TargetInstrInfo &TII = *F->getSubtarget().getInstrInfo();
-//
-//  unsigned Opc;
-//  const TargetRegisterClass * RC;
-//  switch (MI.getOpcode()) {
-//  default: llvm_unreachable("Invalid shift opcode!");
-//  case CPU74::Shl16:
-//   //Opc = CPU74::SHL16r1;
-//   Opc = CPU74::LSLrr16;
-//   RC = &CPU74::GR16RegClass;
-//   break;
-//  case CPU74::Sra16:
-//   //Opc = CPU74::SAR16r1;
-//   Opc = CPU74::ASRrr16;
-//   RC = &CPU74::GR16RegClass;
-//   break;
-//  case CPU74::Srl16:
-//   //Opc = CPU74::SAR16r1c;
-//   Opc = CPU74::LSRCrr16;
-//   RC = &CPU74::GR16RegClass;
-//   break;
-//  }
-//
-//  const BasicBlock *LLVM_BB = BB->getBasicBlock();
-//  MachineFunction::iterator I = ++BB->getIterator();
-//
-//  // Create loop block
-//  MachineBasicBlock *LoopBB = F->CreateMachineBasicBlock(LLVM_BB);
-//  MachineBasicBlock *RemBB  = F->CreateMachineBasicBlock(LLVM_BB);
-//
-//  F->insert(I, LoopBB);
-//  F->insert(I, RemBB);
-//
-//  // Update machine-CFG edges by transferring all successors of the current
-//  // block to the block containing instructions after shift.
-//  RemBB->splice(RemBB->begin(), BB, std::next(MachineBasicBlock::iterator(MI)),
-//                BB->end());
-//  RemBB->transferSuccessorsAndUpdatePHIs(BB);
-//
-//  // Add edges BB => LoopBB => RemBB, BB => RemBB, LoopBB => LoopBB
-//  BB->addSuccessor(LoopBB);
-//  BB->addSuccessor(RemBB);
-//  LoopBB->addSuccessor(RemBB);
-//  LoopBB->addSuccessor(LoopBB);
-//
-//  unsigned ShiftAmtReg = RI.createVirtualRegister(&CPU74::GR16RegClass);
-//  unsigned ShiftAmtReg2 = RI.createVirtualRegister(&CPU74::GR16RegClass);
-//  unsigned ShiftReg = RI.createVirtualRegister(RC);
-//  unsigned ShiftReg2 = RI.createVirtualRegister(RC);
-//  unsigned ShiftAmtSrcReg = MI.getOperand(2).getReg();
-//  unsigned SrcReg = MI.getOperand(1).getReg();
-//  unsigned DstReg = MI.getOperand(0).getReg();
-//
-//  // BB:
-//  // cmp 0, N
-//  // je RemBB
-//  //BuildMI(BB, dl, TII.get(CPU74::CMP8ri))
-//  BuildMI(BB, dl, TII.get(CPU74::CMPkr16))
-//    .addReg(ShiftAmtSrcReg).addImm(0);
-//  BuildMI(BB, dl, TII.get(CPU74::JCC))
-//    .addMBB(RemBB)
-//    .addImm(CPU74CC::COND_EQ);
-//
-//  // LoopBB:
-//  // ShiftReg = phi [%SrcReg, BB], [%ShiftReg2, LoopBB]
-//  // ShiftAmt = phi [%N, BB],      [%ShiftAmt2, LoopBB]
-//  // ShiftReg2 = shift ShiftReg
-//  // ShiftAmt2 = ShiftAmt - 1;
-//  BuildMI(LoopBB, dl, TII.get(CPU74::PHI), ShiftReg)
-//    .addReg(SrcReg).addMBB(BB)
-//    .addReg(ShiftReg2).addMBB(LoopBB);
-//  BuildMI(LoopBB, dl, TII.get(CPU74::PHI), ShiftAmtReg)
-//    .addReg(ShiftAmtSrcReg).addMBB(BB)
-//    .addReg(ShiftAmtReg2).addMBB(LoopBB);
-//  BuildMI(LoopBB, dl, TII.get(Opc), ShiftReg2)
-//    .addReg(ShiftReg);
-//  //BuildMI(LoopBB, dl, TII.get(CPU74::SUB8ri), ShiftAmtReg2)
-//  BuildMI(LoopBB, dl, TII.get(CPU74::SUBkr16), ShiftAmtReg2)
-//    .addReg(ShiftAmtReg).addImm(1);
-//  BuildMI(LoopBB, dl, TII.get(CPU74::JCC))
-//    .addMBB(LoopBB)
-//    .addImm(CPU74CC::COND_NE);
-//
-//  // RemBB:
-//  // DestReg = phi [%SrcReg, BB], [%ShiftReg, LoopBB]
-//  BuildMI(*RemBB, RemBB->begin(), dl, TII.get(CPU74::PHI), DstReg)
-//    .addReg(SrcReg).addMBB(BB)
-//    .addReg(ShiftReg2).addMBB(LoopBB);
-//
-//  MI.eraseFromParent(); // The pseudo instruction is gone now.
-//  return RemBB;
-//}
-//
-
-
-//
-//
-//
-//MachineBasicBlock *
-//CPU74TargetLowering::EmitShiftInstr(MachineInstr &MI,
-//                                     MachineBasicBlock *BB) const {
-//  MachineFunction *F = BB->getParent();
-//  MachineRegisterInfo &RI = F->getRegInfo();
-//  DebugLoc dl = MI.getDebugLoc();
-//  const TargetInstrInfo &TII = *F->getSubtarget().getInstrInfo();
-//
-//  unsigned Opc;
-//  const TargetRegisterClass * RC;
-//  switch (MI.getOpcode()) {
-//  default: llvm_unreachable("Invalid shift opcode!");
-//  case CPU74::Shl8:
-//   //Opc = CPU74::SHL8r1;
-//   Opc = CPU74::LSLr8;
-//   RC = &CPU74::GR8RegClass;
-//   break;
-//  case CPU74::Shl16:
-//   //Opc = CPU74::SHL16r1;
-//   Opc = CPU74::LSLr16;
-//   RC = &CPU74::GR16RegClass;
-//   break;
-//  case CPU74::Sra8:
-//   //Opc = CPU74::SAR8r1;
-//   Opc = CPU74::ASRr8;
-//   RC = &CPU74::GR8RegClass;
-//   break;
-//  case CPU74::Sra16:
-//   //Opc = CPU74::SAR16r1;
-//   Opc = CPU74::ASRr16;
-//   RC = &CPU74::GR16RegClass;
-//   break;
-//  case CPU74::Srl8:
-//   //Opc = CPU74::SAR8r1c;
-//   Opc = CPU74::LSRCr8;
-//   RC = &CPU74::GR8RegClass;
-//   break;
-//  case CPU74::Srl16:
-//   //Opc = CPU74::SAR16r1c;
-//   Opc = CPU74::LSRCr16;
-//   RC = &CPU74::GR16RegClass;
-//   break;
-//  }
-//
-//  const BasicBlock *LLVM_BB = BB->getBasicBlock();
-//  MachineFunction::iterator I = ++BB->getIterator();
-//
-//  // Create loop block
-//  MachineBasicBlock *LoopBB = F->CreateMachineBasicBlock(LLVM_BB);
-//  MachineBasicBlock *RemBB  = F->CreateMachineBasicBlock(LLVM_BB);
-//
-//  F->insert(I, LoopBB);
-//  F->insert(I, RemBB);
-//
-//  // Update machine-CFG edges by transferring all successors of the current
-//  // block to the block containing instructions after shift.
-//  RemBB->splice(RemBB->begin(), BB, std::next(MachineBasicBlock::iterator(MI)),
-//                BB->end());
-//  RemBB->transferSuccessorsAndUpdatePHIs(BB);
-//
-//  // Add edges BB => LoopBB => RemBB, BB => RemBB, LoopBB => LoopBB
-//  BB->addSuccessor(LoopBB);
-//  BB->addSuccessor(RemBB);
-//  LoopBB->addSuccessor(RemBB);
-//  LoopBB->addSuccessor(LoopBB);
-//
-//  unsigned ShiftAmtReg = RI.createVirtualRegister(&CPU74::GR8RegClass);
-//  unsigned ShiftAmtReg2 = RI.createVirtualRegister(&CPU74::GR8RegClass);
-//  unsigned ShiftReg = RI.createVirtualRegister(RC);
-//  unsigned ShiftReg2 = RI.createVirtualRegister(RC);
-//  unsigned ShiftAmtSrcReg = MI.getOperand(2).getReg();
-//  unsigned SrcReg = MI.getOperand(1).getReg();
-//  unsigned DstReg = MI.getOperand(0).getReg();
-//
-//  // BB:
-//  // cmp 0, N
-//  // je RemBB
-//  //BuildMI(BB, dl, TII.get(CPU74::CMP8ri))
-//  BuildMI(BB, dl, TII.get(CPU74::CMPkr8))
-//    .addReg(ShiftAmtSrcReg).addImm(0);
-//  BuildMI(BB, dl, TII.get(CPU74::JCC))
-//    .addMBB(RemBB)
-//    .addImm(CPU74CC::COND_E);
-//
-//  // LoopBB:
-//  // ShiftReg = phi [%SrcReg, BB], [%ShiftReg2, LoopBB]
-//  // ShiftAmt = phi [%N, BB],      [%ShiftAmt2, LoopBB]
-//  // ShiftReg2 = shift ShiftReg
-//  // ShiftAmt2 = ShiftAmt - 1;
-//  BuildMI(LoopBB, dl, TII.get(CPU74::PHI), ShiftReg)
-//    .addReg(SrcReg).addMBB(BB)
-//    .addReg(ShiftReg2).addMBB(LoopBB);
-//  BuildMI(LoopBB, dl, TII.get(CPU74::PHI), ShiftAmtReg)
-//    .addReg(ShiftAmtSrcReg).addMBB(BB)
-//    .addReg(ShiftAmtReg2).addMBB(LoopBB);
-//  BuildMI(LoopBB, dl, TII.get(Opc), ShiftReg2)
-//    .addReg(ShiftReg);
-//  //BuildMI(LoopBB, dl, TII.get(CPU74::SUB8ri), ShiftAmtReg2)
-//  BuildMI(LoopBB, dl, TII.get(CPU74::SUBkr8), ShiftAmtReg2)
-//    .addReg(ShiftAmtReg).addImm(1);
-//  BuildMI(LoopBB, dl, TII.get(CPU74::JCC))
-//    .addMBB(LoopBB)
-//    .addImm(CPU74CC::COND_NE);
-//
-//  // RemBB:
-//  // DestReg = phi [%SrcReg, BB], [%ShiftReg, LoopBB]
-//  BuildMI(*RemBB, RemBB->begin(), dl, TII.get(CPU74::PHI), DstReg)
-//    .addReg(SrcReg).addMBB(BB)
-//    .addReg(ShiftReg2).addMBB(LoopBB);
-//
-//  MI.eraseFromParent(); // The pseudo instruction is gone now.
-//  return RemBB;
-//}
-//
-//
-//
-
-
-//MachineBasicBlock *
-//CPU74TargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
-//                                                  MachineBasicBlock *BB) const {
-//  unsigned Opc = MI.getOpcode();
-//
-////JLZ  if (Opc == CPU74::Shl8 || Opc == CPU74::Shl16 ||
-////JLZ      Opc == CPU74::Sra8 || Opc == CPU74::Sra16 ||
-////JLZ      Opc == CPU74::Srl8 || Opc == CPU74::Srl16)
-//  
-//  if (Opc == CPU74::Shl16 || Opc == CPU74::Sra16 || Opc == CPU74::Srl16)
-//    return EmitShiftInstr(MI, BB);
-//
-////  if (Opc == CPU74::Select16)
-////    return EmitSelectCC(MI, BB);
-//  
-//  assert( 0 && "Unexpected instr type to insert");
-//  return 0;
-//}
-
-
-
-SDValue CPU74TargetLowering::PerformDAGCombine(SDNode *N, DAGCombinerInfo &DCI) const
+static SDValue CombineBRCOND(SDNode *N, SelectionDAG &DAG)
 {
-//  SelectionDAG &DAG = DCI.DAG;
-//  SDLoc dl(N);
-//  switch ( N->getOpcode() )
-//  {
-//      case ISD::SELECT_CC:
-//        N->dump();
-//      break;
-//  }
+  SDValue N1 = N->getOperand(1);  // condition, possibly a setcc
+  
+  // Fold a brcond with a setcc condition into a BR_CC node if we have a
+  // custom lowering implementation for its operands value types
+  if (N1.getOpcode() == ISD::SETCC)
+  {
+    SDValue Chain = N->getOperand(0);
+    SDValue N2 = N->getOperand(2);  // target
+    SDValue LHS = N1.getOperand(0);
+    SDValue RHS = N1.getOperand(1);
+    SDValue CC = N1.getOperand(2);
+    
+    return DAG.getNode(ISD::BR_CC, SDLoc(N), MVT::Other, Chain, CC, LHS, RHS, N2);
+  }
   
   return SDValue();
 }
 
 
+static SDValue CombineSELECT(SDNode *N, SelectionDAG &DAG)
+{
+
+  EVT VT = N->getValueType(0);
+  SDValue N0 = N->getOperand(0);  // set bit, possibly from a setcc
+  SDLoc DL(N);
+  //SDNodeFlags Flags = N->getFlags();
+
+  if (N0.getOpcode() == ISD::SETCC)
+  {
+    //ISD::CondCode CC = cast<CondCodeSDNode>(N0.getOperand(2))->get();
+//    if (isOperationCustom(ISD::SELECT_CC, VT))
+//    {
+      SDValue N1 = N->getOperand(1);  // True val
+      SDValue N2 = N->getOperand(2);  // False val
+      SDValue LHS = N0.getOperand(0);
+      SDValue RHS = N0.getOperand(1);
+      SDValue CC = N0.getOperand(2);
+      
+      // Any flags available in a select/setcc fold will be on the setcc as they
+      // migrated from fcmp
+      SDNodeFlags Flags = N0.getNode()->getFlags();
+      SDValue SelectNode = DAG.getNode(ISD::SELECT_CC, DL, VT, LHS, RHS, N1, N2, CC);
+      SelectNode->setFlags(Flags);
+      return SelectNode;
+   // }
+  }
+  return SDValue();
+}
 
 
+static SDValue CombineZEROEXTEND(SDNode *N, SelectionDAG &DAG)
+{
+  //return LowerSETCC(SDValue(N,0), DAG);
 
+  EVT VT = N->getValueType(0);
+  SDLoc DL(N);
+  
+  SDValue N0 = N->getOperand(0);  // set bit, possibly from a setcc
+  //SDNodeFlags Flags = N->getFlags();
+  
+  if (N0.getOpcode() != ISD::SETCC )
+    return SDValue();
+
+  SDValue LHS = N0.getOperand(0);
+  SDValue RHS = N0.getOperand(1);
+  SDValue CC = N0.getOperand(2);
+  
+  SDValue Lo = DAG.getNode(ISD::SETCC, DL, MVT::i16, LHS, RHS, CC);
+  
+  if ( VT == MVT::i16)
+    return Lo;
+
+  if ( VT == MVT::i32 )
+  {
+    SDValue Hi = DAG.getConstant(0, DL, MVT::i16);
+    return DAG.getNode(ISD::BUILD_PAIR, DL, VT, Lo, Hi);
+  }
+  
+  assert( true && "Not good" );
+  return SDValue();
+}
+
+//static SDValue CombineShift(SDNode *N, SelectionDAG &DAG)
+//{
+//  EVT VT = N->getValueType(0);
+//  SDLoc DL(N);
+//
+//  if ( VT != MVT::i16 )
+//    return SDValue();
+//
+//  unsigned Opc = N->getOpcode();
+//
+//  // if we have a shift ammount of exactly 15, expand to
+//  //    SETCC  lhs, 0, setlt
+//  // however, if the shift was preceded by XOR Val, -1 then use this
+//  //    SETCC  Val, 0, setge
+//  ConstantSDNode *RHSC = dyn_cast<ConstantSDNode>(N->getOperand(1));
+//  if ( RHSC && RHSC->getSExtValue() == 15 )
+//  {
+//    SDValue LHS = N->getOperand(0);
+//    SDValue Zero = DAG.getConstant(0, DL, VT);
+//    ISD::CondCode Cond = ISD::SETLT;
+//    if ( Opc == ISD::SRL ) {
+//
+//      if ( LHS.getOpcode() == ISD::XOR )
+//        if ( ConstantSDNode *LHSOp1 = dyn_cast<ConstantSDNode>(LHS.getOperand(1)) )
+//          if ( LHSOp1->getSExtValue() == -1 ) {
+//            Cond = ISD::SETGE;
+//            LHS = LHS->getOperand(0);
+//          }
+//
+//      return DAG.getNode( ISD::SETCC, DL, VT,
+//                  LHS, Zero, DAG.getCondCode(Cond));
+//    }
+//
+//    assert ( Opc == ISD::SRA && "Expecting right shiftt" );
+//
+//    return DAG.getNode( ISD::SELECT_CC, DL, VT,
+//                LHS, Zero, DAG.getConstant(-1, DL, VT), Zero, DAG.getCondCode(Cond));
+//  }
+//  return SDValue();
+//}
+
+
+SDValue CPU74TargetLowering::PerformDAGCombine(SDNode *N, DAGCombinerInfo &DCI) const
+{
+  SelectionDAG &DAG = DCI.DAG;
+  SDLoc dl(N);
+  switch ( N->getOpcode() )
+  {
+      case ISD::BRCOND:
+        return CombineBRCOND( N, DAG );
+      
+      case ISD::SELECT:
+        return CombineSELECT( N, DAG );
+      
+      case ISD::ZERO_EXTEND:
+        return CombineZEROEXTEND( N, DAG );
+      
+//      case ISD::SRL:
+//      case ISD::SRA:
+//        return CombineShift( N, DAG );
+      
+  }
+  
+  return SDValue();
+}
+
+// Lower Operation
 SDValue CPU74TargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const
 {
   ISD::NodeType opCodeNT = (ISD::NodeType)Op.getOpcode();
@@ -2402,7 +2178,6 @@ SDValue CPU74TargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const
     case ISD::SHL: // FALLTHROUGH
     case ISD::SRL:
     case ISD::SRA:                return LowerShifts(Op, DAG);
-    //case ISD::UDIVREM:            return LowerUDIVREM(Op, DAG);
     case ISD::CTLZ:               return LowerCLZ(Op,DAG);
     case ISD::GlobalAddress:      return LowerGlobalAddress(Op, DAG);
     case ISD::BlockAddress:       return LowerBlockAddress(Op, DAG);
@@ -2411,10 +2186,6 @@ SDValue CPU74TargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const
     case ISD::SETCC:              return LowerSETCC(Op, DAG);
     case ISD::SELECT_CC:          return LowerSELECT_CC(Op, DAG);
     case ISD::BR_CC:              return LowerBR_CC(Op, DAG);
-    //case ISD::SHL_PARTS:        return LowerSHL_PARTS(Op, DAG);
-    //case ISD::SELECT:           return LowerSELECT(Op, DAG);
-    
-    
     case ISD::DYNAMIC_STACKALLOC: return LowerDYNAMIC_STACKALLOC(Op,DAG);
     case ISD::RETURNADDR:         return LowerRETURNADDR(Op, DAG);
     case ISD::FRAMEADDR:          return LowerFRAMEADDR(Op, DAG);
@@ -2430,13 +2201,11 @@ SDValue CPU74TargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const
 
 
 
-
-
 // Estimate the size of the stack, including the incoming arguments. We need to
 // account for push register spills, local objects, reserved call frame and incoming
 // arguments. This is required to determine the largest possible positive offset
-// from SP so that it can be determined if an  spill slot for stack
-// addresses is required. See: MipsFrameLowering::estimateStackSize
+// from SP so that it can be determined if using a FP is profitable
+
 static unsigned argumentsSize(const MachineFunction &MF)
 {
   const MachineFrameInfo &MFI = MF.getFrameInfo();
@@ -2447,9 +2216,8 @@ static unsigned argumentsSize(const MachineFunction &MF)
   for (int i = beg; i < 0; i++)
       size += MFI.getObjectSize(i);
 
-  // Get the size of the rest of the frame objects and any possible reserved
-  // call frame, accounting for alignment.
-  return size; // + MFI.estimateStackSize(MF);
+  // Return the size
+  return size;
 }
 
 
@@ -2459,19 +2227,24 @@ static unsigned argumentsSize(const MachineFunction &MF)
 void CPU74TargetLowering::finalizeLowering(MachineFunction &MF) const
 {
   MachineFrameInfo &MFI = MF.getFrameInfo();
-  const TargetFrameLowering *TFI = MF.getSubtarget().getFrameLowering();
+  //const TargetFrameLowering *TFI = MF.getSubtarget().getFrameLowering();
   CPU74MachineFunctionInfo *FuncInf = MF.getInfo<CPU74MachineFunctionInfo>();
   const TargetRegisterInfo *RegInfo = MF.getSubtarget().getRegisterInfo();
 
+  // We need to call this in advance to get the right results from estimateStackSize
   MFI.computeMaxCallFrameSize(MF);
   
+  // Get the stack arguments size
   unsigned argsSize = argumentsSize(MF);
+
+  // Get the size of the rest of the frame objects and any possible reserved
+  // call frame,
   unsigned maxOffset = argsSize + MFI.estimateStackSize(MF);
   
   // Conservatively assume all callee-saved registers will be saved (*)
-  // (*) Don't actually do this.
-  // (*) We rather delay use of R6 until there's really big offsets into the arguments
-  if ( 0 )
+  // (*) Consider to actually do this,
+  // or otherwise delay the use of R7 until there's really big offsets into the arguments
+  if ( 1 )
   {
     for (const MCPhysReg *reg = RegInfo->getCalleeSavedRegs(&MF); *reg != 0; ++reg)
     {

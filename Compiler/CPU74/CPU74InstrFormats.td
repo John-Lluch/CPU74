@@ -40,56 +40,138 @@ class Instruction32< dag outs, dag ins, string asmstr, list<dag> pattern >
   let Size = 4;
 }
 
-// Relative Call/Jump
-class Type1 < bits<1> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+// Type P
+
+class TypeP_call <dag outs, dag ins, string asmstr, list<dag> pattern>
       : Instruction16< outs, ins, asmstr, pattern>
 {
-  bits<12> a;   // unbound var
-  let Inst{15-13} = 0b111;
-  let Inst{12-12} = opcode;
-  let Inst{11-0} = a;
+  bits<11> a;   // unbound var
+  let Inst{15-11} = 0b11110;
+  let Inst{10-0} = a;
 }
 
-// Conditional branch
-class Type2 < dag outs, dag ins, string asmstr, list<dag> pattern>
-      : Instruction16< outs, ins, asmstr, pattern>
+class TypePP_call <dag outs, dag ins, string asmstr, list<dag> pattern>
+      : Instruction32< outs, ins, asmstr, pattern>
 {
-  bits<3> cc;   // unbound var
-  bits<10> a;   // unbound var
-  let Inst{15-13} = 0b110;
-  let Inst{12-10} = cc;
-  let Inst{9-0} = a;
+  bits<16> a;   // unbound var
+  let Inst{31-27} = 0b11111;
+  let Inst{26-16} = a{15-5};
+  let Inst{15-11} = 0b11110;
+  let Inst{10-5} = 0b000000;
+  let Inst{4-0} = a{4-0};
 }
 
-// Move, Compare, ALU immediate
-class Type3 < bits<3> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
-      : Instruction16< outs, ins, asmstr, pattern>
-{
-  bits<8> k;   // unbound var
-  bits<3> rd;   // unbound var
-  let Inst{15-14} = 0b10;
-  let Inst{13-11} = opcode;
-  let Inst{10-3} = k;
-  let Inst{2-0} = rd;
-}
+// Type I1
 
-// Load/store with immediate offset
-class Type4 < bits<2> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+class TypeI1 < bits<3> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
       : Instruction16< outs, ins, asmstr, pattern>
 {
-  bits<6> k;    // unbound var
+  bits<5> k;    // unbound var
   bits<3> rs;   // unbound var
   bits<3> rd;   // unbound var
-  let Inst{15-14} = 0b01;
-  let Inst{13-12} = opcode;
-  let Inst{11-6} = k;
+  let Inst{15-14} = 0b11;
+  let Inst{13-11} = opcode;
+  let Inst{10-6} = k;
   let Inst{5-3} = rs;
   let Inst{2-0} = rd;
 }
 
-// Three register ALU operation,
-// Load/store with register offset
-class Type5 < bits<4> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+// Type Prefixed I1
+
+class TypePI1 < bits<3> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+      : Instruction32< outs, ins, asmstr, pattern>
+{
+  bits<16> K;   // unbound var
+  bits<3> rs;   // unbound var
+  bits<3> rd;   // unbound var
+  let Inst{31-27} = 0b11111;
+  let Inst{26-16} = K{15-5};
+  let Inst{15-14} = 0b11;
+  let Inst{13-11} = opcode;
+  let Inst{10-6} = K{4-0};
+  let Inst{5-3} = rs;
+  let Inst{2-0} = rd;
+}
+
+// Type I2
+
+class TypeI2 < bits<5> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+      : Instruction16< outs, ins, asmstr, pattern>
+{
+  bits<8> k;   // unbound var
+  bits<3> rd;   // unbound var
+  let Inst{15-11} = opcode;
+  let Inst{10-3} = k;
+  let Inst{2-0} = rd;
+}
+
+// Type prefixed I2
+
+class TypePI2 < bits<5> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+      : Instruction32< outs, ins, asmstr, pattern>
+{
+  bits<16> K;   // unbound var
+  bits<3> rd;   // unbound var
+  let Inst{31-27} = 0b11111;
+  let Inst{26-16} = K{15-5};
+  let Inst{15-11} = opcode;
+  let Inst{10-8} = 0b000;
+  let Inst{7-3} = K{4-0};
+  let Inst{2-0} = rd;
+}
+
+
+// Type J
+
+class TypeJ_cc < dag outs, dag ins, string asmstr, list<dag> pattern>
+      : Instruction16< outs, ins, asmstr, pattern>
+{
+  bits<3> cc;   // unbound var
+  bits<9> a;   // unbound var
+  let Inst{15-12} = 0b0100;
+  let Inst{11-9} = cc;
+  let Inst{8-0} = a;
+}
+
+class TypeJ < bits<1> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+      : Instruction16< outs, ins, asmstr, pattern>
+{
+  bits<9> a;   // unbound var
+  let Inst{15-10} = 0b001111;
+  let Inst{9-9} = opcode;
+  let Inst{8-0} = a;
+}
+
+// Type Prefixed J
+
+class TypePJ_cc < dag outs, dag ins, string asmstr, list<dag> pattern>
+      : Instruction32< outs, ins, asmstr, pattern>
+{
+  bits<3> cc;   // unbound var
+  bits<16> a;   // unbound var
+  let Inst{31-27} = 0b11111;
+  let Inst{26-16} = a{15-5};
+  let Inst{15-12} = 0b0100;
+  let Inst{11-9} = cc;
+  let Inst{8-5} = 0b0000;
+  let Inst{4-0} = a{4-0};
+}
+
+class TypePJ < bits<1> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+      : Instruction32< outs, ins, asmstr, pattern>
+{
+  bits<16> a;   // unbound var
+  let Inst{31-27} = 0b11111;
+  let Inst{26-16} = a{15-5};
+  let Inst{15-10} = 0b001111;
+  let Inst{9-9} = opcode;
+  let Inst{8-5} = 0b0000;
+  let Inst{4-0} = a{4-0};
+}
+
+// Type R1
+
+class TypeR1 < bits<4> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
       : Instruction16< outs, ins, asmstr, pattern>
 {
   bits<3> rd;   // unbound var
@@ -102,120 +184,65 @@ class Type5 < bits<4> opcode, dag outs, dag ins, string asmstr, list<dag> patter
   let Inst{2-0} = rd;
 }
 
-// Conditional select
-class Type6 < dag outs, dag ins, string asmstr, list<dag> pattern>
+class TypeR1_cc < dag outs, dag ins, string asmstr, list<dag> pattern>
       : Instruction16< outs, ins, asmstr, pattern>
 {
   bits<3> cc;   // unbound var
   bits<3> rn;   // unbound var
   bits<3> rs;   // unbound var
   bits<3> rd;   // unbound var
-  let Inst{15-13} = 0b000;
-  let Inst{12-10} = cc;
-  let Inst{9-9} = 0b1;
+  let Inst{15-12} = 0b0001;
+  let Inst{11-9} = cc;
   let Inst{8-6} = rn;
   let Inst{5-3} = rs;
   let Inst{2-0} = rd;
 }
 
-// Conditional set
-class Type7 <dag outs, dag ins, string asmstr, list<dag> pattern>
+// Type R2
+
+class TypeR2_cc <dag outs, dag ins, string asmstr, list<dag> pattern>
       : Instruction16< outs, ins, asmstr, pattern>
 {
   bits<3> cc;   // unbound var
   bits<3> rd;   // unbound var
-  let Inst{15-13} = 0b000;
-  let Inst{12-10} = cc;
-  let Inst{9-9} = 0b0;
+  let Inst{15-12} = 0b0000;
+  let Inst{11-9} = cc;
   let Inst{8-6} = 0b111;
   let Inst{5-3} = 0b000;
   let Inst{2-0} = rd;
 }
 
-// Zero Operand Instructions
-class Type8 < bits<3> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
+class TypeR2_0 < bits<3> opcode, bits<3> mode, dag outs, dag ins, string asmstr, list<dag> pattern>
       : Instruction16< outs, ins, asmstr, pattern>
 {
-  let Inst{15-13} = 0b000;
-  let Inst{12-10} = opcode;
-  let Inst{9-9} = 0b0;
-  let Inst{8-6} = 0b110;
+  let Inst{15-12} = 0b0000;
+  let Inst{11-9} = opcode;
+  let Inst{8-6} = mode;
   let Inst{5-3} = 0b000;
   let Inst{2-0} = 0b000;
 }
 
-// Zero Operand Instructions
-class Type8a < bits<3> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>
-      : Instruction32< outs, ins, asmstr, pattern>
-{
-  bits<16> a;     // unbound
-  let Inst{31-16} = a;
-  let Inst{15-13} = 0b000;
-  let Inst{12-10} = opcode;
-  let Inst{9-9} = 0b0;
-  let Inst{8-6} = 0b110;
-  let Inst{5-3} = 0b000;
-  let Inst{2-0} = 0b000;
-}
-
-// Push/Pop, move SP Register, Branch/Call Indirect
-class Type9 < bits<3> opcode, bits<1>mode, dag outs, dag ins, string asmstr, list<dag> pattern>
+class TypeR2_1 < bits<3> opcode, bits<3> mode, dag outs, dag ins, string asmstr, list<dag> pattern>
       : Instruction16< outs, ins, asmstr, pattern>
 {
   bits<3> rd;   // unbound var
-  let Inst{15-13} = 0b000;
-  let Inst{12-10} = opcode;
-  let Inst{9-9} = 0b0;
-  let Inst{8-7} = 0b10;
-  let Inst{6-6} = mode;
+  let Inst{15-12} = 0b0000;
+  let Inst{11-9} = opcode;
+  let Inst{8-6} = mode;
   let Inst{5-3} = 0b000;
   let Inst{2-0} = rd;
 }
 
-// Move immediate, Load/store with absolute address
-class Type9a < bits<3> opcode, bits<1> mode, dag outs, dag ins, string asmstr, list<dag> pattern>
-      : Instruction32< outs, ins, asmstr, pattern>
-{
-  bits<16> a;     // unbound
-  bits<3> rd;   // unbound var
-  let Inst{31-16} = a;
-  let Inst{15-13} = 0b000;
-  let Inst{12-10} = opcode;
-  let Inst{9-9} = 0b0;
-  let Inst{8-7} = 0b10;
-  let Inst{6-6} = mode;
-  let Inst{5-3} = 0b000;
-  let Inst{2-0} = rd;
-}
-
-// Two register Move, Compare, ALU operation
-class Type10 < bits<3> opcode, bits<2> mode, dag outs, dag ins, string asmstr, list<dag> pattern>
+class TypeR2_2 < bits<3> opcode, bits<3> mode, dag outs, dag ins, string asmstr, list<dag> pattern>
       : Instruction16< outs, ins, asmstr, pattern>
 {
   bits<3> rs;   // unbound var
   bits<3> rd;   // unbound var
-  let Inst{15-13} = 0b000;
-  let Inst{12-10} = opcode;
-  let Inst{9-8} = 0b00;
-  let Inst{7-6} = mode;
+  let Inst{15-12} = 0b0000;
+  let Inst{11-9} = opcode;
+  let Inst{8-6} = mode;
   let Inst{5-3} = rs;
   let Inst{2-0} = rd;
-}
-
-// Load/store with immediate offset word
-class Type10a < bits<3> opcode, bits<2> mode, dag outs, dag ins, string asmstr, list<dag> pattern>
-      : Instruction32< outs, ins, asmstr, pattern>
-{
-  bits<16> a;     // unbound
-  bits<3> rs;   // unbound var
-  bits<3> rd;   // unbound var
-  let Inst{15-13} = 0b000;
-  let Inst{12-10} = opcode;
-  let Inst{9-8} = 0b00;
-  let Inst{7-6} = mode;
-  let Inst{5-3} = rs;
-  let Inst{2-0} = rd;
-  let Inst{31-16} = a;
 }
 
 // Pseudo instruction format

@@ -69,7 +69,8 @@ CondCodes getOppositeCondition( CondCodes CC );
 
 
 
-class CPU74InstrInfo : public CPU74GenInstrInfo {
+class CPU74InstrInfo : public CPU74GenInstrInfo
+{
   const CPU74RegisterInfo RI;
   virtual void anchor();
 public:
@@ -80,6 +81,12 @@ public:
   /// always be able to get register info as well (through this method).
   ///
   const TargetRegisterInfo &getRegisterInfo() const { return RI; }
+
+  unsigned isLoadFromStackSlot(const MachineInstr &MI,
+                                             int &FrameIndex) const override;
+  
+  unsigned isStoreToStackSlot(const MachineInstr &MI,
+                                            int &FrameIndex) const override;
 
   void copyPhysReg(MachineBasicBlock &MBB, MachineBasicBlock::iterator I,
                    const DebugLoc &DL, unsigned DestReg, unsigned SrcReg,

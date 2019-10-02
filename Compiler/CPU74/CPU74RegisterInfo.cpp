@@ -61,7 +61,6 @@ BitVector CPU74RegisterInfo::getReservedRegs(const MachineFunction &MF) const
   Reserved.set(CPU74::PC);
   Reserved.set(CPU74::SP);
   Reserved.set(CPU74::SR);
-  Reserved.set(CPU74::AR);
   
   // We can not tell whether a function may require the r6 register as
   // a frame pointer until frame lowering, which is too late.
@@ -70,12 +69,8 @@ BitVector CPU74RegisterInfo::getReservedRegs(const MachineFunction &MF) const
   // convert one of its spills to use the r6 register.
   // See comments on CPU74MachineFunctionInfo:getHasSpills() for more details
 
-#ifdef FP_AS_SPILL
-  if ( 1 )   // Reserve always
-#else
   if ( TFI->hasFP(MF))   // Reserve the FP if needed
-#endif
-    Reserved.set(CPU74::R6);
+    Reserved.set(CPU74::R7);
   
   return Reserved;
 }
@@ -90,7 +85,7 @@ const TargetRegisterClass *CPU74RegisterInfo::getPointerRegClass(const MachineFu
 Register CPU74RegisterInfo::getFrameRegister(const MachineFunction &MF) const
 {
   const CPU74FrameLowering *TFI = getFrameLowering(MF);
-  return TFI->hasFP(MF) ? CPU74::R6 : CPU74::SP;
+  return TFI->hasFP(MF) ? CPU74::R7 : CPU74::SP;
 }
 
 bool CPU74RegisterInfo::requiresFrameIndexScavenging(const MachineFunction &MF) const
@@ -110,7 +105,7 @@ bool CPU74RegisterInfo::hasReservedSpillSlot(const MachineFunction &MF,
                                               unsigned Reg, int &FrameIdx) const
 {
 #ifdef FP_AS_SPILL
-  if ( Reg == CPU74::R6)
+  if ( Reg == CPU74::R7)
   {
     FrameIdx = 0;
     return true;
@@ -130,6 +125,8 @@ bool CPU74RegisterInfo::trackLivenessAfterRegAlloc(const MachineFunction &MF) co
 bool CPU74RegisterInfo::requiresVirtualBaseRegisters(const MachineFunction &MF) const {
   return false;
 }
+
+
 
 //This function is called for each instruction that references a word of data in a stack slot.
 //All previous passes of the code generator have been addressing stack slots through an abstract
@@ -152,18 +149,19 @@ void CPU74RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   assert(SPAdj == 0 && "Unexpected");
 
   MachineInstr &MI = *II;
-  DebugLoc dl = MI.getDebugLoc(); 
+  DebugLoc dl = MI.getDebugLoc();
   MachineBasicBlock &MBB = *MI.getParent();
   /*const*/ MachineFunction &MF = *MBB.getParent();
   const TargetInstrInfo &TII = *MF.getSubtarget().getInstrInfo();
   const MachineFrameInfo &MFI = MF.getFrameInfo();
   const CPU74FrameLowering *TFI = getFrameLowering(MF);
-  CPU74MachineFunctionInfo *FuncInf = MF.getInfo<CPU74MachineFunctionInfo>();
+  //CPU74MachineFunctionInfo *FuncInf = MF.getInfo<CPU74MachineFunctionInfo>();
   
   int frameIndex = MI.getOperand(FIOperandNum).getIndex();
   bool usesFP = TFI->hasFP(MF); // implementation already accounts for reservedCallFrame, this means that FP can be used
-  bool usesBP = !TFI->hasReservedCallFrame(MF); // use FP as Base Pointer
   bool hasResFr = TFI->hasReservedCallFrame(MF); // this essentially means that SP can be used
+  //bool usesBP = !TFI->hasReservedCallFrame(MF); // use FP as Base Pointer
+  bool usesBP = TFI->hasBasePointer(MF); // use BP as Base Pointer, this implies usesFP
   
   // Base offset
   int offset = MFI.getObjectOffset(frameIndex);
@@ -175,11 +173,7 @@ void CPU74RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   // need to add 2 to skip saved FP
   if ( frameIndex < 0 )
   {
-#ifdef FP_AS_SPILL
-    if ( usesFP || FuncInf->getReplacedSpillsFrameSize() > 0 ) offset += 2;
-#else
     if ( usesFP ) offset += 2;
-#endif
   }
 
   // Calculate pointer relative offsets
@@ -194,188 +188,88 @@ void CPU74RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   if ( (usesFP && offsetFP >= 0) || !hasResFr )
   {
     theOffset = offsetFP;
-    baseReg = CPU74::R6;
+    baseReg = CPU74::R7;
   }
-  
-  MachineInstr *mi = nullptr;
   
   // Get instruction opCode
   unsigned opCode = MI.getOpcode();
-  
-  // ADDFrame pseudo instructions are actually "load effective address" of the stack slot
-  // instruction. We need to expand them into mov + add
-  if ( opCode == CPU74::ADDFrame )
-  {
-    unsigned dstReg = MI.getOperand(0).getReg();
-  
-    // Try to fit into an immediate add or sub instruction
-    if ( (usesFP && (CPU74Imm::isImm8u(offsetFP) || CPU74Imm::isImm8u(-offsetFP))) ||
-         (hasResFr && (CPU74Imm::isImm8u(offsetSP) || CPU74Imm::isImm8u(-offsetSP))) )
-    {
-      // Move frame base register to the destination register
-      // 'mov FP, Rd'
-      BuildMI(MBB, II, dl, TII.get(CPU74::MOVrr16), dstReg)
-          .addReg(baseReg);
-
-      if ( theOffset > 0 )
-      {
-        // Materialize the offset via add instruction
-        // 'add Rd, #offset, Rd'
-        mi = BuildMI(MBB, std::next(II), dl, TII.get(CPU74::ADDkr16), dstReg)
-            .addReg(dstReg).addImm(theOffset);
-        mi->getOperand(3).setIsDead();  // SR Implicit
-      }
-      else if ( theOffset < 0 )
-      {
-        // Materialize the offset via sub instruction
-        // 'sub Rd, #offset, Rd'
-        mi = BuildMI(MBB, std::next(II), dl, TII.get(CPU74::SUBkr16), dstReg)
-            .addReg(dstReg).addImm(-theOffset);
-        mi->getOperand(3).setIsDead();  // SR Implicit
-
-      }
-    }
-
-    // Offset is too big, we need to materialize the offset via register immediate
-    else
-    {
-      // Use the destination register to materialize sp + offset.
-      // 'mov #imm, Rd'
-      BuildMI(MBB, II, dl, TII.get(CPU74::LEAKr16), dstReg)
-          .addImm(theOffset);  // positive or negative
-
-      // 'add FP, Rd, Rd'
-      mi = BuildMI(MBB, II, dl, TII.get(CPU74::ADDrrr16), dstReg)
-          .addReg(baseReg)
-          .addReg(dstReg);
-      mi->getOperand(3).setIsDead();  // SR Implicit
-    }
-    
-    // We are done with the ADDFrame pseudo instruction
-    MI.eraseFromParent();
-    return ;
-  }
-  
-  // So we have a load/store with constant offset instruction,
-  // find the optimal way to eliminate the frame index
-  
-  // We should only have indexed load/store instructions getting here
-  assert( (opCode == CPU74::MOVmr16 || opCode == CPU74::MOVmr8s ||
-          opCode == CPU74::MOVmr8z || opCode == CPU74::MOVrm16 ||
-          opCode == CPU74::MOVrm8) &&
-          "Unsupported opcode entering eliminateFrameIndex");
-  
-#ifdef FP_AS_SPILL
-  // In cases where we do not have a frame pointer, we may be able to use
-  // R6 as a replacement of an existing spill. Do it now if possible
-    if ( FuncInf->getReplacedSpillsFrameSize() > 0 && FuncInf->getFirstSpillIndex() == frameIndex
-    {
-      unsigned dstReg = MI.getOperand(0).getReg();
-      switch ( opCode )
-      {
-        default: llvm_unreachable("Unsupported opcode entering eliminateFrameIndex");
-        case CPU74::MOVmr16 :  // load
-          // 'mov r6, Rd'
-          BuildMI(MBB, II, dl, TII.get(CPU74::MOVrr16), dstReg)
-            .addReg( CPU74::R6);
-          break;
-
-        case CPU74::MOVrm16 : // store
-          // 'mov Rd, r6'
-          BuildMI(MBB, II, dl, TII.get(CPU74::MOVrr16), CPU74::R6)
-            .addReg( dstReg );
-          break;
-      }
-      //MI->getOperand(3).setIsDead(); // The SR implicit def is dead.
-      MI.eraseFromParent();
-      return;
-    }
-#endif
-  
+  unsigned newOpCode = 0;
   bool needsExtension = false;
   
-  // Try to fit in load/store immediate instruction
-  if ( CPU74Imm::isImm6_d(theOffset) )
+  // We should only have frame indexed lea and load/store instructions getting here
+  assert( (opCode == CPU74::LEAqr16_core ||
+           opCode == CPU74::MOVqr16_core || opCode == CPU74::MOVqr8s_core || opCode == CPU74::MOVqr8z_core ||
+           opCode == CPU74::MOVrq16_core || opCode == CPU74::MOVrq8_core) &&
+           "Unsupported opcode entering eliminateFrameIndex");
+
+  // If fits in base register offsets
+  if ( baseReg == CPU74::R7 && CPU74Imm::isImm5_d(theOffset) )
   {
-      if (opCode == CPU74::MOVmr8z )  // opcode needs to be replaced for zext loads
-         MI.setDesc(TII.get(CPU74::MOVmr8s)), needsExtension = true;
-    
-      // 'ld [fp, imm], Rd' or
-      // 'st Rd, [fp, imm]'
-      MI.getOperand(FIOperandNum).ChangeToRegister(baseReg, false);
-      MI.getOperand(FIOperandNum + 1).ChangeToImmediate(theOffset);
-  }
-  
-  // Offset does not fit
-  else
-  {
-    // Offset was too small for load instruction, but it may still fit
-    // in move immediate instruction
-    unsigned moveOpCode = CPU74::LEAKr16;
-    if ( CPU74Imm::isImm8s(theOffset))
-        moveOpCode = CPU74::MOVkr16;
-
-    unsigned dstReg = MI.getOperand(0).getReg();
-
-    // For loads use the destination register to materialize fp + offset.
-    if ( MI.mayLoad() )
+    switch ( opCode )
     {
-      unsigned newOpCode = 0;
-      switch ( opCode )
-      {
-        default: llvm_unreachable("Unsupported opcode entering eliminateFrameIndex");
-        case CPU74::MOVmr16 :
-          newOpCode = CPU74::MOVnr16; break;
-        case CPU74::MOVmr8s :
-          newOpCode = CPU74::MOVnr8s; break;
-        case CPU74::MOVmr8z :
-          newOpCode = CPU74::MOVnr8z; break;
-      }
-
-      // Use destination register to materialize the offset
-      // 'mov #imm, Rd'
-      BuildMI(MBB, II, dl, TII.get(moveOpCode), dstReg)
-          .addImm(theOffset);
-
-      // 'ld [FP, Rd], Rd'
-      MI.setDesc(TII.get(newOpCode));
-      MI.getOperand(FIOperandNum).ChangeToRegister(baseReg, false, false, false);
-      MI.getOperand(FIOperandNum+1).ChangeToRegister(dstReg, false, false, true);
-    }
-
-    else if ( MI.mayStore() )
-    {
-      unsigned newOpCode = 0;
-      switch ( opCode )
-      {
-        default: llvm_unreachable("Unsupported opcode entering eliminateFrameIndex");
-        case CPU74::MOVrm16 :
-          newOpCode =  CPU74::MOVrn16; break;
-        case CPU74::MOVrm8 :
-          newOpCode = CPU74::MOVrn8; break;
-      }
-
-      unsigned vReg = MF.getRegInfo().createVirtualRegister(&CPU74::GR16RegClass);     // TODO: mirar que passa si es queda sense registres.
-                                                                                      // (s'ha de preveure un stack slot per register scavenger)?
-                                                                                      // (es pot utilitzar el register scavenger RS directament,
-      // 'mov #imm, Rx'                                                              // despres de posar requiresFrameIndexReplacementScavenging = true)?
-      BuildMI(MBB, II, dl, TII.get(moveOpCode), vReg)
-          .addImm(offsetFP); //.setMIFlag(MachineInstr::NoFlags);
-
-      // 'st Rd, [FP, Rx]'
-      MI.setDesc(TII.get(newOpCode));
-      MI.getOperand(FIOperandNum).ChangeToRegister(baseReg, false, false, false);
-      MI.getOperand(FIOperandNum+1).ChangeToRegister(vReg, false, false, true); // true a l'ultim?
+      default: llvm_unreachable("Unsupported opcode entering eliminateFrameIndex");
+      case CPU74::LEAqr16_core : newOpCode = CPU74::LEArkr16_core; break;
+      case CPU74::MOVqr16_core : newOpCode = CPU74::MOVmr16_core; break;
+      case CPU74::MOVqr8s_core : newOpCode = CPU74::MOVmr8s_core; break;
+      case CPU74::MOVqr8z_core : newOpCode = CPU74::MOVmr8z_core; break;
+      case CPU74::MOVrq16_core : newOpCode = CPU74::MOVrm16_core; break;
+      case CPU74::MOVrq8_core  : newOpCode = CPU74::MOVrm8_core; break;
     }
   }
   
-  // If the instruction was a pseudo zero extended load we just replaced it
-  // by a supported signextended instruction so we need to insert a ZEXT after it
+  // If fits in SP offset
+  else if ( baseReg == CPU74::SP && CPU74Imm::isImm8u(theOffset) )
+  {
+    newOpCode = opCode ;
+    if ( opCode == CPU74::MOVqr8z_core ) // Opcode needs to be replaced by sext loads
+    {
+      // add an explicit Sext
+      newOpCode = CPU74::MOVqr8s_core, needsExtension = true;
+    }
+  }
+  
+  // It didn't fit. Replace the instruction by a prefixed one
+  else if ( baseReg == CPU74::R7 )
+  {
+    switch ( opCode )
+    {
+      default: llvm_unreachable("Unsupported opcode entering eliminateFrameIndex");
+      case CPU74::LEAqr16_core : newOpCode = CPU74::LEArkr16_pfix; break;
+      case CPU74::MOVqr16_core : newOpCode = CPU74::MOVmr16_pfix; break;
+      case CPU74::MOVqr8z_core : newOpCode = CPU74::MOVmr8z_pfix; break;
+      case CPU74::MOVqr8s_core : newOpCode = CPU74::MOVmr8s_pfix; break;
+      case CPU74::MOVrq16_core : newOpCode = CPU74::MOVrm16_pfix; break;
+      case CPU74::MOVrq8_core  : newOpCode = CPU74::MOVrm8_pfix; break;
+    }
+  }
+  
+  // It didn't fit. Replace the instruction by a prefixed one
+  else if ( baseReg == CPU74::SP )
+  {
+    switch ( opCode )
+    {
+      default: llvm_unreachable("Unsupported opcode entering eliminateFrameIndex");
+      case CPU74::LEAqr16_core : newOpCode = CPU74::LEAqr16_pfix; break;
+      case CPU74::MOVqr16_core : newOpCode = CPU74::MOVqr16_pfix; break;
+      case CPU74::MOVqr8z_core : newOpCode = CPU74::MOVqr8s_pfix, needsExtension = true; break;
+      case CPU74::MOVqr8s_core : newOpCode = CPU74::MOVqr8s_pfix; break;
+      case CPU74::MOVrq16_core : newOpCode = CPU74::MOVrq16_pfix; break;
+      case CPU74::MOVrq8_core  : newOpCode = CPU74::MOVrq8_pfix; break;
+    }
+  
+  }
+  
+  assert( newOpCode && "Could not find a way to eliminate frame index" );
+  
+  // 'ld [fp, imm], Rd' or 'st Rd, [fp, imm]'
+  MI.setDesc(TII.get(newOpCode));
+  MI.getOperand(FIOperandNum).ChangeToRegister(baseReg, false);
+  MI.getOperand(FIOperandNum + 1).ChangeToImmediate(theOffset);
+  
   if ( needsExtension )
   {
     unsigned dstReg = MI.getOperand(0).getReg();
-    BuildMI(MBB, std::next(II), dl, TII.get(CPU74::ZEXTrr16), dstReg)  // add zero extend
+    BuildMI(MBB, std::next(II), dl, TII.get(CPU74::ZEXTrr16), dstReg)  // add sign extend
         .addReg(dstReg);
   }
 }
-

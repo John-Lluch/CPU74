@@ -42,6 +42,10 @@ public:
   bool isLSRCostLess(TargetTransformInfo::LSRCost &C1,
                      TargetTransformInfo::LSRCost &C2);
   
+  unsigned getUserCost(const User *U, ArrayRef<const Value *> Operands);
+  //unsigned getOperationCost(unsigned Opcode, Type *Ty, Type *OpTy = nullptr);
+
+  
   unsigned getNumberOfRegisters(bool Vector) const {
     return Vector ? 0 : 8;
   }
@@ -49,7 +53,6 @@ public:
   unsigned getRegisterBitWidth(bool Vector) const {
     return Vector ? 0 : 16;
   }
-  
 };
 
 

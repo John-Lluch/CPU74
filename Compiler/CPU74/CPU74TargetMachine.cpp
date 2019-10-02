@@ -81,7 +81,8 @@ CPU74TargetMachine::CPU74TargetMachine(const Target &T, const Triple &TT,
 
 CPU74TargetMachine::~CPU74TargetMachine() {}
 
-namespace {
+namespace
+{
 /// CPU74 Code Generator Pass Configuration Options.
 class CPU74PassConfig : public TargetPassConfig {
 public:

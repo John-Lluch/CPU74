@@ -41,21 +41,18 @@ class CPU74MachineFunctionInfo : public MachineFunctionInfo {
   /// Estimates of frame sizes for prolog/epilog
   unsigned estimatedFrameSize;
   unsigned argumentsSize;
-  //int firstSpillIndex;
-  //bool hasBigOffsets;
-  //bool hasSpills;
 
 public:
-  CPU74MachineFunctionInfo() : CalleeSavedFrameSize(0), // ReplacedSpillFrameSize(0),
+  CPU74MachineFunctionInfo() : CalleeSavedFrameSize(0),
                               ReturnAddrIndex(0), SRetReturnReg(0),
-                              estimatedFrameSize(0), argumentsSize(0) //, hasBigOffsets(false)
-                              /*firstSpillIndex(0),  hasSpills(false)*/ {}
+                              estimatedFrameSize(0), argumentsSize(0)
+                              {}
 
   explicit CPU74MachineFunctionInfo(MachineFunction &MF)
        : CalleeSavedFrameSize(0), //ReplacedSpillFrameSize(0),
          ReturnAddrIndex(0), SRetReturnReg(0),
-         estimatedFrameSize(0), argumentsSize(0) //,hasBigOffsets(false)
-         /*firstSpillIndex(0), hasSpills(false)*/ {}
+         estimatedFrameSize(0), argumentsSize(0)
+         {}
 
   unsigned getCalleeSavedFrameSize() const { return CalleeSavedFrameSize; }
   void setCalleeSavedFrameSize(unsigned bytes) { CalleeSavedFrameSize = bytes; }
@@ -82,19 +79,6 @@ public:
   void setEstimatedFrameSize( unsigned newSize ) { estimatedFrameSize = newSize; }
   unsigned getArgumentsSize() const { return argumentsSize; }
   void setArgumentsSize( unsigned newSize ) { argumentsSize = newSize; }
-  
-//  bool getHasBigOffsets() const { return hasBigOffsets; }
-//  void setHasBigOffsets(bool value) { hasBigOffsets = value; }
-  
-//  // With the following set of functions we signal that there are
-//  // spill instructions that may be replaced by r6 moves when
-//  // it's not used as a FP
-//  // This is updated in CPU74InstrInfo::loadRegFromStackSlot and used
-//  // during Prolog/Epilog Insertion and FrameIndexElimination
-//  bool getHasSpills() const { return hasSpills; }
-//  void setHasSpills(bool value) { hasSpills = value; }
-//  int getFirstSpillIndex() const { return firstSpillIndex; }
-//  void setFirstSpillIndex(int value) { firstSpillIndex = value; }
 };
 
 } // End llvm namespace

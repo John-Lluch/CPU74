@@ -62,10 +62,11 @@ public:
 char CPU74BSel::ID = 0;
 }
 
+/// Returns true if the specified Distance fits in a core branch instruction
 static bool isInRage(int DistanceInBytes) {
-  // According to CC430 Family User's Guide, Section 4.5.1.3, branch
-  // instructions have the signed 10-bit word offset field, so first we need to
-  // convert the distance from bytes to words, then check if it fits in 10-bit
+  // CPU74 core branch
+  // instructions have the signed 9-bit word offset field, so first we need to
+  // convert the distance from bytes to words, then check if it fits in 9-bit
   // signed integer.
   const int WordSize = 2;
 
@@ -73,7 +74,7 @@ static bool isInRage(int DistanceInBytes) {
          "Branch offset should be word aligned!");
 
   int Words = DistanceInBytes / WordSize;
-  return isInt<10>(Words);
+  return isInt<9>(Words);
 }
 
 /// Measure each basic block, fill the BlockOffsets, and return the size of
@@ -104,24 +105,20 @@ unsigned CPU74BSel::measureFunction(OffsetVector &BlockOffsets,
 
 /// Do expand branches and split the basic blocks if necessary.
 /// Returns true if made any change.
-bool CPU74BSel::expandBranches(OffsetVector &BlockOffsets) {
+bool CPU74BSel::expandBranches(OffsetVector &BlockOffsets)
+{
   // For each conditional branch, if the offset to its destination is larger
-  // than the offset field allows, transform it into a long branch sequence
-  // like this:
-  //   short branch:
-  //     bCC MBB
-  //   long branch:
-  //     b!CC $PC+6
-  //     b MBB
-  //
+  // than the offset field allows, transform it into a prefixed branch instruction
   bool MadeChange = false;
-  for (auto MBB = MF->begin(), E = MF->end(); MBB != E; ++MBB) {
+  for (auto MBB = MF->begin(), E = MF->end(); MBB != E; ++MBB)
+  {
     unsigned MBBStartOffset = 0;
-    for (auto MI = MBB->begin(), EE = MBB->end(); MI != EE; ++MI) {
+    for (auto MI = MBB->begin(), EE = MBB->end(); MI != EE; ++MI)
+    {
       MBBStartOffset += TII->getInstSizeInBytes(*MI);
 
       // If this instruction is not a short branch then skip it.
-      if (MI->getOpcode() != CPU74::BRCC && MI->getOpcode() != CPU74::JMP) {
+      if (MI->getOpcode() != CPU74::BRCC_core && MI->getOpcode() != CPU74::JMP_core) {
         continue;
       }
 
@@ -129,9 +126,9 @@ bool CPU74BSel::expandBranches(OffsetVector &BlockOffsets) {
       // Determine the distance from the current branch to the destination
       // block. MBBStartOffset already includes the size of the current branch
       // instruction.
-      int BlockDistance =
-          BlockOffsets[DestBB->getNumber()] - BlockOffsets[MBB->getNumber()];
+      int BlockDistance = BlockOffsets[DestBB->getNumber()] - BlockOffsets[MBB->getNumber()];
       int BranchDistance = BlockDistance - MBBStartOffset;
+      BranchDistance -= 2 ; // compensate for the PC pointing always to the next instruction
 
       // If this branch is in range, ignore it.
       if (isInRage(BranchDistance)) {
@@ -141,80 +138,25 @@ bool CPU74BSel::expandBranches(OffsetVector &BlockOffsets) {
       LLVM_DEBUG(dbgs() << "  Found a branch that needs expanding, "
                         << printMBBReference(*DestBB) << ", Distance "
                         << BranchDistance << "\n");
-
-      // If BRCC is not the last instruction we need to split the MBB.
-      if (MI->getOpcode() == CPU74::BRCC && std::next(MI) != EE) {
-
-        LLVM_DEBUG(dbgs() << "  Found a basic block that needs to be split, "
-                          << printMBBReference(*MBB) << "\n");
-
-        // Create a new basic block.
-        MachineBasicBlock *NewBB =
-            MF->CreateMachineBasicBlock(MBB->getBasicBlock());
-        MF->insert(std::next(MBB), NewBB);
-
-        // Splice the instructions following MI over to the NewBB.
-        NewBB->splice(NewBB->end(), &*MBB, std::next(MI), MBB->end());
-
-        // Update the successor lists.
-        for (MachineBasicBlock *Succ : MBB->successors()) {
-          if (Succ == DestBB) {
-            continue;
-          }
-          MBB->replaceSuccessor(Succ, NewBB);
-          NewBB->addSuccessor(Succ);
-        }
-
-        // We introduced a new MBB so all following blocks should be numbered
-        // and measured again.
-        measureFunction(BlockOffsets, &*MBB);
-
-        ++NumSplit;
-
-        // It may be not necessary to start all over at this point, but it's
-        // safer do this anyway.
-        return true;
-      }
-
-      MachineInstr &OldBranch = *MI;
-      DebugLoc dl = OldBranch.getDebugLoc();
-      int InstrSizeDiff = -TII->getInstSizeInBytes(OldBranch);
-
-      if (MI->getOpcode() == CPU74::BRCC) {
-        MachineBasicBlock *NextMBB = &*std::next(MBB);
-        assert(MBB->isSuccessor(NextMBB) &&
-               "This block must have a layout successor!");
-
-        // The BCC operands are:
-        // 0. Target MBB
-        // 1. CPU74 branch predicate
-        SmallVector<MachineOperand, 1> Cond;
-        Cond.push_back(MI->getOperand(1));
-
-        // Jump over the long branch on the opposite condition
-        TII->reverseBranchCondition(Cond);
-        MI = BuildMI(*MBB, MI, dl, TII->get(CPU74::BRCC))
-                 .addMBB(NextMBB)
-                 .add(Cond[0]);
-        InstrSizeDiff += TII->getInstSizeInBytes(*MI);
-        ++MI;
-      }
-
-      // Unconditional branch to the real destination.
-      //JLZ Aqui hi avia aixo:  MI = BuildMI(*MBB, MI, dl, TII->get(CPU74::Bi)).addMBB(DestBB);
-      //JLZ No en tinc ni idea del que fara aixo:
-      MI = BuildMI(*MBB, MI, dl, TII->get(CPU74::JMP)).addMBB(DestBB);
-      //JLZ O seria millor aixo?  MI = BuildMI(*MBB, MI, dl, TII->get(CPU74::JMPReg)).addMBB(DestBB);
       
+      int InstrSizeDiff = -TII->getInstSizeInBytes(*MI);
+      
+      unsigned newOpCode = 0;
+      switch ( MI->getOpcode() )
+      {
+        default: llvm_unreachable("Unsupported opcode entering expandBranches");
+        case CPU74::BRCC_core : newOpCode = CPU74::BRCC_pfix; break;
+        case CPU74::JMP_core : newOpCode = CPU74::JMP_pfix; break;
+      }
+      
+      MI->setDesc(TII->get(newOpCode));
       
       InstrSizeDiff += TII->getInstSizeInBytes(*MI);
-
-      // Remove the old branch from the function.
-      OldBranch.eraseFromParent();
-
+    
       // The size of a new instruction is different from the old one, so we need
       // to correct all block offsets.
-      for (int i = MBB->getNumber() + 1, e = BlockOffsets.size(); i < e; ++i) {
+      for (int i = MBB->getNumber() + 1, e = BlockOffsets.size(); i < e; ++i)
+      {
         BlockOffsets[i] += InstrSizeDiff;
       }
       MBBStartOffset += InstrSizeDiff;
@@ -226,7 +168,9 @@ bool CPU74BSel::expandBranches(OffsetVector &BlockOffsets) {
   return MadeChange;
 }
 
-bool CPU74BSel::runOnMachineFunction(MachineFunction &mf) {
+// Pass Entry point
+bool CPU74BSel::runOnMachineFunction(MachineFunction &mf)
+{
   MF = &mf;
   TII = static_cast<const CPU74InstrInfo *>(MF->getSubtarget().getInstrInfo());
 

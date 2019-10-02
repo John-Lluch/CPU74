@@ -94,18 +94,6 @@ using namespace llvm;
 ///
 namespace
 {
-
-//  enum AdressingMode
-//  {
-//    AdrModeUnknown = 0,
-//    //AdrModeAddress,
-//    AdrModeSPIndexed,
-//    //AdrModeMemIndexed,
-//    //AdrModeRegIndexed
-//  };
-
-
-
   class CPU74DAGToDAGISel : public SelectionDAGISel
   {
   public:
@@ -125,8 +113,7 @@ namespace
   private:
     void Select(SDNode *N) override;
     
-    //bool SelectSPIndexed(SDValue N, SDValue &Base, SDValue &OffImm);
-    bool SelectGRIndexed(SDValue N, SDValue &Base, SDValue &OffImm);
+    bool SelectARIndexed(SDValue N, SDValue &Base, SDValue &OffImm);
     bool SelectFIIndexed(SDValue N, SDValue &Base, SDValue &OffImm);
     bool SelectIndexed(SDValue N, SDValue &Base, SDValue &OffImm);
     bool SelectWordIndexed(SDValue N, SDValue &Base, SDValue &OffImm);
@@ -136,7 +123,6 @@ namespace
     bool doSelectMemoryIndexed(SDValue N, SDValue &Base, SDValue &OffImm, ImmTestF immTest );
     bool doSelectMemoryIndexedWrapper(SDValue N, SDValue &Base, SDValue &Offset );
     bool doSelectAddress(SDValue N, SDValue &Base);
-    //void ensureFrameObjectAlignment( int idx );
   };
 }  // end anonymous namespace
 
@@ -154,7 +140,6 @@ FunctionPass *llvm::createCPU74ISelDag(CPU74TargetMachine &TM,
 
 static void aveureque( SDValue Addr  )
 {
-
     unsigned last = ISD::BUILTIN_OP_END;
     unsigned opCode = 0;
     ISD::NodeType opCodeNT = ISD::DELETED_NODE;
@@ -187,51 +172,44 @@ static void aveureque( SDValue Addr  )
       unsigned zzz1 = oper1.getOpcode();
       zzz1NT = (ISD::NodeType)zzz1;
       if ( zzz1 > CPU74ISD::FIRST_NUMBER ) zzz174NT = (CPU74ISD::NodeType)zzz1;
-
-//      bool kkk0 = isa<ConstantSDNode>(Addr.getOperand(0));
-//      bool kkk1 = isa<ConstantSDNode>(Addr.getOperand(1));
-//      bool kkk11 = isa<RegisterSDNode>(Addr.getOperand(1));
     }
   int a=2;
 }
 
-//void CPU74DAGToDAGISel::ensureFrameObjectAlignment( int idx )
-//{
-////    MachineFrameInfo &MFI = MF->getFrameInfo();
-////    if (MFI.getObjectSize(idx) > 1 && MFI.getObjectAlignment(idx) < 2)
-////        MFI.setObjectAlignment(idx, 2);
-//}
-
-
+// Only selects Frame Index [fp,k]. Example: movw_qr, movw_rq, lea_qr
 bool CPU74DAGToDAGISel::SelectFIIndexed(SDValue Addr, SDValue &Base, SDValue &Offset)
 {
   return doSelectFrameIndexed(Addr, Base, Offset);
 }
 
-bool CPU74DAGToDAGISel::SelectGRIndexed(SDValue Addr, SDValue &Base, SDValue &Offset)
+// Address with short immediates, but not Frame Indexes [Rx,k]. Example: movw_mr, movw_rm, lea_mr
+bool CPU74DAGToDAGISel::SelectARIndexed(SDValue Addr, SDValue &Base, SDValue &Offset)
 {
-  ImmTestF immTest = [](int constant) -> bool { return CPU74Imm::isImm6_d(constant); };
+  ImmTestF immTest = [](int constant) -> bool { return CPU74Imm::isImm5_d(constant); };
   return doSelectMemoryIndexed(Addr, Base, Offset, immTest);
 }
 
+// Address with short immediates, and Frame Indexes [Rx,k], [fp,k] . Example: movw_mr, movw_rm, lea_mr
 bool CPU74DAGToDAGISel::SelectIndexed(SDValue Addr, SDValue &Base, SDValue &Offset)
 {
   if ( doSelectFrameIndexed(Addr, Base, Offset) )
     return true;
   
-  ImmTestF immTest = [](int constant) -> bool { return CPU74Imm::isImm6_d(constant); };
+  ImmTestF immTest = [](int constant) -> bool { return CPU74Imm::isImm5_d(constant); };
   return doSelectMemoryIndexed(Addr, Base, Offset, immTest);
 }
 
+// Address with long immediates, but not Frame Indexes [Rx,K] . Example: movw_Mr, movw_rM, lea_Mr
 bool CPU74DAGToDAGISel::SelectWordIndexed(SDValue Addr, SDValue &Base, SDValue &Offset)
 {
   if ( doSelectMemoryIndexedWrapper(Addr, Base, Offset) )
     return true;
 
-  ImmTestF immTest = [](int constant) -> bool { return !CPU74Imm::isImm6_d(constant); };
+  ImmTestF immTest = [](int constant) -> bool { return !CPU74Imm::isImm5_d(constant); };
   return doSelectMemoryIndexed(Addr, Base, Offset, immTest);
 }
 
+// Direct addresses of the form [&Addr]
 bool CPU74DAGToDAGISel::SelectAddress(SDValue Addr, SDValue &Base)
 {
   return doSelectAddress(Addr, Base);
@@ -270,6 +248,19 @@ bool CPU74DAGToDAGISel::doSelectFrameIndexed(SDValue Addr, SDValue &Base, SDValu
     return true;
   }
   
+  if ( !CPU74Imm::isImm8u(constant) )  // Should be selected by MOVMr
+      return false;
+  
+  unsigned opCode = EntryNode.getOpcode();
+  if (  opCode == CPU74ISD::CallArgLoc )
+  {
+    assert( CPU74Imm::isImm8u(constant) && "Too big, sorry" );
+    //Base = CurDAG->getCopyFromReg(Chain, dl, CPU74::SP, PtrVT);
+    Base = CurDAG->getRegister(CPU74::SP, ValTy);
+    Offset = CurDAG->getTargetConstant(constant, DL, ValTy);
+    return true;
+  }
+  
   return false;
 }
 
@@ -298,12 +289,20 @@ bool CPU74DAGToDAGISel::doSelectMemoryIndexed(SDValue Addr, SDValue &Base, SDVal
   if ( !immTest(constant) )
     return false;
   
-  // Select unless it's frame stuff or it contains a non constant embeeded add
+  // Select CallArgLog in case it was not by doSelectFrameIndexed
   unsigned opCode = EntryNode.getOpcode();
+  if (  opCode == CPU74ISD::CallArgLoc )
+  {
+    Base = CurDAG->getRegister(CPU74::SP, ValTy);
+    Offset = CurDAG->getTargetConstant(constant, DL, ValTy);
+    return true;
+  }
+  
+  // Select unless it's frame stuff or it contains a non constant embeeded add
   if ( !( dyn_cast<FrameIndexSDNode>(EntryNode) /*|| opCode == CPU74ISD::CallArgLoc */ // This shall be selected by MOVqr or MOVrq
-        || opCode == ISD::ADD           // This shall be selected by MOVnr or MOVrn
+        || opCode == ISD::ADD           // This should be selected by MOVnr or MOVrn
         //|| opCode == CPU74ISD::SingleValWrapper   // This shall be selected by MOVar or MOVra
-        || (opCode == CPU74ISD::AggregateWrapper && EntryNode.hasOneUse()) ) )  // This shall be selected by MOVar or MOVra
+        || (opCode == CPU74ISD::AggregateWrapper && EntryNode.hasOneUse()) ) )  // This should be selected by MOVar or MOVra
   {
     Base = EntryNode;
     Offset = CurDAG->getTargetConstant(constant, DL, ValTy);
@@ -351,7 +350,7 @@ bool CPU74DAGToDAGISel::doSelectMemoryIndexedWrapper(SDValue Addr, SDValue &Base
   return false;
 }
 
-// [&a]
+// [&a],  [&a+cnst]
 bool CPU74DAGToDAGISel::doSelectAddress(SDValue Addr, SDValue &Base)
 {
   SDLoc DL(Addr);
@@ -405,18 +404,28 @@ void CPU74DAGToDAGISel::Select(SDNode *Node)
   if ( opCode > CPU74ISD::FIRST_NUMBER ) zzz074NT = (CPU74ISD::NodeType)opCodeNT;
 
   EVT ValTy = Node->getValueType(0);
-
-  if ( 1 && opCode == ISD::FrameIndex )
+  
+  if ( opCode == CPU74ISD::CallArgLoc )
   {
-      FrameIndexSDNode *FIN = dyn_cast<FrameIndexSDNode>(Node);
-      int idx = FIN->getIndex();
-      SDValue Base = CurDAG->getTargetFrameIndex(idx, ValTy);
-      SDValue Offset = CurDAG->getTargetConstant(0, dl, ValTy);
-      CurDAG->SelectNodeTo(Node, CPU74::ADDFrame, ValTy, Base, Offset);
-      //CurDAG->SelectNodeTo(Node, CPU74::LEAMr16, ValTy, Base, Offset);
-      //ensureFrameObjectAlignment( idx );
+      SDValue Base = CurDAG->getRegister( CPU74::SP, ValTy);
+      SDValue Offset = CurDAG->getTargetConstant(0, dl, MVT::i16);
+      CurDAG->SelectNodeTo(Node, CPU74::LEAqr16_core, ValTy, Base, Offset);
       return;
   }
+
+//  if ( 0 && opCode == ISD::FrameIndex )
+//  {
+//      FrameIndexSDNode *FIN = dyn_cast<FrameIndexSDNode>(Node);
+//      int idx = FIN->getIndex();
+//      SDValue Base = CurDAG->getTargetFrameIndex(idx, ValTy);
+//      SDValue Offset = CurDAG->getTargetConstant(0, dl, ValTy);
+//      //CurDAG->SelectNodeTo(Node, CPU74::ADDFrame, ValTy, Base, Offset);
+//
+//      CurDAG->SelectNodeTo(Node, CPU74::LEAqr16, ValTy, Base, Offset); 
+//      //CurDAG->SelectNodeTo(Node, CPU74::LEAMr16, ValTy, Base, Offset);
+//      //ensureFrameObjectAlignment( idx );
+//      return;
+//  }
   
 //  if ( 0 && CurDAG->isBaseWithConstantOffset( SDValue(Node,0)) )
 //  {
@@ -437,49 +446,6 @@ void CPU74DAGToDAGISel::Select(SDNode *Node)
 //    }
 //  }
 
-//  if ( opCode == CPU74ISD::CallArgLoc )
-//  {
-//      SDValue Base = CurDAG->getRegister( CPU74::SP, ValTy);
-//      CurDAG->SelectNodeTo(Node, CPU74::MOVsr16, ValTy, Base);
-//      return;
-//  }
-  
-
-  // Few custom selection stuff.
-//  switch (opCode)
-//  {
-//    default: break;
-//    case ISD::FrameIndex:
-//    {
-//      // Convert the frameindex into a temp instruction that will hold the
-//      // effective address of the final stack slot.
-//      // These are variable index array or struct member accesses
-//      EVT ValTy = Node->getValueType(0);
-//      FrameIndexSDNode *FIN = dyn_cast<FrameIndexSDNode>(Node);
-//      int idx = FIN->getIndex();
-//      SDValue Base = CurDAG->getTargetFrameIndex(idx, ValTy);
-//      SDValue Offset = CurDAG->getTargetConstant(0, dl, ValTy);
-//      //if (Node->hasOneUse())
-//      {
-//        CurDAG->SelectNodeTo(Node, CPU74::ADDFrame, ValTy, Base, Offset);
-//        return;
-//      }
-////      ReplaceNode(Node, CurDAG->getMachineNode(
-////              CPU74::ADDFrame, dl, MVT::i16, Base, Offset);
-////      return;
-//    }
-//    break;
-//
-//    case CPU74ISD::CallArgLoc:
-//
-//    {
-//      EVT VT = Node->getValueType(0);
-//      SDValue Base = CurDAG->getRegister( CPU74::SP, VT);    //
-//      CurDAG->SelectNodeTo(Node, CPU74::MOVsr16, VT, Base);
-//      return;
-//    }
-//    break;
-//  }
 
 
   // Other cases are autogenerated

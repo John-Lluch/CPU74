@@ -46,11 +46,12 @@ public:
   bool hasFP(const MachineFunction &MF) const override;
   bool hasReservedCallFrame(const MachineFunction &MF) const override;
   
-//  void determineCalleeSaves(MachineFunction &MF, BitVector &SavedRegs,
-//                                    RegScavenger *RS = nullptr) const override;
   void processFunctionBeforeFrameFinalized(MachineFunction &MF,
                                      RegScavenger *RS = nullptr) const override;
   
+public:
+  bool hasBasePointer(const MachineFunction &MF) const;
+
 private:
   int estimateMaxOffset(const MachineFunction &MF, RegScavenger *RS) const;
   

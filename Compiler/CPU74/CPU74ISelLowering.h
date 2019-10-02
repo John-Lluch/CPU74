@@ -33,28 +33,17 @@ namespace llvm
       /// Same as RET_FLAG, but used for returning from ISRs.
       RETI_FLAG,
 
-//      /// Y = R{R,L}A X, rotate right (left) arithmetically
-//      ASR, ASL,
-//
-//      /// Y = RRC X, rotate right via carry
-//      LSRC,
-      
       /// One bit shift
       LSL, LSR, ASR,
-//      LSLO, LSRO, ASRO,
-//      LSLC, LSRC, ASRC,
+
+      // Part Shifts
+      LSLC, LSRC,
       
       /// 15 bit ASR
       SEXTW,
-      
-      // N bits shift Pseudo
-      //LSLN, LSRN, ASRN,
-      
-      // Y = SWAP X, swap high and lower bytes
-      //SWAP,
 
       // Location of passed argument on the stack
-      //CallArgLoc,
+      CallArgLoc,
       
       /// CALL - These operations represent an abstract call
       /// instruction, which includes a bunch of information.
@@ -68,18 +57,17 @@ namespace llvm
       /// CMP - Compare instruction.
       CMP,
       
+      // CMPC
+      CMPC,
+      
       // ADD, SUB tests
       ADD, SUB,
       
       // AND, OR, XOR tests
       AND, OR, XOR,
       
-      /// ADDO, SUBO, ADDC, SUBC
-      ADDO, SUBO, ADDC, SUBC,
-
-      /// SetCC - Operand 0 is condition code, and operand 1 is the flag
-      /// operand produced by a CMP instruction.
-      //SETCC,
+      /// ADDC, SUBC
+      ADDC, SUBC,
 
       /// CPU74 conditional branches. Operand 0 is the chain operand, operand 1
       /// is the block to branch if condition is true, operand 2 is the
@@ -87,10 +75,6 @@ namespace llvm
       /// instruction.
       BR_CC,
 
-      /// SELECT_CC - Operand 0 and operand 1 are selection variable, operand 3
-      /// is condition code and operand 4 is flag operand.
-      //SELECT_CC,
-      
       /// SET_CC - operand 1
       /// is condition code
       SET_CC,
@@ -98,10 +82,6 @@ namespace llvm
       /// SEL_CC - Operand 0 and operand 1 are selection variable, operand 3
       /// is condition code
       SEL_CC,
-
-      /// SHL, SRA, SRL - Non-constant shifts.
-      //SHL, SRA, SRL,
-
     };
   }
 
@@ -114,10 +94,9 @@ namespace llvm
 //      return MVT::i8;
 //    }
 
-
-//    bool allowsMisalignedMemoryAccesses(EVT VT, unsigned AddrSpace,
-//                                        unsigned Align,
-//                                        bool *Fast) const override;
+    bool isSelectSupported(SelectSupportKind Kind) const override {
+      return true;
+    }
 
     bool allowsMisalignedMemoryAccesses(EVT VT, unsigned AddrSpace,
                                         unsigned Align,
@@ -139,14 +118,33 @@ namespace llvm
     
     bool isLegalAddImmediate(int64_t Immed) const override;
     bool isLegalICmpImmediate(int64_t Immed) const override;
+    
+    bool shouldFormOverflowOp(unsigned Opcode, EVT VT) const override;
+    bool shouldConvertConstantLoadToIntImm(const APInt &Imm, Type *Ty) const override;
+    bool isSExtCheaperThanZExt(EVT SrcVT, EVT DstVT) const override;
+    
+    /// ReplaceNodeResults - Replace the results of node with an illegal result
+    /// type with new values built out of custom code.
+    void ReplaceNodeResults(SDNode *N, SmallVectorImpl<SDValue>&Results,
+                            SelectionDAG &DAG) const override;
 
     /// LowerOperation - Provide custom lowering hooks for some operations.
     SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const override;
+    
     void finalizeLowering(MachineFunction &MF) const override;
 
     /// getTargetNodeName - This method returns the name of a target specific
     /// DAG node.
     const char *getTargetNodeName(unsigned Opcode) const override;
+    
+    TargetLowering::ConstraintType
+    getConstraintType(StringRef Constraint) const override;
+    
+    std::pair<unsigned, const TargetRegisterClass *>
+    getRegForInlineAsmConstraint(const TargetRegisterInfo *TRI,
+                                 StringRef Constraint, MVT VT) const override;
+    
+    SDValue PerformDAGCombine(SDNode *N, DAGCombinerInfo &DCI) const override;
 
   private:
     SDValue LowerShifts(SDValue Op, SelectionDAG &DAG) const;
@@ -161,33 +159,22 @@ namespace llvm
     SDValue LowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerBR_CC(SDValue Op, SelectionDAG &DAG) const;
     
-    //SDValue LowerSHL_PARTS(SDValue Op, SelectionDAG &DAG) const;
-    //SDValue LowerSELECT(SDValue Op, SelectionDAG &DAG) const;
-    
-    
-    //SDValue LowerSIGN_EXTEND(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerDYNAMIC_STACKALLOC(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerRETURNADDR(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerFRAMEADDR(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerVASTART(SDValue Op, SelectionDAG &DAG) const;
-    //SDValue LowerLoad(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerUALUO(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerADDSUBCARRY(SDValue Op, SelectionDAG &DAG) const;
     
+    SDValue ExpandADD32(SDNode *N, SelectionDAG &DAG) const;
+    SDValue ExpandSHIFT32(SDNode *N, SelectionDAG &DAG) const;
+    
+    
 //    SDValue getReturnAddressFrameIndex(SelectionDAG &DAG) const;
-
 //    void ReplaceNodeResults(SDNode *N, SmallVectorImpl<SDValue> &Results,
 //                            SelectionDAG &DAG) const override;
 
-    TargetLowering::ConstraintType
-    getConstraintType(StringRef Constraint) const override;
-    
-    std::pair<unsigned, const TargetRegisterClass *>
-    getRegForInlineAsmConstraint(const TargetRegisterInfo *TRI,
-                                 StringRef Constraint, MVT VT) const override;
-    
-    SDValue
-    PerformDAGCombine(SDNode *N, DAGCombinerInfo &DCI) const override;
+
 
 // comentat JLZ
 //    /// isTruncateFree - Return true if it's free to truncate a value of type
@@ -213,27 +200,6 @@ namespace llvm
 //    MachineBasicBlock *EmitShiftInstr(MachineInstr &MI, MachineBasicBlock *BB) const;
 
   private:
-//    SDValue LowerCCCCallTo(SDValue Chain, SDValue Callee,
-//                           CallingConv::ID CallConv, bool isVarArg,
-//                           bool isTailCall,
-//                           const SmallVectorImpl<ISD::OutputArg> &Outs,
-//                           const SmallVectorImpl<SDValue> &OutVals,
-//                           const SmallVectorImpl<ISD::InputArg> &Ins,
-//                           const SDLoc &dl, SelectionDAG &DAG,
-//                           SmallVectorImpl<SDValue> &InVals) const;
-
-//    SDValue LowerCCCArguments(SDValue Chain, CallingConv::ID CallConv,
-//                              bool isVarArg,
-//                              const SmallVectorImpl<ISD::InputArg> &Ins,
-//                              const SDLoc &dl, SelectionDAG &DAG,
-//                              SmallVectorImpl<SDValue> &InVals) const;
-
-//    SDValue LowerCallResult(SDValue Chain, SDValue InFlag,
-//                            CallingConv::ID CallConv, bool isVarArg,
-//                            const SmallVectorImpl<ISD::InputArg> &Ins,
-//                            const SDLoc &dl, SelectionDAG &DAG,
-//                            SmallVectorImpl<SDValue> &InVals) const;
-
     SDValue LowerFormalArguments(SDValue Chain, CallingConv::ID CallConv, bool isVarArg,
                          const SmallVectorImpl<ISD::InputArg> &Ins,
                          const SDLoc &dl, SelectionDAG &DAG,

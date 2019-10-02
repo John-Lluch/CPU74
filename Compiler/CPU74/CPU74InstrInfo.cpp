@@ -34,6 +34,50 @@ CPU74InstrInfo::CPU74InstrInfo( /*CPU74Subtarget &STI*/)
   : CPU74GenInstrInfo(CPU74::CALLSQ_START, CPU74::CALLSQ_END),
     RI() {}
 
+
+
+
+// isLoadFromStackSlot - If the specified machine instruction is a direct
+// load from a stack slot, return the virtual or physical register number of
+// the destination along with the FrameIndex of the loaded stack slot.  If
+// not, return 0.  This predicate must return 0 if the instruction has
+// any side effects other than loading from the stack slot.
+unsigned CPU74InstrInfo::isLoadFromStackSlot(const MachineInstr &MI, int &FrameIndex) const
+{
+  unsigned op = MI.getOpcode();
+  if ( op == CPU74::MOVqr16_core || op == CPU74::MOVqr8s_core || op == CPU74::MOVqr8z_core )
+  {
+    if (MI.getOperand(1).isFI() && MI.getOperand(2).isImm() &&
+                                    MI.getOperand(2).getImm() == 0)
+    {
+      FrameIndex = MI.getOperand(1).getIndex();
+      return MI.getOperand(0).getReg();
+    }
+  }
+  return 0;
+}
+
+// isStoreToStackSlot - If the specified machine instruction is a direct
+// store to a stack slot, return the virtual or physical register number of
+// the source reg along with the FrameIndex of the loaded stack slot.  If
+// not, return 0.  This predicate must return 0 if the instruction has
+// any side effects other than storing to the stack slot.
+unsigned CPU74InstrInfo::isStoreToStackSlot(const MachineInstr &MI, int &FrameIndex) const
+{
+  unsigned op = MI.getOpcode();
+  if ( op == CPU74::MOVrq16_core || op == CPU74::MOVrq8_core )
+  {
+    if (MI.getOperand(0).isFI() && MI.getOperand(1).isImm() &&
+                                    MI.getOperand(1).getImm() == 0)
+    {
+      FrameIndex = MI.getOperand(0).getIndex();
+      return MI.getOperand(2).getReg();
+    }
+  }
+  return 0;
+}
+
+
 // Generate instructions to store register to the stack
 
 void CPU74InstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
@@ -51,8 +95,8 @@ void CPU74InstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
       MFI.getObjectSize(FrameIdx), MFI.getObjectAlignment(FrameIdx));
   
   unsigned opcode = 0;
-  //if (RC == &CPU74::GR16RegClass) opcode = CPU74::MOVrq16;
-  if (RC == &CPU74::GR16RegClass) opcode = CPU74::MOVrm16;
+  if (RC == &CPU74::GR16RegClass ) opcode = CPU74::MOVrq16_core;
+  //if (RC == &CPU74::GR16RegClass) opcode = CPU74::MOVrm16;
 
   assert( opcode && "Cannot store this register to stack slot!");
   
@@ -79,8 +123,8 @@ void CPU74InstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
       MFI.getObjectSize(FrameIdx), MFI.getObjectAlignment(FrameIdx));
   
   unsigned opcode = 0;
-  //if (RC == &CPU74::GR16RegClass) opcode = CPU74::MOVqr16;
-  if (RC == &CPU74::GR16RegClass) opcode = CPU74::MOVmr16;
+  if (RC == &CPU74::GR16RegClass ) opcode = CPU74::MOVqr16_core;
+  //if (RC == &CPU74::GR16RegClass) opcode = CPU74::MOVmr16;
   
   assert( opcode && "Cannot load this register from stack slot!");
   
@@ -110,44 +154,25 @@ void CPU74InstrInfo::copyPhysReg(MachineBasicBlock &MBB,
     MachineBasicBlock::iterator I, const DebugLoc &DL, unsigned DestReg,
     unsigned SrcReg, bool KillSrc) const
 {
+  if (CPU74::GR16RegClass.contains(DestReg) && CPU74::SSPRegClass.contains(SrcReg))
+  {
+    BuildMI(MBB, I, DL, get(CPU74::LEAqr16_core), DestReg)
+      .addReg(SrcReg, getKillRegState(KillSrc))
+      .addImm(0);
+    return;
+  }
+  
   unsigned opcode = 0;
-  if (CPU74::GR16RegClass.contains(DestReg, SrcReg)) opcode = CPU74::MOVrr16;
-  else if (CPU74::GRX16RegClass.contains(DestReg) && CPU74::GR16RegClass.contains(SrcReg)) opcode = CPU74::MOVrx16;
-  else if (CPU74::GR16RegClass.contains(DestReg) && CPU74::GRX16RegClass.contains(SrcReg)) opcode = CPU74::MOVxr16;
+  if (CPU74::GR16RegClass.contains(DestReg, SrcReg))
+    opcode = CPU74::MOVrr16;
+  
+  else if (CPU74::SSPRegClass.contains(DestReg) && CPU74::GR16RegClass.contains(SrcReg))
+    opcode = CPU74::MOVrq16;
   
   assert( opcode && "Impossible reg-to-reg copy" );
 
-  BuildMI(MBB, I, DL, get(opcode), DestReg).addReg(SrcReg, getKillRegState(KillSrc));
-}
-
-
-unsigned CPU74InstrInfo::removeBranch(MachineBasicBlock &MBB,
-                                       int *BytesRemoved) const {
-  assert(!BytesRemoved && "code size not handled");
-
-  MachineBasicBlock::iterator I = MBB.end();
-  unsigned Count = 0;
-
-  while (I != MBB.begin()) {
-    --I;
-    if (I->isDebugInstr())
-      continue;
-//JLZ    if (I->getOpcode() != CPU74::JMP &&
-//JLZ        I->getOpcode() != CPU74::JCC &&
-//JLZ        I->getOpcode() != CPU74::Br &&
-//JLZ        I->getOpcode() != CPU74::Bm)
-
-    if (I->getOpcode() != CPU74::JMP &&
-        I->getOpcode() != CPU74::BRCC &&
-        I->getOpcode() != CPU74::JMPreg)
-      break;
-    // Remove the branch.
-    I->eraseFromParent();
-    I = MBB.end();
-    ++Count;
-  }
-
-  return Count;
+  BuildMI(MBB, I, DL, get(opcode), DestReg)
+      .addReg(SrcReg, getKillRegState(KillSrc));
 }
 
 CPU74CC::CondCodes CPU74CC::getOppositeCondition( CPU74CC::CondCodes CondCode )
@@ -169,8 +194,7 @@ CPU74CC::CondCodes CPU74CC::getOppositeCondition( CPU74CC::CondCodes CondCode )
   }
 }
 
-bool CPU74InstrInfo::
-reverseBranchCondition(SmallVectorImpl<MachineOperand> &Cond) const
+bool CPU74InstrInfo::reverseBranchCondition(SmallVectorImpl<MachineOperand> &Cond) const
 {
   assert(Cond.size() == 1 && "Invalid Xbranch condition!");
 
@@ -184,7 +208,33 @@ reverseBranchCondition(SmallVectorImpl<MachineOperand> &Cond) const
   return false;
 }
 
-
+/// Analyze the branching code at the end of MBB, returning
+/// true if it cannot be understood (e.g. it's a switch dispatch or isn't
+/// implemented for a target).  Upon success, this returns false and returns
+/// with the following information in various cases:
+///
+/// 1. If this block ends with no branches (it just falls through to its succ)
+///    just return false, leaving TBB/FBB null.
+/// 2. If this block ends with only an unconditional branch, it sets TBB to be
+///    the destination block.
+/// 3. If this block ends with a conditional branch and it falls through to a
+///    successor block, it sets TBB to be the branch destination block and a
+///    list of operands that evaluate the condition. These operands can be
+///    passed to other TargetInstrInfo methods to create new branches.
+/// 4. If this block ends with a conditional branch followed by an
+///    unconditional branch, it returns the 'true' destination in TBB, the
+///    'false' destination in FBB, and a list of operands that evaluate the
+///    condition.  These operands can be passed to other TargetInstrInfo
+///    methods to create new branches.
+///
+/// Note that removeBranch and insertBranch must be implemented to support
+/// cases where this method returns success.
+///
+/// If AllowModify is true, then this routine is allowed to modify the basic
+/// block (e.g. delete instructions after the unconditional branch).
+///
+/// The CFG information in MBB.Predecessors and MBB.Successors must be valid
+/// before calling this function.
 bool CPU74InstrInfo::analyzeBranch(MachineBasicBlock &MBB,
                                     MachineBasicBlock *&TBB,
                                     MachineBasicBlock *&FBB,
@@ -214,7 +264,7 @@ bool CPU74InstrInfo::analyzeBranch(MachineBasicBlock &MBB,
       return true;
 
     // Handle unconditional branches.
-    if (I->getOpcode() == CPU74::JMP) {
+    if (I->getOpcode() == CPU74::JMP_core) {
       if (!AllowModify) {
         TBB = I->getOperand(0).getMBB();
         continue;
@@ -240,7 +290,7 @@ bool CPU74InstrInfo::analyzeBranch(MachineBasicBlock &MBB,
     }
 
     // Handle conditional branches.
-    assert(I->getOpcode() == CPU74::BRCC && "Invalid conditional branch");
+    assert(I->getOpcode() == CPU74::BRCC_core && "Invalid conditional branch");
     CPU74CC::CondCodes BranchCode =
       static_cast<CPU74CC::CondCodes>(I->getOperand(1).getImm());
     if (BranchCode == CPU74CC::COND_INVALID)
@@ -275,6 +325,19 @@ bool CPU74InstrInfo::analyzeBranch(MachineBasicBlock &MBB,
   return false;
 }
 
+/// Insert branch code into the end of the specified MachineBasicBlock. The
+/// operands to this method are the same as those returned by AnalyzeBranch.
+/// This is only invoked in cases where AnalyzeBranch returns success. It
+/// returns the number of instructions inserted. If \p BytesAdded is non-null,
+/// report the change in code size from the added instructions.
+///
+/// It is also invoked by tail merging to add unconditional branches in
+/// cases where AnalyzeBranch doesn't apply because there was no original
+/// branch to analyze.  At least this much must be implemented, else tail
+/// merging needs to be disabled.
+///
+/// The CFG information in MBB.Predecessors and MBB.Successors must be valid
+/// before calling this function.
 unsigned CPU74InstrInfo::insertBranch(MachineBasicBlock &MBB,
                                        MachineBasicBlock *TBB,
                                        MachineBasicBlock *FBB,
@@ -290,27 +353,56 @@ unsigned CPU74InstrInfo::insertBranch(MachineBasicBlock &MBB,
   if (Cond.empty()) {
     // Unconditional branch?
     assert(!FBB && "Unconditional branch with multiple successors!");
-    BuildMI(&MBB, DL, get(CPU74::JMP)).addMBB(TBB);
+    BuildMI(&MBB, DL, get(CPU74::JMP_core)).addMBB(TBB);
     return 1;
   }
 
   // Conditional branch.
   unsigned Count = 0;
-  BuildMI(&MBB, DL, get(CPU74::BRCC)).addMBB(TBB).addImm(Cond[0].getImm());
+  BuildMI(&MBB, DL, get(CPU74::BRCC_core)).addMBB(TBB).addImm(Cond[0].getImm());
   ++Count;
 
   if (FBB) {
     // Two-way Conditional branch. Insert the second branch.
-    BuildMI(&MBB, DL, get(CPU74::JMP)).addMBB(FBB);
+    BuildMI(&MBB, DL, get(CPU74::JMP_core)).addMBB(FBB);
     ++Count;
   }
   return Count;
 }
 
+/// Remove the branching code at the end of the specific MBB.
+/// This is only invoked in cases where AnalyzeBranch returns success. It
+/// returns the number of instructions that were removed.
+/// If \p BytesRemoved is non-null, report the change in code size from the
+/// removed instructions.
+unsigned CPU74InstrInfo::removeBranch(MachineBasicBlock &MBB,
+                                       int *BytesRemoved) const {
+  assert(!BytesRemoved && "code size not handled");
+
+  MachineBasicBlock::iterator I = MBB.end();
+  unsigned Count = 0;
+
+  while (I != MBB.begin()) {
+    --I;
+    if (I->isDebugInstr())
+      continue;
+
+    if (I->getOpcode() != CPU74::JMP_core &&
+        I->getOpcode() != CPU74::BRCC_core &&
+        I->getOpcode() != CPU74::JMPreg)
+      break;
+      
+    // Remove the branch.
+    I->eraseFromParent();
+    I = MBB.end();
+    ++Count;
+  }
+
+  return Count;
+}
 
 /// GetInstSize - Return the number of bytes of code the specified
 /// instruction may be.  This returns the maximum number of bytes.
-///
 unsigned CPU74InstrInfo::getInstSizeInBytes(const MachineInstr &MI) const
 {
   const MCInstrDesc &Desc = MI.getDesc();
