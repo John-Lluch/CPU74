@@ -140,12 +140,14 @@ class Assembler
     """
       \t.text
       \t.file "setup"
+      \tmov &initialSP, r0
+      \tmov r0, SP
       \tmov @setupAddr, r1    # program memory
       \tmov &dataAddr, r2     # data memory
       \tmov &wordLength, r0   # counter
       .LL0:
-      \tcmp r0, 0
-      \tbreq .LL1
+      \tcmp.eq r0, 0
+      \tbrcc .LL1
       \tld.w {r1}, r3
       \tst.w r3, [r2, 0]
       \tadd r1, 1, r1
@@ -165,6 +167,8 @@ class Assembler
   func insertSetupSymbols()
   {
     let setup = sources[0]
+    
+    setup.localSymTable["initialSP".d] = SymTableInfo(bank:.imm, value:-256)
     setup.localSymTable["setupAddr".d] = SymTableInfo(bank:.imm, value:0)
     setup.localSymTable["dataAddr".d] = SymTableInfo(bank:.imm, value:0)
     setup.localSymTable["wordLength".d] = SymTableInfo(bank:.imm, value:0)
@@ -230,7 +234,7 @@ class Assembler
       var thePrefix:TypeP? = nil
       if let op = inst.exOperand
       {
-        thePrefix = TypeP( op:1, ops:[op], rk:[] )
+        thePrefix = TypeP( op:0b11111, ops:[op], rk:[] )
         thePrefix!.setPrefixValue(a:op.u16value)   // Set the prefix address bits
         theInst?.setPrefixedValue(a:op.u16value)   // Update the prefixed immediate
       }
@@ -435,10 +439,10 @@ class Assembler
           
           // Compute the destination address
           assert( inst.symOp != nil, "Instruction should have a symOp" )
+          
           let op = inst.symOp!
           if let symInfo = getMemoryAddress(sym: op.sym!, src:source) {
             aa = symInfo.value + op.value - here }
-          
           // Get the acceptable range for this instruction
           let inCoreRange = theInst!.inRange(aa)
           
@@ -447,6 +451,8 @@ class Assembler
           if ( inst.hasPfix && inCoreRange ) { inst.hasPfix = false }
           else if ( !inst.hasPfix && !inCoreRange ) {inst.hasPfix = true }
           let instSizeDif = inst.size - instSize
+
+          out.logln( "Optimizing: \((op.sym?.s)!), Value: \(aa), \(instSizeDif != 0 ? "" : "(no change)" ) " )
 
           // Did we replace the instruction?
           if instSizeDif != 0
@@ -486,18 +492,26 @@ class Assembler
       
       for inst in source.instructions
       {
-        if let label = inst.label
+        if inst.labels != nil
         {
-          var symInfo = source.localSymTable[label]
-          if symInfo == nil { symInfo = globalSymTable[label] }
-          
-          if symInfo == nil {
-            out.exitWithError( "\(source.shortName.s).s Unresolved symbol: " + label.s ) }
-          
-          switch symInfo!.bank
+          for label in inst.labels!
+          //if let label = inst.label
           {
-            case .program  : symInfo!.value = memIdx + source.instructionsOffset
-            default : out.exitWithError( "Unsuported bank" )
+            var symInfo = source.localSymTable[label]
+            if symInfo == nil { symInfo = globalSymTable[label] }
+          
+            if symInfo == nil {
+              out.exitWithError( "\(source.shortName.s).s Unresolved symbol: " + label.s ) }
+          
+            out.log( "Replacing: \(label.s), Value: \(symInfo!.value)" )
+          
+            switch symInfo!.bank
+            {
+              case .program  : symInfo!.value = memIdx + source.instructionsOffset
+              default : out.exitWithError( "Unsuported bank" )
+            }
+          
+            out.logln( "...New Value: \(symInfo!.value)" )
           }
         }
         memIdx += inst.size

@@ -30,7 +30,7 @@ class SourceParser:PrimitiveParser
   let asm:Assembler        // Destination Assembler object
   var currBank:Bank = .program    // Current memory bank
   var currInst:Instruction?       // Current instruction
-  var currLabel:Data?             // Current label
+  var currLabels:[Data]?          // Current label list
 
   //-------------------------------------------------------------------------------------------
   // Designated initializer, withData contains the actual source file
@@ -58,6 +58,7 @@ class SourceParser:PrimitiveParser
   {
     if let token = parseToken() { return token }
     if let token = parsePrefixedToken( prefix: ".L".d ) { return token }
+    if let token = parsePrefixedToken( prefix: ".L.".d ) { return token }
     return nil
   }
 
@@ -115,7 +116,8 @@ class SourceParser:PrimitiveParser
     // Register
     if let regNum = parseRegisterOperand( opt:opt )
     {
-       return (regNum == 11 ? OpReg(regNum, opt.union(.isSP)) : OpReg(regNum, opt) , false)
+       //return (regNum == 11 ? OpReg(regNum, opt.union(.isSP)) : OpReg(regNum, opt) , false)
+       return (regNum == 11 ? OpSP(regNum, opt) : OpReg(regNum, opt) , false)
     }
     
     // Absolute address symbol in data memory
@@ -152,7 +154,8 @@ class SourceParser:PrimitiveParser
     if let tokenDef = parseToken()
     {
       if let regNum = src.defsTable[tokenDef] {
-        return (regNum == 11 ? OpReg(regNum, opt.union(.isSP)) : OpReg(regNum, opt) , false) }
+        //return (regNum == 11 ? OpReg(regNum, opt.union(.isSP)) : OpReg(regNum, opt) , false) }
+        return (regNum == 11 ? OpSP(regNum, opt) : OpReg(regNum, opt) , false) }
       
       else { error( "Expecting register or register def" ) }
       c = svsc
@@ -240,28 +243,47 @@ class SourceParser:PrimitiveParser
           "ult".d: 3, "ge".d: 4, "lt".d: 5,
           "ugt".d: 6, "gt".d: 7 ][token]
       {
-        currInst?.ops.append( OpImm(value) )
+        currInst?.ops.append( OpCC(value) /*OpImm(value, .isCC)*/ )
         return true
       }
     }
     return false
   }
-
-  //-------------------------------------------------------------------------------------------
-  func parseConditionalInstruction() -> Bool
+  
+    //-------------------------------------------------------------------------------------------
+  func parseCompareInstruction() -> Bool
   {
-    if let name:Data? = { if self.parseRawToken( cStr:"br".d ) { return "brcc".d  }
-                          if self.parseRawToken( cStr:"set".d ) { return "setcc".d }
-                          if self.parseRawToken( cStr:"sel".d ) { return "selcc".d }
+    if let name:Data? = { if self.parseConcreteToken( cStr:"cmp".d ) { return "cmp".d  }
+                          if self.parseConcreteToken( cStr:"cmpc".d ) { return "cmpc".d }
                           return nil }()
     {
       currInst = Instruction( name! )
-      if parseConditionCode() { return true }
-      else { error( "Unrecognized condition code for conditional instruction" ) }
+      if parseChar( _dot )
+      {
+        if parseConditionCode() { return true }
+        else { error( "Unrecognized condition code for conditional instruction" ) }
+      }
+      else { error( "Expected 'dot' after compare instruction" ) }
     }
     
     return false
   }
+
+//  //-------------------------------------------------------------------------------------------
+//  func parseConditionalInstruction() -> Bool
+//  {
+//    if let name:Data? = { if self.parseRawToken( cStr:"br".d ) { return "brcc".d  }
+//                          if self.parseRawToken( cStr:"set".d ) { return "setcc".d }
+//                          if self.parseRawToken( cStr:"sel".d ) { return "selcc".d }
+//                          return nil }()
+//    {
+//      currInst = Instruction( name! )
+//      if parseConditionCode() { return true }
+//      else { error( "Unrecognized condition code for conditional instruction" ) }
+//    }
+//
+//    return false
+//  }
   
   //-------------------------------------------------------------------------------------------
   func parseAnyInstruction() -> Bool
@@ -277,7 +299,8 @@ class SourceParser:PrimitiveParser
   //-------------------------------------------------------------------------------------------
   func parseInstructionName() -> Bool
   {
-    if parseConditionalInstruction() { return true }
+    //if parseConditionalInstruction() { return true }
+    if parseCompareInstruction() { return true }
     if parseAnyInstruction() { return true }
     return false
   }
@@ -393,7 +416,7 @@ class SourceParser:PrimitiveParser
     return false
   }
   
-  //-------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
   func parseSection() -> Bool
   {
     if parseConcreteToken(cStr: "section".d )
@@ -402,21 +425,13 @@ class SourceParser:PrimitiveParser
       if nil != parsePrefixedToken(prefix:".".d) || nil != parseToken()
       {
         skipSpTab()
-        if parseChar( UInt8(ascii:",") )
+        while parseChar( UInt8(ascii:",") )
         {
           skipSpTab()
-          if nil != parseEscapedString()
-          {
-            skipSpTab()
-            if parseChar( UInt8(ascii:",") )
-            {
-              skipSpTab()
-              if nil != parsePrefixedToken(prefix:"@".d)
-              {
-                // nothing to do at this time
-              }
-            }
-          }
+          if nil != parseEscapedString() ||
+             nil != parsePrefixedToken(prefix:"@".d) ||
+             nil != parseInteger() { skipSpTab(); continue }
+          else { error( "Bad formed .section directive" ) }
         }
         currBank = .constant
         out.logln()
@@ -426,6 +441,40 @@ class SourceParser:PrimitiveParser
     }
     return false
   }
+  
+  //-------------------------------------------------------------------------------------------
+//  func parseSection() -> Bool
+//  {
+//    if parseConcreteToken(cStr: "section".d )
+//    {
+//      skipSpTab()
+//      if nil != parsePrefixedToken(prefix:".".d) || nil != parseToken()
+//      {
+//        skipSpTab()
+//        if parseChar( UInt8(ascii:",") )
+//        {
+//          skipSpTab()
+//          if nil != parseEscapedString()
+//          {
+//            skipSpTab()
+//            if parseChar( UInt8(ascii:",") )
+//            {
+//              skipSpTab()
+//              if nil != parsePrefixedToken(prefix:"@".d)
+//              {
+//                // nothing to do at this time
+//              }
+//            }
+//          }
+//        }
+//        currBank = .constant
+//        out.logln()
+//        return true
+//      }
+//      else { error( "Expecting section name after .section directive" ) }
+//    }
+//    return false
+//  }
   
   //-------------------------------------------------------------------------------------------
   func parseP2Align() -> Bool
@@ -662,8 +711,10 @@ class SourceParser:PrimitiveParser
         error( "Unrecognised Instruction Pattern: " + String(reflecting:inst) ) }
       
       // Set the current label to the instruction
-      inst.label = currLabel
-      currLabel = nil
+      inst.labels = currLabels
+      currLabels = nil
+      //inst.label = currLabel
+      //currLabel = nil
     }
     
     if parseInstructionName()
@@ -701,7 +752,10 @@ class SourceParser:PrimitiveParser
         default : error( "Unsuported bank" )
       }
       
-      currLabel = name
+      // There may be more than one label for the same instruction, so use an array
+      if currLabels != nil { currLabels?.append(name) }
+      else { currLabels = [name] }
+      //currLabel = name
       
       out.logln( name.s + ":" )
  
@@ -766,6 +820,7 @@ class SourceParser:PrimitiveParser
   // Entry function for the parser
   func parse() -> Bool
   {
+    // For debug purposes use 'print self.dump()'
     while true
     {
       skip()

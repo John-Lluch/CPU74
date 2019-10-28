@@ -18,7 +18,8 @@ struct OpOption: OptionSet
   let rawValue:Int
   static let indirect = OpOption(rawValue: 1 << 0)      // Indirect memory addressing
   static let prgIndirect = OpOption(rawValue: 1 << 1)   // Indirect program addressing
-  static let isSP = OpOption(rawValue: 1 << 4)          // SP flag for register operands
+  //static let isSP = OpOption(rawValue: 1 << 2)          // SP flag for register operands
+  //static let isCC = OpOption(rawValue: 1 << 3)          // flag for condition codes
 }
 
 // Base class for assembly instruction operands
@@ -67,14 +68,40 @@ class Operand : CustomDebugStringConvertible
 class OpReg : Operand
 {
   // Description string for logging purposes
-  override var debugDescription: String { return value == 11 ? "SP" : "r\(value)" }
+  //override var debugDescription: String { return value == 11 ? "SP" : "r\(value)" }
+  override var debugDescription: String { return "r\(value)" }
+}
+
+class OpSP : OpReg
+{
+  // Description string for logging purposes
+  override var debugDescription: String { return "SP" }
 }
 
 // Immediate value operand
 class OpImm : Operand
 {
   // Description string for logging purposes
-  override var debugDescription: String { return "\(value)" }
+  override var debugDescription: String
+  {
+    return "\(value)"
+  }
+}
+
+class OpCC : OpImm
+{
+  // Description string for logging purposes
+  override var debugDescription: String
+  {
+    return [ 0: "eq", 1: "ne", 2: "uge",
+               3: "ult", 4: "ge", 5: "lt",
+               6: "ugt", 7: "gt" ][value]!
+  }
+}
+
+// Zero value operand
+class OpZero : OpImm
+{
 }
 
 // Symbolic address operand
@@ -108,8 +135,9 @@ class Instruction : Hashable, CustomDebugStringConvertible
 {
   let name:Data         // Instruction name represented in raw UTF8 bytes
   var ops:[Operand]     // Operands
-  var label:Data?       // Instruction entry label or nil
-  var hasPfix:Bool
+  //var label:Data?       // Instruction entry label or nil
+  var labels:[Data]?      // Instruction entry labels or nil
+  var hasPfix:Bool        // Indicates that this instruction is two words
   var mcInst:MachineInstr?   // Machine Instruction or nil
   
   // Hash stuff for object use as a dictionary key
@@ -124,8 +152,14 @@ class Instruction : Hashable, CustomDebugStringConvertible
     
     for i in 0..<lhs.ops.count
     {
-      if !( type(of:lhs.ops[i]) == type(of:rhs.ops[i]) ) { return false }
-      if !( lhs.ops[i].opt == rhs.ops[i].opt ) { return false }
+      let lhsop = lhs.ops[i]
+      let rhsop = rhs.ops[i]
+      
+      if lhsop.opt != rhsop.opt { return false }
+      
+      if lhsop is OpZero && rhsop is OpImm { if rhsop.value != 0 {return false} }
+      else if lhsop is OpImm && rhsop is OpZero { if lhsop.value != 0 {return false} }
+      else if type(of:lhsop) != type(of:rhsop) { return false }
     }
     
     return true
@@ -171,7 +205,7 @@ class Instruction : Hashable, CustomDebugStringConvertible
     for op in ops
     {
       if op is OpSym { return op }
-      if op is OpImm { return op }
+      if op is OpImm && !(op is OpCC) { return op }
     }
 
     return nil
@@ -187,13 +221,23 @@ class Instruction : Hashable, CustomDebugStringConvertible
     return nil
   }
   
+//  // Return the SP operand for this instruction if any
+//  var opSP:OpReg?
+//  {
+//    for op in ops
+//    {
+//      if let opReg = op as? OpReg {
+//        if opReg.opt.contains(.isSP) { return opReg } }
+//    }
+//    return nil
+//  }
+  
   // Return the SP operand for this instruction if any
   var opSP:OpReg?
   {
     for op in ops
     {
-      if let opReg = op as? OpReg {
-        if opReg.opt.contains(.isSP) { return opReg } }
+      if let opSP = op as? OpSP { return opSP }
     }
     return nil
   }
@@ -204,6 +248,15 @@ class Instruction : Hashable, CustomDebugStringConvertible
     name = n
     ops = []
     hasPfix = false
+  }
+  
+  func append( label:Data? )
+  {
+    if label != nil
+    {
+      if labels != nil { labels!.append(label!) }
+      else { labels = [label!] }
+    }
   }
   
   // Initialize with operands list

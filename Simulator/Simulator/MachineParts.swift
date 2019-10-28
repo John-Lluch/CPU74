@@ -92,7 +92,11 @@ class DataMemory
   
   // Memory write
   func writew() { self[mar] = mdr }
-  func writeb() { if (mar & 1) != 0 { memoryHi[mar.i/2] = mdr.lo } else { memoryLo[mar.i/2] = mdr.lo } }
+  func writeb()
+  {
+    if (mar & 1) != 0 { memoryHi[mar.i/2] = mdr.lo } else { memoryLo[mar.i/2] = mdr.lo }
+    if ( mar == 0xffff ) { fputc(Int32(mdr.lo), stdout); }
+  }
 
   // Memory size
   var size:UInt16 { return (memoryLo.count + memoryHi.count).u16 }   // size in bytes
@@ -162,24 +166,39 @@ class Registers : CustomDebugStringConvertible
 class PrefixRegister
 {
   private var _value:UInt16 = 0
-  private var _enable = false
+  var enable = false
   var value:UInt16
   {
-    get { let v = _enable ? _value : 0 ; _enable = false ; return v }
-    set(v) { _value = v ; _enable = true }
+    get { return _value }
+    set(v) { _value = v ; enable = true }
   }
+  
+//  private var _value:UInt16 = 0
+//  private var _enable = false
+//  var value:UInt16
+//  {
+//    get { let v = _enable ? _value : 0 ; _enable = false ; return v }
+//    set(v) { _value = v ; _enable = true }
+//  }
 }
 
 //-------------------------------------------------------------------------------------------
-class Status
+class Condition
 {
-//  var az:Bool = false
-//  var ac:Bool = false
   var z:Bool = false
   var c:Bool = false
   var s:Bool = false
   var v:Bool = false
 }
+
+class Status
+{
+  var z:Bool = false
+  var c:Bool = false
+  var t:Bool = false
+}
+
+enum CC : UInt16 { case eq = 0, ne, uge, ult, ge, lt, ugt, gt }
 
 //-------------------------------------------------------------------------------------------
 
@@ -191,83 +210,112 @@ class ALU
   var sr = Status()
   
   // Adder, returns result and flags
-  func adder( _ a:UInt16, _ b:UInt16, c:Bool, z:Bool=true) -> (res:UInt16, st:Status)
+  func adder( _ a:UInt16, _ b:UInt16, c:Bool, z:Bool=true) -> (res:UInt16, ct:Condition)
   {
-    let st = Status()
+    let ct = Condition()
     let res32 = UInt32(a) + UInt32(b) + UInt32(c.u16)
     let res = UInt16(truncatingIfNeeded:res32)
-    st.z = z && (res == 0)
-    st.c = res32 > 0xffff
-    st.s = res.s
-    st.v = (!a.s && !b.s && res.s) || (a.s && b.s && !res.s )
-    return ( res, st )
+    ct.z = z && (res == 0)
+    ct.c = res32 > 0xffff
+    ct.s = res.s
+    ct.v = (!a.s && !b.s && res.s) || (a.s && b.s && !res.s )
+    return ( res, ct )
   }
   
   // Set the status register based on passed in flags
-  func seta( _ st:Status /*, ar:Bool=true*/ )
-  {
-    sr.z = st.z
-    sr.c = st.c
-    sr.s = st.s
-    sr.v = st.v
-  }
+//  func seta( _ ct:Status /*, ar:Bool=true*/ )
+//  {
+//    sr.z = st.z
+//    sr.c = st.c
+//    sr.s = st.s
+//    sr.v = st.v
+//  }
   
-  // Set logical operation flags based on result
-  private func setl( _ res:UInt16 )
+  // Set logical operation flags
+  private func setz( z:Bool )
   {
-    sr.z = res == 0
+    sr.z = z
     sr.c = false
-    sr.s = res.s
-    sr.v = false
+    sr.t = z
   }
   
-  // Returns whether a given condition code matches the status register flags
-  func hasCC( _ cc:UInt16 ) -> Bool
+  // Set shift operation flags
+  private func setzc( z:Bool, c:Bool )
   {
-    enum CC : UInt16 { case eq = 0, ne, uge, ult, ge, lt, ugt, gt }
-    switch CC(rawValue:cc)!
+    sr.z = z
+    sr.c = c
+    sr.t = c
+  }
+  
+  // Set arithmetic operation flags based on condition
+  private func setsr( _ cc:CC, _ ct:Condition )
+  {
+    sr.z = ct.z
+    sr.c = ct.c
+    switch cc
     {
-      case .eq : return sr.z
-      case .ne : return !sr.z
-      case .uge: return sr.c
-      case .ult: return !sr.c
-      case .ge : return sr.s == sr.v
-      case .lt : return sr.s != sr.v
-      case .ugt: return sr.c && !sr.z
-      case .gt : return (sr.s == sr.v) && !sr.z
+      case .eq : sr.t = ct.z
+      case .ne : sr.t = !ct.z
+      case .uge: sr.t = ct.c
+      case .ult: sr.t = !ct.c
+      case .ge : sr.t = ct.s == ct.v
+      case .lt : sr.t = ct.s != ct.v
+      case .ugt: sr.t = ct.c && !ct.z
+      case .gt : sr.t = (ct.s == ct.v) && !ct.z
     }
   }
   
+  func setsr( _ cc:UInt16, _ ct:Condition ) {
+    setsr( CC(rawValue:cc)!, ct )
+  }
+  
+  
+//  // Returns whether a given condition code matches the status register flags
+//  func hasCC( _ cc:UInt16 ) -> Bool
+//  {
+//    enum CC : UInt16 { case eq = 0, ne, uge, ult, ge, lt, ugt, gt }
+//    switch CC(rawValue:cc)!
+//    {
+//      case .eq : return sr.z
+//      case .ne : return !sr.z
+//      case .uge: return sr.c
+//      case .ult: return !sr.c
+//      case .ge : return sr.s == sr.v
+//      case .lt : return sr.s != sr.v
+//      case .ugt: return sr.c && !sr.z
+//      case .gt : return (sr.s == sr.v) && !sr.z
+//    }
+  //}
+  
   // Operations
   
-  func cmp   ( _ a:UInt16, _ b:UInt16 ) { let res = adder(a,~b, c:true) ; seta(res.st) }
-  func cmpc  ( _ a:UInt16, _ b:UInt16 ) { let res = adder(a,~b, c:sr.c, z:sr.z) ; seta(res.st) }
+  func cmp   ( _ cc:UInt16, _ a:UInt16, _ b:UInt16 ) { let res = adder(a,~b, c:true) ; setsr(cc, res.ct) }
+  func cmpc  ( _ cc:UInt16, _ a:UInt16, _ b:UInt16 ) { let res = adder(a,~b, c:sr.c, z:sr.z) ; setsr(cc, res.ct) }
   
-  func sub   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,~b, c:true); seta(res.st) ; return res.res }
-  func subc  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,~b, c:sr.c, z:sr.z); seta(res.st) ; return res.res }
+  func sub   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,~b, c:true); setsr(.eq, res.ct) ; return res.res }
+  func subc  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,~b, c:sr.c, z:sr.z); setsr(.eq, res.ct) ; return res.res }
   
-  func add   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,b, c:false); seta(res.st) ; return res.res }
-  func addc  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,b, c:sr.c, z:sr.z); seta(res.st) ; return res.res }
+  func add   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,b, c:false); setsr(.eq, res.ct) ; return res.res }
+  func addc  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,b, c:sr.c, z:sr.z); setsr(.eq, res.ct) ; return res.res }
   
   func adda  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,b, c:false); return res.res }
   func suba  ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = adder(a,~b, c:true); return res.res }
   
-  func or    ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a | b ; setl(res) ; return res }
-  func and   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a & b ; setl(res) ; return res }
-  func xor   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a ^ b ; setl(res) ; return res }
+  func or    ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a | b ; setz(z:res==0) ; return res }
+  func and   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a & b ; setz(z:res==0) ; return res }
+  func xor   ( _ a:UInt16, _ b:UInt16 ) -> UInt16 { let res = a ^ b ; setz(z:res==0) ; return res }
   
-  func lsr   ( _ a:UInt16 ) -> UInt16 { let res = a >> 1 ; setl(res); sr.c = a[0]; return res }
-  func lsrc  ( _ a:UInt16 ) -> UInt16 { var res = a >> 1 ; res[15] = sr.c; setl(res); sr.c = a[0]; return res }
-  func asr   ( _ a:UInt16 ) -> UInt16 { var res = a >> 1 ; res[15] = a[15]; setl(res); sr.c = a[0]; return res }
+  func lsr   ( _ a:UInt16 ) -> UInt16 { let res = a >> 1 ; setzc(z:res==0, c:a[0]); sr.c = a[0]; return res }
+  func lsrc  ( _ a:UInt16 ) -> UInt16 { var res = a >> 1 ; res[15] = sr.c; setzc(z:res==0, c:a[0]); return res }
+  func asr   ( _ a:UInt16 ) -> UInt16 { var res = a >> 1 ; res[15] = a[15]; setzc(z:res==0, c:a[0]); return res }
   func neg   ( _ a:UInt16 ) -> UInt16 { let res = sub( 0, a ) ; return res }
-  func not   ( _ a:UInt16 ) -> UInt16 { let res = ~a ; setl(res) ; return res }
+  func not   ( _ a:UInt16 ) -> UInt16 { let res = ~a ; setz(z:res==0) ; return res }
   func inca2 ( _ a:UInt16 ) -> UInt16 { let res = adda( a, 2 ) ; return res }
   func deca2 ( _ a:UInt16 ) -> UInt16 { let res = suba( a, 2 ) ; return res }
   func zext  ( _ a:UInt16 ) -> UInt16 { let res = a.zext ; return res }
   func sext  ( _ a:UInt16 ) -> UInt16 { let res = a.sext ; return res }
   func bswap ( _ a:UInt16 ) -> UInt16 { let res = UInt16(lo:a.hi, hi:a.lo) ; return res }
   func sextw ( _ a:UInt16 ) -> UInt16 { let res = (a.i16>>15).u16 ; return res }
-  
 }
 
 
