@@ -95,7 +95,7 @@ class DataMemory
   func writeb()
   {
     if (mar & 1) != 0 { memoryHi[mar.i/2] = mdr.lo } else { memoryLo[mar.i/2] = mdr.lo }
-    if ( mar == 0xffff ) { fputc(Int32(mdr.lo), stdout); }
+		if ( mar == 0xffff ) { fputc(Int32(mdr.lo), stdout) }
   }
 
   // Memory size
@@ -150,13 +150,13 @@ class Registers : CustomDebugStringConvertible
   
     str += String(format:"sp=%d", sp)
     
-    str += "\n\t\t\t\t\t\t\t\t\t"
-    for i in stride(from:0, to:8, by:2)
-    {
-      if ( i != 0 ) { str += ", " }
-      str += String(format:"\tr%d:r%d=%d", i, i+1, Int(regs[i]) | Int(regs[i+1])<<16 )
-    }
-    
+//    str += "\n\t\t\t\t\t\t\t\t\t"
+//    for i in stride(from:0, to:8, by:2)
+//    {
+//      if ( i != 0 ) { str += ", " }
+//      str += String(format:"\tr%d:r%d=%d", i, i+1, Int(regs[i]) | Int(regs[i+1])<<16 )
+//    }
+		
     return str
   }
   
@@ -256,8 +256,8 @@ class ALU
     {
       case .eq : sr.t = ct.z
       case .ne : sr.t = !ct.z
-      case .uge: sr.t = ct.c
-      case .ult: sr.t = !ct.c
+      case .uge: sr.t = ct.c   // ATENCIO BUG !!
+      case .ult: sr.t = !ct.c  // ATENCIO BUG !!
       case .ge : sr.t = ct.s == ct.v
       case .lt : sr.t = ct.s != ct.v
       case .ugt: sr.t = ct.c && !ct.z

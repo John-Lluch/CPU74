@@ -486,7 +486,7 @@ class SourceParser:PrimitiveParser
       {
         if currBank == .constant { src.p2AlignConstantData(align) }
         else if currBank == .variable { src.p2AlignInitializedVar(align) }
-        else { error( "Unsuported bank" ) }
+        else { error( "Unsuported bank (1)" ) }
         return true
       }
     }
@@ -523,7 +523,7 @@ class SourceParser:PrimitiveParser
     {
       if currBank == .constant { src.addConstantData( DataValue( size, op ) ) }
       else if currBank == .variable { src.addInitializedVar( DataValue( size, op ) ) }
-      else { error( "Unsuported bank" ) }
+      else { error( "Unsuported bank (2)" ) }
 
       out.logln( "\t" + String(reflecting:op) )
 
@@ -540,7 +540,7 @@ class SourceParser:PrimitiveParser
       let size = op.sym!.count
       if currBank == .constant { src.addConstantData( DataValue( size, op ) ) }
       else if currBank == .variable { src.addInitializedVar( DataValue( size, op ) ) }
-      else { error( "Unsuported bank" ) }
+      else { error( "Unsuported bank (3)" ) }
 
       out.logln( "\t" + String(reflecting:op) )
       return true
@@ -749,14 +749,15 @@ class SourceParser:PrimitiveParser
         case .program  : symInfo!.value = src.getInstructionsEnd()
         case .constant : symInfo!.value = src.getConstantDataEnd()
         case .variable : symInfo!.value = src.getInitializedVarsEnd()
-        default : error( "Unsuported bank" )
+        default : error( "Unsuported bank (4)" )
       }
       
-      // There may be more than one label for the same instruction, so use an array
-      if currLabels != nil { currLabels?.append(name) }
-      else { currLabels = [name] }
-      //currLabel = name
-      
+      if currBank == .program
+      {
+        // There may be more than one label for the same instruction, so use an array
+        if currLabels != nil { currLabels?.append(name) }
+        else { currLabels = [name] }
+      }
       out.logln( name.s + ":" )
  
       return true

@@ -508,7 +508,7 @@ class Assembler
             switch symInfo!.bank
             {
               case .program  : symInfo!.value = memIdx + source.instructionsOffset
-              default : out.exitWithError( "Unsuported bank" )
+              default : out.exitWithError( "Unsuported bank (5)" )
             }
           
             out.logln( "...New Value: \(symInfo!.value)" )

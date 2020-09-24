@@ -114,7 +114,7 @@ class TypeP:InstWithImmediate
 class TypeP_call:TypeP
 {
   override func inRange( _ v:Int ) -> Bool {
-    return signExtendRange( v ) }
+    return signExtendRange( v ) }                        // FIX ME : Aixo no es correcte, els calls son absoluts!
 }
 
 // Type I2

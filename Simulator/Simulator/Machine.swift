@@ -45,6 +45,10 @@ class Machine
   var br_inhibit = false
   var pc_inhibit = false
   var mc_halt = false
+	
+  // Statistics
+  var instCount:Int = 0
+  var cycleCount:Int = 0
   
   // Instruction Definitions
   
@@ -428,6 +432,10 @@ class Machine
               control.1 != .me_end ? mir : (oh<<5) | ol
     // Log
     if out.logEnabled { logDecode() }
+		
+		// Statistics
+		if !(pc_inhibit || br_inhibit) { instCount += 1 }
+    cycleCount += 1
 
 //    if (prg.pc == 356 )
 //    {
@@ -587,11 +595,23 @@ class Machine
   func run() -> Bool
   {
     var done = false
+		let start = DispatchTime.now() // <<<<<<<<<< Start time
+		
     while !done  // execute until 'halt' instruction
     {
+//      let pep = out.getKeyPress();
+//      out.logln( "keyPress : \(pep)" )
+      
       decode()
       done = process()
     }
+		
+		// Log
+		
+    let end = DispatchTime.now()   // <<<<<<<<<<   end time
+    let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds // <<<<< Difference in nano seconds (UInt64)
+    let timeInterval = Double(nanoTime) / 1_000_000_000 // Technically could overflow for long running test
+    logStatistics( time:timeInterval )
     return true
   }
 
@@ -616,6 +636,16 @@ class Machine
   {
     out.log( " " )
     out.logln( String(reflecting:reg) )
+  }
+	
+  func logStatistics( time:Double )
+  {
+		out.print( String( format:"Executed instruction count: %i\n", instCount) )
+		out.print( String( format:"Total cycle count: %i\n", cycleCount) )
+		out.print( String( format:"Elapsed simulation time: %g seconds\n", time) )
+		out.print( String( format:"Calculated execution time at 1MHz : %g seconds\n", Double(cycleCount)/1e6) )
+		out.print( String( format:"Calculated execution time at 8MHz : %g seconds\n", Double(cycleCount)/8e6) )
+		out.print( String( format:"Calculated execution time at 16MHz: %g seconds\n", Double(cycleCount)/16e6) )
   }
 }
 
