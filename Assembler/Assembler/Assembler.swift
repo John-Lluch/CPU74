@@ -604,6 +604,25 @@ class Assembler
     // Invoke the assembler
     assembleProgram()
   }
+	
+	//-------------------------------------------------------------------------------------------
+  // Assemble all sources
+  func getLogisimData() -> Data
+  {
+    var logisimData = Data()
+    logisimData.append( "v2.0 raw".d )
+		
+    for i in stride(from:0, to:programMemory.count, by:2)
+    {
+      let encoding:Int = Int(programMemory[i]) | Int(programMemory[i+1]) << 8
+      logisimData.append( (i % 16 == 0 ? "\n" : " " ).d )
+      logisimData.append( String(format:"%x", encoding ).d )
+    }
+    return logisimData
+  }
+
+	
+	
 }
 
 

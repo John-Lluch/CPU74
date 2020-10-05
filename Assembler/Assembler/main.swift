@@ -103,8 +103,11 @@ class C74_as
       
       // Write out the machine code to the destination file
       out.write(data: assembler.programMemory, url: console.destination)
-
+			
+			// Write logisim data
+      out.write(data:assembler.getLogisimData(), url:console.logisimDestination)
     }
+    else { out.printError( "Number of sources mismatch" ) }
     
     // Output log file
     out.logln()

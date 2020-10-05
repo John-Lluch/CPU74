@@ -192,7 +192,6 @@ class Machine
   [
     // E7 11_ooooo
     MCExt.me_wait.rawValue      : (wait,      .me_end),
-    MCExt.me_movw_pr1.rawValue  : (movw_pr_1, .me_wait),
     MCExt.me_load_w.rawValue    : (load_w,    .me_end),
     MCExt.me_load_zb.rawValue   : (load_zb,   .me_end),
     MCExt.me_load_sb.rawValue   : (load_sb,   .me_end),
@@ -201,6 +200,7 @@ class Machine
     MCExt.me_call_k1.rawValue   : (call_k1,   .me_wait),
     MCExt.me_call_r1.rawValue   : (call_r1,   .me_wait),
     MCExt.me_ret1.rawValue      : (ret1,      .me_wait),
+    MCExt.me_movw_pr1.rawValue  : (movw_pr_1, .me_wait),
     
     // I1, I2, P
     0b10_01000  :  (mov_kr,    .me_end),

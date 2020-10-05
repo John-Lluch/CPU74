@@ -31,6 +31,17 @@
 		4E2D76842307F58C003466CD /* Console.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Console.swift; sourceTree = "<group>"; };
 		4E2D7688230802A7003466CD /* Machine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Machine.swift; sourceTree = "<group>"; };
 		4E3561BC230947DA003E74F4 /* MachineParts.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MachineParts.swift; sourceTree = "<group>"; };
+		4E638CE4252B097C003DC0CA /* DecoderRomTruthTableV3.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = DecoderRomTruthTableV3.txt; sourceTree = "<group>"; };
+		4E638CE5252B83AA003DC0CA /* DecoderRomTruthTableV4.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = DecoderRomTruthTableV4.txt; sourceTree = "<group>"; };
+		4E638CE7252BB068003DC0CA /* DecoderRomTruthTableV10_1.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = DecoderRomTruthTableV10_1.txt; sourceTree = "<group>"; };
+		4E638CE8252BB0B4003DC0CA /* DecoderRomTruthTableV10_2.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = DecoderRomTruthTableV10_2.txt; sourceTree = "<group>"; };
+		4E638CE9252BB0B4003DC0CA /* DecoderRomTruthTableV10_4.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = DecoderRomTruthTableV10_4.txt; sourceTree = "<group>"; };
+		4E638CEA252BB0B5003DC0CA /* DecoderRomTruthTableV10_3.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = DecoderRomTruthTableV10_3.txt; sourceTree = "<group>"; };
+		4E638CEB252BB0B5003DC0CA /* DecoderRomTruthTableV10_5.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = DecoderRomTruthTableV10_5.txt; sourceTree = "<group>"; };
+		4E9F7FF92529A31400E4364C /* DecoderRomTruthTableV2.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = DecoderRomTruthTableV2.txt; sourceTree = "<group>"; };
+		4EE79C9E2528B7B600639007 /* DecoderRom.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = DecoderRom.txt; sourceTree = "<group>"; };
+		4EE79C9F2528D9A200639007 /* DecoderRomTruthTable.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = DecoderRomTruthTable.txt; sourceTree = "<group>"; };
+		4EE79CA02528F7C800639007 /* LogisimBUG.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LogisimBUG.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,6 +58,7 @@
 		4E2D76712307F3DE003466CD = {
 			isa = PBXGroup;
 			children = (
+				4EE79C9D2528B75B00639007 /* LogisimSupport */,
 				4E2D767C2307F3DE003466CD /* Simulator */,
 				4E2D767B2307F3DE003466CD /* Products */,
 			);
@@ -69,6 +81,24 @@
 				4E2D767D2307F3DE003466CD /* main.swift */,
 			);
 			path = Simulator;
+			sourceTree = "<group>";
+		};
+		4EE79C9D2528B75B00639007 /* LogisimSupport */ = {
+			isa = PBXGroup;
+			children = (
+				4EE79C9E2528B7B600639007 /* DecoderRom.txt */,
+				4EE79C9F2528D9A200639007 /* DecoderRomTruthTable.txt */,
+				4E9F7FF92529A31400E4364C /* DecoderRomTruthTableV2.txt */,
+				4E638CE4252B097C003DC0CA /* DecoderRomTruthTableV3.txt */,
+				4E638CE5252B83AA003DC0CA /* DecoderRomTruthTableV4.txt */,
+				4E638CE7252BB068003DC0CA /* DecoderRomTruthTableV10_1.txt */,
+				4E638CE8252BB0B4003DC0CA /* DecoderRomTruthTableV10_2.txt */,
+				4E638CEA252BB0B5003DC0CA /* DecoderRomTruthTableV10_3.txt */,
+				4E638CE9252BB0B4003DC0CA /* DecoderRomTruthTableV10_4.txt */,
+				4E638CEB252BB0B5003DC0CA /* DecoderRomTruthTableV10_5.txt */,
+				4EE79CA02528F7C800639007 /* LogisimBUG.txt */,
+			);
+			path = LogisimSupport;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
