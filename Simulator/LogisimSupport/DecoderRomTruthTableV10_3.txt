@@ -1,0 +1,146 @@
+# Truth table
+# Generated from circuit ProvaCircuit
+# Exported on Sat Oct 03 17:57:30 CEST 2020
+
+# Hints and Notes on Formatting:
+# * You can edit this file then import it back into Logisim!
+# * Anything after a '#' is a comment and will be ignored.
+# * Blank lines and separator lines (e.g., ~~~~~~) are ignored.
+# * Keep column names simple (no spaces, punctuation, etc.)
+# * 'Name[N..0]' indicates an N+1 bit variable, whereas
+#   'Name' by itself indicates a 1-bit variable.
+# * You can use 'x' to indicate "don't care" for both
+#   input and output bits.
+# * You can use binary (e.g., '10100011xxxx') notation or
+#   or hex (e.g., 'C3x'). Logisim will figure out which is which.
+
+ M[1..0] I[4..0] | B[1..0]  M0 M1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    00    00000  |    00    0  0   #mov_rr,
+    00    00001  |    00    0  0   #mov_rq,
+    00    00010  |    00    0  0   #zext_rr,
+    00    00011  |    00    0  0   #sext_rr,
+    00    00100  |    00    0  0   #bswap_rr
+    00    00101  |    00    0  0   #sextw_rr
+    00    00110  |    00    x  x   #reserved,
+    00    00111  |    00    0  0   #movw_pr,
+    00    01000  |    00    0  0   #lsr_rr,
+    00    01001  |    00    0  0   #lsrc_rr,
+    00    01010  |    00    0  0   #asr_rr,
+    00    01011  |    00    x  x   #reserved,
+    00    01100  |    00    0  0   #sel_0rr,  (*)
+    00    01101  |    00    0  0   #sel_r0r,  (*)
+    00    01110  |    00    0  0   #neg_rr,
+    00    01111  |    00    0  0   #not_rr,
+    00    10000  |    11    0  0   #jmp_r,
+    00    10001  |    00    0  0   #call_r,
+    00    10010  |    00    x  x   #reserved,
+    00    10011  |    00    x  x   #reserved,
+    00    10100  |    00    0  0   #mov_sr,
+    00    10101  |    00    0  0   #mov_rs,
+    00    10110  |    00    0  0   #set_nt,
+    00    10111  |    00    0  0   #set_t,
+    00    11000  |    00    0  0   #ret,
+    00    11001  |    00    0  0   #reti,
+    00    11010  |    00    0  0   #dint,
+    00    11011  |    00    0  0   #eint,
+    00    11100  |    00    0  0   #halt,
+    00    11101  |    00    x  x   #reserved,
+    00    11110  |    00    x  x   #reserved,
+    00    11111  |    00    x  x   #reserved,
+    01    00000  |    xx    x  x   #
+    01    00001  |    xx    x  x   #
+    01    00010  |    xx    x  x   #
+    01    00011  |    xx    x  x   #
+    01    00100  |    xx    x  x   #
+    01    00101  |    xx    x  x   #
+    01    00110  |    xx    x  x   #
+    01    00111  |    xx    x  x   #
+    01    01000  |    00    0  0   #cmp_crr,
+    01    01001  |    00    0  0   #cmpc_crr,
+    01    01010  |    00    0  0   #subc_rrr,
+    01    01011  |    00    0  0   #sub_rrr,
+    01    01100  |    00    0  0   #and_rrr,
+    01    01101  |    00    0  0   #or_rrr,
+    01    01110  |    00    x  x   #reserved,
+    01    01111  |    00    x  x   #reserved,
+    01    10000  |    00    0  0   #xor_rrr,
+    01    10001  |    00    0  0   #addc_rrr,
+    01    10010  |    00    0  0   #add_rrr,
+    01    10011  |    00    0  0   #movw_nr,
+    01    10100  |    00    0  0   #movzb_nr,
+    01    10101  |    00    0  0   #movsb_nr,
+    01    10110  |    00    0  0   #movw_rn,
+    01    10111  |    00    0  0   #movb_rn,
+    01    11000  |    00    0  0   #sel_crrr, (*)
+    01    11001  |    00    x  x   #reserved,
+    01    11010  |    00    x  x   #reserved,
+    01    11011  |    00    x  x   #reserved,
+    01    11100  |    10    0  0   #br_nt,
+    01    11101  |    01    0  0   #br_t,
+    01    11110  |    00    0  0   #add_kq,
+    01    11111  |    11    0  0   #jmp_k,
+    10    00000  |    xx    x  x   #
+    10    00001  |    xx    x  x   #
+    10    00010  |    xx    x  x   #
+    10    00011  |    xx    x  x   #
+    10    00100  |    xx    x  x   #
+    10    00101  |    xx    x  x   #
+    10    00110  |    xx    x  x   #
+    10    00111  |    xx    x  x   #
+    10    01000  |    00    0  0   #movw_ar,
+    10    01001  |    00    0  0   #movsb_ar,
+    10    01010  |    00    0  0   #movw_ra,
+    10    01011  |    00    0  0   #movb_ra,
+    10    01100  |    00    0  0   #mov_kr,
+    10    01101  |    00    0  0   #sub_kr,
+    10    01110  |    00    0  0   #add_kr,
+    10    01111  |    00    0  0   #lea_qr,
+    10    10000  |    00    0  0   #movw_qr,
+    10    10001  |    00    0  0   #movsb_qr,
+    10    10010  |    00    0  0   #movw_rq,
+    10    10011  |    00    0  0   #movb_rq,
+    10    10100  |    00    0  0   #lea_mr,
+    10    10101  |    00    0  0   #movw_mr,
+    10    10110  |    00    0  0   #movzb_mr,
+    10    10111  |    00    0  0   #movsb_mr,
+    10    11000  |    00    0  0   #movw_rm,
+    10    11001  |    00    0  0   #movb_rm,
+    10    11010  |    00    x  x   #reserved,
+    10    11011  |    00    0  0   #and_kr,
+    10    11100  |    00    0  0   #cmp_crk,
+    10    11101  |    00    0  0   #cmpc_crk,
+    10    11110  |    00    0  0   #call_k,
+    10    11111  |    00    0  0   #_pfix,
+    11    00000  |    00    0  0   #wait,
+    11    00001  |    00    0  0   #load_w,
+    11    00010  |    00    0  0   #load_zb,
+    11    00011  |    00    0  0   #load_sb,
+    11    00100  |    00    0  0   #store_w,
+    11    00101  |    00    0  0   #store_b,
+    11    00110  |    00    0  0   #call_k1,
+    11    00111  |    00    0  0   #call_r1,
+    11    01000  |    00    0  0   #ret1,
+    11    01001  |    00    0  0   #movw_pr_1
+    11    01010  |    xx    x  x   #
+    11    01011  |    xx    x  x   #
+    11    01100  |    xx    x  x   #
+    11    01101  |    xx    x  x   #
+    11    01110  |    xx    x  x   #
+    11    01111  |    xx    x  x   #
+    11    10000  |    xx    x  x   #
+    11    10001  |    xx    x  x   #
+    11    10010  |    xx    x  x   #
+    11    10011  |    xx    x  x   #
+    11    10100  |    xx    x  x   #
+    11    10101  |    xx    x  x   #
+    11    10110  |    xx    x  x   #
+    11    10111  |    xx    x  x   #
+    11    11000  |    xx    x  x   #
+    11    11001  |    xx    x  x   #
+    11    11010  |    xx    x  x   #
+    11    11011  |    xx    x  x   #
+    11    11100  |    xx    x  x   #
+    11    11101  |    xx    x  x   #
+    11    11110  |    xx    x  x   #
+    11    11111  |    xx    x  x   #

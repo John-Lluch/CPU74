@@ -1,0 +1,146 @@
+# Truth table
+# Generated from circuit ProvaCircuit
+# Exported on Sat Oct 03 17:57:30 CEST 2020
+
+# Hints and Notes on Formatting:
+# * You can edit this file then import it back into Logisim!
+# * Anything after a '#' is a comment and will be ignored.
+# * Blank lines and separator lines (e.g., ~~~~~~) are ignored.
+# * Keep column names simple (no spaces, punctuation, etc.)
+# * 'Name[N..0]' indicates an N+1 bit variable, whereas
+#   'Name' by itself indicates a 1-bit variable.
+# * You can use 'x' to indicate "don't care" for both
+#   input and output bits.
+# * You can use binary (e.g., '10100011xxxx') notation or
+#   or hex (e.g., 'C3x'). Logisim will figure out which is which.
+
+ M[1..0] I[4..0] | PF[3..0] PT[3..0]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    00    00000  |    1010     1010     #mov_rr,
+    00    00001  |    1010     1010     #mov_rq,
+    00    00010  |    1010     1010     #zext_rr,
+    00    00011  |    1010     1010     #sext_rr,
+    00    00100  |    1010     1010     #bswap_rr
+    00    00101  |    1111     1111     #sextw_rr
+    00    00110  |    xxxx     xxxx     #reserved,
+    00    00111  |    1010     1010     #movw_pr,
+    00    01000  |    1010     1010     #lsr_rr,
+    00    01001  |    1010     1010     #lsrc_rr,
+    00    01010  |    1010     1010     #asr_rr,
+    00    01011  |    1010     1010     #reserved,
+    00    01100  |    0000     1010     #sel_0rr,  (*)
+    00    01101  |    1010     0000     #sel_r0r,  (*)
+    00    01110  |    0101     0101     #neg_rr,
+    00    01111  |    0101     0101     #not_rr,
+    00    10000  |    1010     1010     #jmp_r,
+    00    10001  |    1010     1010     #call_r,
+    00    10010  |    xxxx     xxxx     #reserved,
+    00    10011  |    xxxx     xxxx     #reserved,
+    00    10100  |    1010     1010     #mov_sr,
+    00    10101  |    1010     1010     #mov_rs,
+    00    10110  |    0000     0000     #set_nt,
+    00    10111  |    0000     0000     #set_t,
+    00    11000  |    xxxx     xxxx     #ret,
+    00    11001  |    xxxx     xxxx     #reti,
+    00    11010  |    0000     0000     #dint,
+    00    11011  |    0000     0000     #eint,
+    00    11100  |    0000     0000     #halt,
+    00    11101  |    xxxx     xxxx     #reserved,
+    00    11110  |    xxxx     xxxx     #reserved,
+    00    11111  |    xxxx     xxxx     #reserved,
+    01    00000  |    xxxx     xxxx     #
+    01    00001  |    xxxx     xxxx     #
+    01    00010  |    xxxx     xxxx     #
+    01    00011  |    xxxx     xxxx     #
+    01    00100  |    xxxx     xxxx     #
+    01    00101  |    xxxx     xxxx     #
+    01    00110  |    xxxx     xxxx     #
+    01    00111  |    xxxx     xxxx     #
+    01    01000  |    1001     1001     #cmp_crr,
+    01    01001  |    1001     1001     #cmpc_crr,
+    01    01010  |    1001     1001     #subc_rrr,
+    01    01011  |    1001     1001     #sub_rrr,
+    01    01100  |    1000     1000     #and_rrr,
+    01    01101  |    1110     1110     #or_rrr,
+    01    01110  |    xxxx     xxxx     #reserved,
+    01    01111  |    xxxx     xxxx     #reserved,
+    01    10000  |    0110     0110     #xor_rrr,
+    01    10001  |    0110     0110     #addc_rrr,
+    01    10010  |    0110     0110     #add_rrr,
+    01    10011  |    0110     0110     #movw_nr,
+    01    10100  |    0110     0110     #movzb_nr,
+    01    10101  |    0110     0110     #movsb_nr,
+    01    10110  |    0110     0110     #movw_rn,
+    01    10111  |    0110     0110     #movb_rn,
+    01    11000  |    1100     1010     #sel_crrr, (*)
+    01    11001  |    xxxx     xxxx     #reserved,
+    01    11010  |    xxxx     xxxx     #reserved,
+    01    11011  |    xxxx     xxxx     #reserved,
+    01    11100  |    0110     0110     #br_nt,
+    01    11101  |    0110     0110     #br_t,
+    01    11110  |    0110     0110     #add_kq,
+    01    11111  |    0110     0110     #jmp_k,
+    10    00000  |    xxxx     xxxx     #
+    10    00001  |    xxxx     xxxx     #
+    10    00010  |    xxxx     xxxx     #
+    10    00011  |    xxxx     xxxx     #
+    10    00100  |    xxxx     xxxx     #
+    10    00101  |    xxxx     xxxx     #
+    10    00110  |    xxxx     xxxx     #
+    10    00111  |    xxxx     xxxx     #
+    10    01000  |    1010     1010     #movw_ar,
+    10    01001  |    1010     1010     #movsb_ar,
+    10    01010  |    1010     1010     #movw_ra,
+    10    01011  |    1010     1010     #movb_ra,
+    10    01100  |    1010     1010     #mov_kr,
+    10    01101  |    1001     1001     #sub_kr,
+    10    01110  |    0110     0110     #add_kr,
+    10    01111  |    0110     0110     #lea_qr,
+    10    10000  |    0110     0110     #movw_qr,
+    10    10001  |    0110     0110     #movsb_qr,
+    10    10010  |    0110     0110     #movw_rq,
+    10    10011  |    0110     0110     #movb_rq,
+    10    10100  |    0110     0110     #lea_mr,
+    10    10101  |    0110     0110     #movw_mr,
+    10    10110  |    0110     0110     #movzb_mr,
+    10    10111  |    0110     0110     #movsb_mr,
+    10    11000  |    0110     0110     #movw_rm,
+    10    11001  |    0110     0110     #movb_rm,
+    10    11010  |    xxxx     xxxx     #reserved,
+    10    11011  |    1000     1000     #and_kr,
+    10    11100  |    1001     1001     #cmp_crk,
+    10    11101  |    1001     1001     #cmpc_crk,
+    10    11110  |    1010     1010     #call_k,
+    10    11111  |    xxxx     xxxx     #_pfix,
+    11    00000  |    xxxx     xxxx     #wait,
+    11    00001  |    1010     1010     #load_w,
+    11    00010  |    1010     1010     #load_zb,
+    11    00011  |    1010     1010     #load_sb,
+    11    00100  |    1010     1010     #store_w,
+    11    00101  |    1010     1010     #store_b,
+    11    00110  |    1010     1010     #call_k1,
+    11    00111  |    1010     1010     #call_r1,
+    11    01000  |    1010     1010     #ret1,
+    11    01001  |    1010     1010     #movw_pr_1
+    11    01010  |    xxxx     xxxx     #
+    11    01011  |    xxxx     xxxx     #
+    11    01100  |    xxxx     xxxx     #
+    11    01101  |    xxxx     xxxx     #
+    11    01110  |    xxxx     xxxx     #
+    11    01111  |    xxxx     xxxx     #
+    11    10000  |    xxxx     xxxx     #
+    11    10001  |    xxxx     xxxx     #
+    11    10010  |    xxxx     xxxx     #
+    11    10011  |    xxxx     xxxx     #
+    11    10100  |    xxxx     xxxx     #
+    11    10101  |    xxxx     xxxx     #
+    11    10110  |    xxxx     xxxx     #
+    11    10111  |    xxxx     xxxx     #
+    11    11000  |    xxxx     xxxx     #
+    11    11001  |    xxxx     xxxx     #
+    11    11010  |    xxxx     xxxx     #
+    11    11011  |    xxxx     xxxx     #
+    11    11100  |    xxxx     xxxx     #
+    11    11101  |    xxxx     xxxx     #
+    11    11110  |    xxxx     xxxx     #
+    11    11111  |    xxxx     xxxx     #
