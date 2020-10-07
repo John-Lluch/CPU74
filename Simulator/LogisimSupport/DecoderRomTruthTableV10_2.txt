@@ -62,7 +62,7 @@
     01    01011  |      000     01   0  0     #sub_rrr,
     01    01100  |      000     00   0  0     #and_rrr,
     01    01101  |      000     00   0  0     #or_rrr,
-    01    01110  |      xxx     xx   0  0     #reserved,
+    01    01110  |      000     00   0  0     #sel_crrr, (*)
     01    01111  |      xxx     xx   0  0     #reserved,
     01    10000  |      000     00   0  0     #xor_rrr,
     01    10001  |      x11     10   0  0     #addc_rrr,
@@ -72,7 +72,7 @@
     01    10101  |      000     10   0  0     #movsb_nr,
     01    10110  |      000     10   0  0     #movw_rn,
     01    10111  |      000     10   0  0     #movb_rn,
-    01    11000  |      000     00   0  0     #sel_crrr, (*)
+    01    11000  |      xxx     xx   0  0     #reserved,
     01    11001  |      xxx     xx   0  0     #reserved,
     01    11010  |      xxx     xx   0  0     #reserved,
     01    11011  |      xxx     xx   0  0     #reserved,
