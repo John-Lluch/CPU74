@@ -309,7 +309,7 @@ class Assembler
         {
           let str = String(encoding, radix:2) //binary base
           let padd = String(repeating:"0", count:(16 - str.count))
-          var prStr = String(format:"%05d : %@%@  %@", addr, padd, str, (inst != nil ? String(reflecting:inst!) : "_pfix") )
+          var prStr = String(format:"%05d (%04X) : %@%@ (%04X) %@", addr, addr, padd, str, encoding, (inst != nil ? String(reflecting:inst!) : "_pfix") )
           if ( aa != nil && isRelative)  { prStr += String(format:"  %@:%+d", bankStr, aa!) }
           if ( aa != nil && !isRelative) { prStr += String(format:"  %@:%05d", bankStr, aa!) }
           out.logln( prStr )
@@ -363,7 +363,7 @@ class Assembler
     // Debug log stuff...
     if out.logEnabled
     {
-      var prStr = String(format:"%05d : ", dataMemory.count)
+      var prStr = String(format:"%05d (%04X) : ", dataMemory.count, dataMemory.count)
       for i in 0..<bytes.count
       {
         let byte:UInt8 = bytes[i]
@@ -430,6 +430,8 @@ class Assembler
         
         // We are only interested on intructions with
         // relative offsets or absolute values/addresses
+        // Use the `isDisjoint(with:)` method to test whether a set has any elements
+        ///   in common with another set
         if ( theInst != nil && theInst!.refKind.isDisjoint(with:[.relative, .absolute]) == false )
         {
           var here = 0;

@@ -56,11 +56,11 @@ class ProgramMemory
 {
   // Program counter, memory output
   var pc:UInt16 = 0        // program counter register
-  var par:UInt16 = 0       // programm address register
+  var pmar:UInt16 = 0       // programm address register
   var parsel:Bool = false  // address register select
 
   // Memory value at current address
-  var value:UInt16 { return self[parsel ? par:pc] }
+  var value:UInt16 { return self[parsel ? pmar : pc] }
 
   // Memory size
   var size:UInt16 { return (memory.count/2).u16 }   // size in words
@@ -97,7 +97,7 @@ class DataMemory
     if (mar & 1) != 0 { memoryHi[mar.i/2] = mdr.lo } else { memoryLo[mar.i/2] = mdr.lo }
 		if ( mar == 0xffff ) { fputc(Int32(mdr.lo), stdout) }
   }
-
+ 
   // Memory size
   var size:UInt16 { return (memoryLo.count + memoryHi.count).u16 }   // size in bytes
   
@@ -170,7 +170,7 @@ class PrefixRegister
   var value:UInt16
   {
     get { return _value }
-    set(v) { _value = v ; enable = true }
+    set(v) { _value = v /*; enable = true*/ }
   }
   
 //  private var _value:UInt16 = 0
@@ -315,6 +315,9 @@ class ALU
   func zext  ( _ a:UInt16 ) -> UInt16 { let res = a.zext ; return res }
   func sext  ( _ a:UInt16 ) -> UInt16 { let res = a.sext ; return res }
   func bswap ( _ a:UInt16 ) -> UInt16 { let res = UInt16(lo:a.hi, hi:a.lo) ; return res }
+  func lsrb  ( _ a:UInt16 ) -> UInt16 { let res = UInt16(lo:a.hi, hi:0) ; return res }
+  func asrb  ( _ a:UInt16 ) -> UInt16 { let res = UInt16(lo:a.hi, hi:(a[15] ? 255 : 0)) ; return res }
+  func lslb  ( _ a:UInt16 ) -> UInt16 { let res = UInt16(lo:0, hi:a.lo) ; return res }
   func sextw ( _ a:UInt16 ) -> UInt16 { let res = (a.i16>>15).u16 ; return res }
 }
 
