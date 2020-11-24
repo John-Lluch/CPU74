@@ -66,7 +66,7 @@ class Machine
   func movw_ra()   { (mem.mar, mem.mdr) = (imm<<1, reg[rd]) }
   func movb_ra()   { (mem.mar, mem.mdr) = (imm, reg[rd]) }
   
-  func lea_qr()    { reg[rd] = alu.adda( reg.sp, imm ) }
+  func lea_qr()    { reg[rd] = alu.adda( reg.sp, imm<<1 ) }
   func movw_qr()   { mem.mar = alu.adda( imm<<1, reg.sp ) }
   func movsb_qr()  { mem.mar = alu.adda( imm, reg.sp ) }
   func movw_rq()   { (mem.mar, mem.mdr) = (alu.adda( imm<<1, reg.sp ), reg[rd]) }
@@ -115,8 +115,8 @@ class Machine
   
   func br_nt()     { if !alu.sr.t { prg.pc = alu.adda( prg.pc, imm) ; br_taken=true } }
   func br_t()      { if alu.sr.t { prg.pc = alu.adda( prg.pc, imm) ; br_taken=true } }
-  func jmp_k()     { prg.pc = alu.adda( prg.pc, imm ) }
-  func add_kq()    { reg.sp = alu.adda( reg.sp, imm ) }
+  func jmp_k()     { prg.pc = alu.adda( prg.pc, imm ) ; br_taken=true }
+  func add_kq()    { reg.sp = alu.adda( reg.sp, imm<<1 ) }
   
   // Type R2
   
@@ -134,7 +134,7 @@ class Machine
   func asr_rr()    { reg[rd] = alu.asr( reg[rs] ) }
   
   func movw_pr()   { prg.pmar = reg[rs] }
-  func movw_pr_1() { prg.parsel = true ; reg[rd] = prg.value }
+  func movw_pr_1() { prg.pmarsel = true ; reg[rd] = prg.value }
   
   func sel_0rr()   { reg[rd] = alu.sr.t ? 0 : reg[rs] }
   func sel_r0r()   { reg[rd] = alu.sr.t ? reg[rs] : 0 }
@@ -178,89 +178,21 @@ class Machine
   enum MCExt:UInt16
   {
     case me_end      = 0
-    case me_wait     = 0b11_00000
-    case me_load_w   = 0b11_00001
-    case me_load_zb  = 0b11_00010
-    case me_load_sb  = 0b11_00011
-    case me_store_w  = 0b11_00100
-    case me_store_b  = 0b11_00101
-    case me_call_k1  = 0b11_00110
-    case me_call_r1  = 0b11_01000
-    case me_ret1     = 0b11_01001
-    case me_movw_pr1 = 0b11_01010
+    case me_wait     = 0b11_0_0000
+    case me_load_w   = 0b11_0_0001
+    case me_load_zb  = 0b11_0_0010
+    case me_load_sb  = 0b11_0_0011
+    case me_store_w  = 0b11_0_0100
+    case me_store_b  = 0b11_0_0101
+    case me_call_k1  = 0b11_0_0110
+    case me_call_r1  = 0b11_0_0111
+    case me_ret1     = 0b11_0_1000
+    case me_movw_pr1 = 0b11_0_1001
   }
   
   // Microcode table
   let instrP0:Dictionary<UInt16, ((Machine)->()->(), MCExt) > =
   [
-    // E7 11_ooooo
-    MCExt.me_wait.rawValue      : (wait,      .me_end),
-    MCExt.me_load_w.rawValue    : (load_w,    .me_end),
-    MCExt.me_load_zb.rawValue   : (load_zb,   .me_end),
-    MCExt.me_load_sb.rawValue   : (load_sb,   .me_end),
-    MCExt.me_store_w.rawValue   : (store_w,   .me_end),
-    MCExt.me_store_b.rawValue   : (store_b,   .me_end),
-    MCExt.me_call_k1.rawValue   : (call_k1,   .me_wait),
-    MCExt.me_call_r1.rawValue   : (call_r1,   .me_wait),
-    MCExt.me_ret1.rawValue      : (ret1,      .me_wait),
-    MCExt.me_movw_pr1.rawValue  : (movw_pr_1, .me_wait),
-    
-    // I1, I2, P
-    0b10_01_000  :  (movw_ar,   .me_load_w),
-    0b10_01_001  :  (movsb_ar,  .me_load_sb),
-    0b10_01_010  :  (movw_ra,   .me_store_w),
-    0b10_01_011  :  (movb_ra,   .me_store_b),
-    0b10_01_100  :  (mov_kr,    .me_end),
-    0b10_01_101  :  (sub_kr,    .me_end),
-    0b10_01_110  :  (add_kr,    .me_end),
-    0b10_01_111  :  (lea_qr,    .me_end),
-    
-    0b10_10_000  :  (movw_qr,   .me_load_w),
-    0b10_10_001  :  (movsb_qr,  .me_load_sb),
-    0b10_10_010  :  (movw_rq,   .me_store_w),
-    0b10_10_011  :  (movb_rq,   .me_store_b),
-    0b10_10_100  :  (cmp_crk,   .me_end),
-    0b10_10_101  :  (cmpc_crk,  .me_end),
-    0b10_10_110  :  (and_kr,    .me_end),
-    0b10_10_111  :  (lea_mr,    .me_end),
-    
-    0b10_11_000  :  (movw_mr,   .me_load_w),
-    0b10_11_001  :  (movsb_mr,  .me_load_sb),
-    0b10_11_010  :  (movw_rm,   .me_store_w),
-    0b10_11_011  :  (movb_rm,   .me_store_b),
-    0b10_11_100  :  (nop,       .me_end),
-    0b10_11_101  :  (nop,       .me_end),
-    0b10_11_110  :  (call_k,    .me_call_k1),
-    0b10_11_111  :  (_pfix,     .me_end),
-    
-    // R3, J
-    0b01_01_000  :  (cmp_crr,   .me_end),
-    0b01_01_001  :  (cmpc_crr,  .me_end),
-    0b01_01_010  :  (subc_rrr,  .me_end),
-    0b01_01_011  :  (sub_rrr,   .me_end),
-    0b01_01_100  :  (and_rrr,   .me_end),
-    0b01_01_101  :  (or_rrr,    .me_end),
-    0b01_01_110  :  (sel_crrr,  .me_end),
-    0b01_01_111  :  (nop,       .me_end),
-    
-    0b01_10_000  :  (xor_rrr,   .me_end),
-    0b01_10_001  :  (addc_rrr,  .me_end),
-    0b01_10_010  :  (add_rrr,   .me_end),
-    0b01_10_011  :  (movw_nr,   .me_load_w),
-    0b01_10_100  :  (movzb_nr,  .me_load_zb),
-    0b01_10_101  :  (movsb_nr,  .me_load_sb),
-    0b01_10_110  :  (movw_rn,   .me_store_w),
-    0b01_10_111  :  (movb_rn,   .me_store_b),
-    
-    0b01_11_000  :  (nop,       .me_end),
-    0b01_11_001  :  (nop,       .me_end),
-    0b01_11_010  :  (nop,       .me_end),
-    0b01_11_011  :  (nop,       .me_end),
-    0b01_11_100  :  (br_nt,     .me_end),
-    0b01_11_101  :  (br_t,      .me_end),
-    0b01_11_110  :  (add_kq,    .me_end),
-    0b01_11_111  :  (jmp_k,     .me_wait),
-    
     // R2
     0b00_00_000  :  (mov_rr,    .me_end),
     0b00_00_001  :  (mov_rq,    .me_end),
@@ -297,6 +229,75 @@ class Machine
     0b00_11_101  :  (nop,       .me_end),
     0b00_11_110  :  (nop,       .me_end),
     0b00_11_111  :  (nop,       .me_end),
+    
+     // R3, J
+    0b01_01_000  :  (cmp_crr,   .me_end),
+    0b01_01_001  :  (cmpc_crr,  .me_end),
+    0b01_01_010  :  (subc_rrr,  .me_end),
+    0b01_01_011  :  (sub_rrr,   .me_end),
+    0b01_01_100  :  (and_rrr,   .me_end),
+    0b01_01_101  :  (or_rrr,    .me_end),
+    0b01_01_110  :  (sel_crrr,  .me_end),
+    0b01_01_111  :  (nop,       .me_end),
+    
+    0b01_10_000  :  (xor_rrr,   .me_end),
+    0b01_10_001  :  (addc_rrr,  .me_end),
+    0b01_10_010  :  (add_rrr,   .me_end),
+    0b01_10_011  :  (movw_nr,   .me_load_w),
+    0b01_10_100  :  (movzb_nr,  .me_load_zb),
+    0b01_10_101  :  (movsb_nr,  .me_load_sb),
+    0b01_10_110  :  (movw_rn,   .me_store_w),
+    0b01_10_111  :  (movb_rn,   .me_store_b),
+    
+    0b01_11_000  :  (nop,       .me_end),
+    0b01_11_001  :  (nop,       .me_end),
+    0b01_11_010  :  (nop,       .me_end),
+    0b01_11_011  :  (nop,       .me_end),
+    0b01_11_100  :  (br_nt,     .me_end),
+    0b01_11_101  :  (br_t,      .me_end),
+    0b01_11_110  :  (add_kq,    .me_end),
+    0b01_11_111  :  (jmp_k,     .me_end), // aqui hi havia wait
+    
+    // I1, I2, P
+    0b10_01_000  :  (movw_ar,   .me_load_w),
+    0b10_01_001  :  (movsb_ar,  .me_load_sb),
+    0b10_01_010  :  (movw_ra,   .me_store_w),
+    0b10_01_011  :  (movb_ra,   .me_store_b),
+    0b10_01_100  :  (mov_kr,    .me_end),
+    0b10_01_101  :  (sub_kr,    .me_end),
+    0b10_01_110  :  (add_kr,    .me_end),
+    0b10_01_111  :  (lea_qr,    .me_end),
+    
+    0b10_10_000  :  (movw_qr,   .me_load_w),
+    0b10_10_001  :  (movsb_qr,  .me_load_sb),
+    0b10_10_010  :  (movw_rq,   .me_store_w),
+    0b10_10_011  :  (movb_rq,   .me_store_b),
+    0b10_10_100  :  (cmp_crk,   .me_end),
+    0b10_10_101  :  (cmpc_crk,  .me_end),
+    0b10_10_110  :  (and_kr,    .me_end),
+    0b10_10_111  :  (lea_mr,    .me_end),
+    
+    0b10_11_000  :  (movw_mr,   .me_load_w),
+    0b10_11_001  :  (movsb_mr,  .me_load_sb),
+    0b10_11_010  :  (movw_rm,   .me_store_w),
+    0b10_11_011  :  (movb_rm,   .me_store_b),
+    0b10_11_100  :  (nop,       .me_end),
+    0b10_11_101  :  (nop,       .me_end),
+    0b10_11_110  :  (call_k,    .me_call_k1),
+    0b10_11_111  :  (_pfix,     .me_end),
+    
+    // E7 11_ooooo
+    MCExt.me_wait.rawValue      : (wait,      .me_end),
+    MCExt.me_load_w.rawValue    : (load_w,    .me_end),
+    MCExt.me_load_zb.rawValue   : (load_zb,   .me_end),
+    MCExt.me_load_sb.rawValue   : (load_sb,   .me_end),
+    MCExt.me_store_w.rawValue   : (store_w,   .me_end),
+    MCExt.me_store_b.rawValue   : (store_b,   .me_end),
+    MCExt.me_call_k1.rawValue   : (call_k1,   .me_wait),
+    MCExt.me_call_r1.rawValue   : (call_r1,   .me_wait),
+    
+    MCExt.me_ret1.rawValue      : (ret1,      .me_wait),
+    MCExt.me_movw_pr1.rawValue  : (movw_pr_1, .me_wait),
   ]
   
   //-------------------------------------------------------------------------------------------
@@ -315,14 +316,14 @@ class Machine
     //reg.sp = mem.size  // FIX ME: Should this be automatically done by the machine setup code ??
   }
   
-  //-------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------
   func decode()
   {
     // Decode register and condition code operands
     
-    rs = ir[2,0]
-    rd = ir[5,3]
-    rn = ir[8,6]
+    rn = ir[2,0]
+    rs = ir[7,5]
+    rd = ir[10,8]
     cc = rd
 
     // Decode embeeded immediate fields
@@ -333,27 +334,27 @@ class Machine
     // P
     if ir15_13 == 0b111
     {
-      im = ir[10,7] | (ir[6,0]<<4)  // Type P, zero extended 11 bit
+      im = ir[10,0] // Type P, zero extended 11 bit
     }
 
     // I2
     else if ir15_13 >= 0b101 && ir15_13 <= 0b110
     {
-      im = ir[10,7] | (ir[6,6]<<4)        // Type I2, zero extended 5 bit
+      im = ir[4,0]        // Type I2, zero extended 5 bit
       if ir[15,12] == 0b1010 { im = im.sext(4,0) }  // Type I2, sign extended 5 bit
     }
 
     // I1
     else if ir15_13 >= 0b010 && ir15_13 <= 0b100
     {
-      im =  ir[10,7] | (ir[2,0]<<4) | (ir[6,6]<<7)  // Type I1, zero extended 8 bit
+      im =  ir[7,0]   // Type I1, zero extended 8 bit
       if ir[15,11] == 0b01100 { im = im.sext(7,0) } // Type I1, sign extended 8 bit
     }
     
     // J
     else
     {
-      im = ir[10,7] | (ir[3,0]<<4) | (ir[6,6]<<8)
+      im = ir[8,0]
       im = im.sext(8,0)   // Type J, sign extended 9 bit
     }
 
@@ -371,9 +372,9 @@ class Machine
     var oh:UInt16 = 0     // xx
     var ol:UInt16 = 0     // yyyyy
     
-    if ir15_12 == 0b0000 { oh = 0 ; ol = ir[11,7] }    // Type R2
-    else if ir15_12 >= 0b0001 && ir15_12 <= 0b0010 { oh = 1 ; ol = ir[13,9] }  // Type R3
-    else if ir15_12 == 0b0011 { oh = 1 ; ol = ir[5,4] | (ir[13,11]<<2) }  // Type J
+    if ir15_12 == 0b0000 { oh = 0 ; ol = ir[4,0] }    // Type R2
+    else if ir15_12 >= 0b0001 && ir15_12 <= 0b0010 { oh = 1 ; ol = ir[4,3] | ir[13,11]<<2 }  // Type R3
+    else if ir15_12 == 0b0011 { oh = 1 ; ol = ir[13,9] }  // Type J
     else { oh = 2 ; ol = ir[15,11] } // Types P, I1, I2
     
     // Get the instruction opcode
@@ -391,7 +392,7 @@ class Machine
 //    if !(pc_inhibit || br_taken) { instCount += 1 }
 //    cycleCount += 1
 
-    if (prg.pc == 8 )
+    if (prg.pc == 3 )
     {
       let stop = 1
     }
@@ -402,9 +403,101 @@ class Machine
 
     // These can only be set to true by the exec code, so we clear it first
     //pfr.enable = false
-    prg.parsel = false
+    prg.pmarsel = false
     br_taken = false
   }
+  
+  
+//  //-------------------------------------------------------------------------------------------
+//  func decode()
+//  {
+//    // Decode register and condition code operands
+//
+//    rs = ir[2,0]
+//    rd = ir[5,3]
+//    rn = ir[8,6]
+//    cc = rd
+//
+//    // Decode embeeded immediate fields
+//
+//    let ir15_13 = ir[15,13]
+//    var im:UInt16
+//
+//    // P
+//    if ir15_13 == 0b111
+//    {
+//      im = ir[10,7] | (ir[6,0]<<4)  // Type P, zero extended 11 bit
+//    }
+//
+//    // I2
+//    else if ir15_13 >= 0b101 && ir15_13 <= 0b110
+//    {
+//      im = ir[10,7] | (ir[6,6]<<4)        // Type I2, zero extended 5 bit
+//      if ir[15,12] == 0b1010 { im = im.sext(4,0) }  // Type I2, sign extended 5 bit
+//    }
+//
+//    // I1
+//    else if ir15_13 >= 0b010 && ir15_13 <= 0b100
+//    {
+//      im =  ir[10,7] | (ir[2,0]<<4) | (ir[6,6]<<7)  // Type I1, zero extended 8 bit
+//      if ir[15,11] == 0b01100 { im = im.sext(7,0) } // Type I1, sign extended 8 bit
+//    }
+//
+//    // J
+//    else
+//    {
+//      im = ir[10,7] | (ir[3,0]<<4) | (ir[6,6]<<8)
+//      im = im.sext(8,0)   // Type J, sign extended 9 bit
+//    }
+//
+//    // Prefix
+//    imm = pfr.enable ? im[4,0] | (pfr.value<<5) : im
+//
+//    // The pfix register is updated on every cycle
+//    pfr.value = im[10,0]
+//    pfr.enable = (ir[15,11] == 0b11111) // valid for the next cycle
+//
+//    // Instruction decode
+//
+//    let ir15_12 = ir[15,12]
+//
+//    var oh:UInt16 = 0     // xx
+//    var ol:UInt16 = 0     // yyyyy
+//
+//    if ir15_12 == 0b0000 { oh = 0 ; ol = ir[11,7] }    // Type R2
+//    else if ir15_12 >= 0b0001 && ir15_12 <= 0b0010 { oh = 1 ; ol = ir[13,9] }  // Type R3
+//    else if ir15_12 == 0b0011 { oh = 1 ; ol = ir[5,4] | (ir[13,11]<<2) }  // Type J
+//    else { oh = 2 ; ol = ir[15,11] } // Types P, I1, I2
+//
+//    // Get the instruction opcode
+//    let op = br_taken ? MCExt.me_wait.rawValue /*0b11_00000*/ :
+//        mir != MCExt.me_end.rawValue ? mir : (oh<<5) | ol
+//
+//    // Get the instruction opcode
+////    let op =  br_taken ? 0b11_00000 :
+////          control.1 != .me_end ? mir : (oh<<5) | ol
+//
+//    // Log
+//    if out.logEnabled { logDecode() }
+//
+//    // Statistics
+////    if !(pc_inhibit || br_taken) { instCount += 1 }
+////    cycleCount += 1
+//
+//    if (prg.pc == 3 )
+//    {
+//      let stop = 1
+//    }
+//
+//    // Decode the instruction (get the instruction control bits)
+//    if let f = instrP0[op] { control = f }  // Decoder Pattern
+//    else { out.exitWithError( "Unrecognized instruction opcode" ) }
+//
+//    // These can only be set to true by the exec code, so we clear it first
+//    //pfr.enable = false
+//    prg.pmarsel = false
+//    br_taken = false
+//  }
 
 
   //-------------------------------------------------------------------------------------------

@@ -8,6 +8,7 @@
 
 import Foundation
 
+
 //-------------------------------------------------------------------------------------------
 // Operand
 //-------------------------------------------------------------------------------------------
@@ -35,6 +36,7 @@ class Operand : CustomDebugStringConvertible
   // Other convenience accessors
   var u8value:UInt8 { return UInt8(truncatingIfNeeded:value) }
   var u16value:UInt16 { return UInt16(truncatingIfNeeded:value) }
+  var i16value:Int16 { return Int16(truncatingIfNeeded:value) }
   var u32value:UInt32 { return UInt32(truncatingIfNeeded:value) }
   
   // Designated initializer
@@ -211,6 +213,17 @@ class Instruction : Hashable, CustomDebugStringConvertible
     return nil
   }
   
+  // Return the immediate operand for this instruction if any
+  var immOp:OpImm?
+  {
+    for op in ops
+    {
+      if let opImm = op as? OpImm {
+        if !(op is OpCC) {return opImm} }
+    }
+    return nil
+  }
+  
   // Return the symbolic operand for this instruction if any
   var symOp:OpSym?
   {
@@ -220,17 +233,6 @@ class Instruction : Hashable, CustomDebugStringConvertible
     }
     return nil
   }
-  
-//  // Return the SP operand for this instruction if any
-//  var opSP:OpReg?
-//  {
-//    for op in ops
-//    {
-//      if let opReg = op as? OpReg {
-//        if opReg.opt.contains(.isSP) { return opReg } }
-//    }
-//    return nil
-//  }
   
   // Return the SP operand for this instruction if any
   var opSP:OpReg?

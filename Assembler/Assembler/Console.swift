@@ -48,12 +48,16 @@ class ConsoleIO
   }
   
   var logFile:URL?
+  var logisimLogFile:URL?
   var logData:String?
+  var logisimLogData:String?
   
-  func enableLog( _ url:URL? )
+  func enableLog( _ url:URL?, _ logisimUrl:URL?)
   {
     logFile = url
+    logisimLogFile = logisimUrl
     logData = url != nil ? String() : nil
+    logisimLogData = logisimUrl != nil ? String() : nil
   }
   
   var logEnabled:Bool { return logData != nil }
@@ -72,12 +76,33 @@ class ConsoleIO
     log( "\n" )
   }
   
+  func logisimLog( _ s:String )
+  {
+    if logisimLogData == nil { return }
+    
+    logisimLogData!.append( s )
+  }
+  
+  func logisimLogln( _ s:String = "" )
+  {
+    logisimLog( s )
+    logisimLog( "\n" )
+  }
+  
   func writeLog()
   {
     if logData != nil {
       try! logData!.write(to:logFile!, atomically:false, encoding:.utf8)
     }
   }
+  
+  func writeLogisimLog()
+  {
+    if logisimLogData != nil {
+      try! logisimLogData!.write(to:logisimLogFile!, atomically:false, encoding:.utf8)
+    }
+  }
+  
   
   func write( data:Data?, url:URL? )
   {
@@ -114,6 +139,7 @@ class Console
   var destination:URL?                 // Destination file url
   var logisimDestination:URL?          // Logisim Destination file url
   var logFile:URL?                     // Log file url
+  var logisimLogFile:URL?            // Logisim Source Destination file url
   
   //-------------------------------------------------------------------------------
   // Exit executable with an error
@@ -266,84 +292,11 @@ class Console
       {
         let log = destination!.deletingPathExtension();
         logFile = newURLfromArgument( log.absoluteString, isSource:false, useExtension:"log");
+        logisimLogFile = newURLfromArgument( log.absoluteString+"_log", isSource:false, useExtension:"txt");
       }
-      out.enableLog( logFile )
+      out.enableLog( logFile, logisimLogFile )
     }
   }
 
-  //-------------------------------------------------------------------------------
-//  func initNO()
-//  {
-//    let numArgs = Int(CommandLine.argc)
-//    var wantsLog = false
-//    var currOpt:Character = "s"
-//    executableName.append( (CommandLine.arguments[0] as NSString).lastPathComponent )
-//    command.append( executableName )
-//    for i:Int in 1 ..< numArgs
-//    {
-//        command.append(" ")
-//        command.append( CommandLine.arguments[i] )
-//    }
-//
-//    path = CommandLine.arguments[0]
-//    out.println( path )
-//
-//    for i:Int in 1..<numArgs
-//    {
-//      let arg = CommandLine.arguments[i]
-//
-//      if arg[arg.startIndex] == "-" && arg.count >= 2
-//      {
-//        currOpt = arg[arg.index(after:arg.startIndex)]
-//        if currOpt == "l" { wantsLog = true }
-//        continue;
-//      }
-//
-//      switch currOpt
-//      {
-//        case "s":
-//          let source = getURLfromArgument(arg, isSource:true)
-//          sources.append(source)
-//
-//        case "o":
-//          if destination != nil { exitWithErr( "Only one destination allowed" ) }
-//          destination = getURLfromArgument(arg, isSource:false, useExtension:"c74")
-//
-//        case "l":
-//          if logFile != nil { exitWithErr( "Only one log file allowed" ) }
-//          logFile = getURLfromArgument(arg, isSource:false, useExtension:"log")
-//
-//        default:
-//          exitWithErr( "Unknown command line argument '-\(currOpt)'", withHint:true);
-//      }
-//    }
-//
-//    if currOpt == "h"
-//    {
-//      printUsage();
-//      return;
-//    }
-//
-//    if sources.count == 0
-//    {
-//      exitWithErr( "No sources", withHint:true )
-//    }
-//
-//    if destination == nil
-//    {
-//      let dest = sources[0].deletingPathExtension();
-//      destination = getURLfromArgument( dest.absoluteString, isSource:false, useExtension:"c74");
-//    }
-//
-//    if wantsLog
-//    {
-//      if logFile == nil
-//      {
-//        let log = destination!.deletingPathExtension();
-//        logFile = getURLfromArgument( log.absoluteString, isSource:false, useExtension:"log");
-//      }
-//      out.enableLog( logFile )
-//    }
-//  }
 
-} // console
+} // End class Console

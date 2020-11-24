@@ -212,6 +212,24 @@ class PrimitiveParser
     }
     return nil ;
   }
+  
+  
+  //-------------------------------------------------------------------------------------------
+  // Parse an int. Return a wrapped Int if successful or nil otherwhise
+   func parseAnyInteger() -> Int?
+  {
+    let svc = c
+    if ( c+2 <= end && "0x".d == s[c..<c+2] )
+    {
+      c = c + 2
+      if let result = parseInteger(base:16)
+      {
+        return result
+      }
+      c = svc
+    }
+    return parseInteger( base:10 )
+  }
 
   //-------------------------------------------------------------------------------------------
   // Parse an int. Return a wrapped Int if successful or nil otherwhise
@@ -229,7 +247,7 @@ class PrimitiveParser
         if (base == 10 || base == 16) && (ch >= self._0 && ch <= self._9) { return true }
         if base == 8 && (ch >= self._0 && ch <= self._7) { return true }
         if base == 1 && (ch >= self._0 && ch <= self._1) { return true }
-        if base == 16 && ((ch >= self._a && ch <= self._f) || (ch >= self._a && ch <= self._F )) { return true }
+        if base == 16 && ((ch >= self._a && ch <= self._f) || (ch >= self._A && ch <= self._F )) { return true }
         return false
     }
 
@@ -340,7 +358,7 @@ class PrimitiveParser
     return nil
   }
 
-} // end of PrimitiveParser
+} // End class PrimitiveParser
 
 
 

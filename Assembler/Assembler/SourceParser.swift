@@ -53,12 +53,21 @@ class SourceParser:PrimitiveParser
   // implemented by hand. The entry funcion is 'parse()'
   
   
+  
+  //-------------------------------------------------------------------------------------------
+  func parseGlobalToken() -> Data?
+  {
+    if let token = parsePrefixedToken( prefix: "$".d ) { return token }
+    if let token = parseToken() { return token }
+    return nil
+  }
+  
   //-------------------------------------------------------------------------------------------
   func parseAddressToken() -> Data?
   {
-    if let token = parseToken() { return token }
     if let token = parsePrefixedToken( prefix: ".L".d ) { return token }
     if let token = parsePrefixedToken( prefix: ".L.".d ) { return token }
+    if let token = parseGlobalToken() { return token }
     return nil
   }
 
@@ -71,7 +80,7 @@ class SourceParser:PrimitiveParser
       let data = addr;
       var offset = 0;
       if parseChar( _plus ) {
-        if let value = parseInteger() { offset = value } }
+        if let value = parseAnyInteger() { offset = value } }
       
       return (data,offset)
     }
@@ -83,7 +92,7 @@ class SourceParser:PrimitiveParser
   //-------------------------------------------------------------------------------------------
   func parseImmediate() -> Int?
   {
-    if let value = parseInteger() {
+    if let value = parseAnyInteger() {
       return value }
     
     return nil
@@ -383,7 +392,7 @@ class SourceParser:PrimitiveParser
     if parseConcreteToken(cStr: "globl".d )
     {
       skipSpTab()
-      if let name = parseToken()
+      if let name = parseGlobalToken()
       {
         // We do not allow duplicates of global symbols
         if asm.globalSymTable[name] == nil
@@ -634,14 +643,14 @@ class SourceParser:PrimitiveParser
         if parseChar( UInt8(ascii:",") )
         {
           skipSpTab()
-          if let len = parseInteger()
+          if let len = parseAnyInteger()
           {
             size = len
             skipSpTab()
             if parseChar( UInt8(ascii:",") )
             {
               skipSpTab()
-              if let algn = parseInteger()
+              if let algn = parseAnyInteger()
               {
                 align = algn
               }
@@ -864,5 +873,5 @@ class SourceParser:PrimitiveParser
     return true
   }
 
-} // SourceParser
+} // End class SourceParser
 

@@ -57,10 +57,10 @@ class ProgramMemory
   // Program counter, memory output
   var pc:UInt16 = 0        // program counter register
   var pmar:UInt16 = 0       // programm address register
-  var parsel:Bool = false  // address register select
+  var pmarsel:Bool = false  // address register select
 
   // Memory value at current address
-  var value:UInt16 { return self[parsel ? pmar : pc] }
+  var value:UInt16 { return self[pmarsel ? pmar : pc] }
 
   // Memory size
   var size:UInt16 { return (memory.count/2).u16 }   // size in words

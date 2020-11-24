@@ -108,6 +108,12 @@ class Assembler
     if sources.count > 0 { return sources.last!.getUninitializedVarsEnd() }
     else { return 0 }
   }
+  
+  // Byte count of constant and initialized variables in data memory
+  func getDataValueCount() -> Int
+  {
+    return getConstantDataEnd() + getInitializedVarsEnd()
+  }
 
   //-------------------------------------------------------------------------------------------
   // Returns a SymTableInfo object with the updated memory address of a symbol in the form of a tuple pair that
@@ -134,12 +140,28 @@ class Assembler
   
   //-------------------------------------------------------------------------------------------
   // Insert setup code
+  func getInitCode() -> Data
+  {
+    let code =
+    """
+      \t.text
+      init:
+      \t.file "init"
+      \tjmp @$setup
+    """
+    return code.d
+  }
+
+  //-------------------------------------------------------------------------------------------
+  // Insert setup code
   func getSetupCode() -> Data
   {
     let code =
     """
       \t.text
-      \t.file "setup"
+      \t.file "$setup"
+      \t.globl $setup
+      $setup:
       \tmov &initialSP, r0
       \tmov r0, SP
       \tmov @setupAddr, r1    # program memory
@@ -158,7 +180,24 @@ class Assembler
       \tcall @main
       \thalt
     """
-
+    return code.d
+  }
+  
+  //-------------------------------------------------------------------------------------------
+  // Insert setup code
+  func getSimpleSetupCode() -> Data
+  {
+    let code =
+    """
+      \t.text
+      \t.file "$setup"
+      \t.globl $setup
+      $setup:
+      \tmov &initialSP, r0
+      \tmov r0, SP
+      \tcall @main
+      \thalt
+    """
     return code.d
   }
 
@@ -166,12 +205,144 @@ class Assembler
   // Initialize symbols for the setup code
   func insertSetupSymbols()
   {
-    let setup = sources[0]
+    //let setup = sources[0]
+    let setup = sources.last!
     
     setup.localSymTable["initialSP".d] = SymTableInfo(bank:.imm, value:-256)
     setup.localSymTable["setupAddr".d] = SymTableInfo(bank:.imm, value:0)
     setup.localSymTable["dataAddr".d] = SymTableInfo(bank:.imm, value:0)
     setup.localSymTable["wordLength".d] = SymTableInfo(bank:.imm, value:0)
+  }
+  
+  
+  //-------------------------------------------------------------------------------------------
+  // Optimize immediates by expanding or shringking into the minimal possible instruction
+  func optimizeImmediates() -> Bool
+  {
+    //let setup = sources[0]
+    let setup = sources.last!
+    setup.localSymTable["setupAddr".d]?.value = getInstructionsEnd()
+    setup.localSymTable["dataAddr".d]?.value = 0
+    setup.localSymTable["wordLength".d]?.value = getDataValueCount()/2 //  (getConstantDataEnd() + getInitializedVarsEnd()) / 2
+  
+    // Replace instructions that must be optimized
+    
+    var madeChange = false
+    for j in 0..<sources.count
+    {
+      let source = sources[j]
+      var memIdx = 0
+      for inst in source.instructions
+      {
+        //var aa = 0
+        let instSize = inst.size
+        let theInst = inst.mcInst as? InstWithImmediate
+        
+        // We are only interested on intructions with
+        // relative offsets or absolute values/addresses
+        // Use the `isDisjoint(with:)` method to test whether a set has any elements
+        ///   in common with another set
+        if ( theInst != nil && theInst!.refKind.isDisjoint(with:[.relative, .absolute]) == false )
+        {
+          var here = 0;
+          if theInst!.refKind.contains(.relative) {
+            here =  source.instructionsOffset + memIdx + instSize } // add instSize because the PC always points to the next instruction
+          
+          var inCoreRange = false
+          if let op = inst.immOp
+          {
+            let aa = op.value
+            inCoreRange = theInst!.inRange(op.value)
+            out.log( "Optimizing: \(op.value), Value: \(aa)" )
+          }
+          else
+          {
+            // Compute the destination address
+            assert( inst.symOp != nil, "Instruction should have a symOp" )
+          
+            var aa = 0
+            let op = inst.symOp!
+            if let symInfo = getMemoryAddress(sym: op.sym!, src:source) {
+              aa = symInfo.value + op.value - here }
+            // Get the acceptable range for this instruction
+            inCoreRange = theInst!.inRange(aa)
+            out.log( "Optimizing: \((op.sym?.s)!), Value: \(aa)")
+          }
+          
+          // Replace the instruction if appropiate
+          
+          if ( inst.hasPfix && inCoreRange ) { inst.hasPfix = false }
+          else if ( !inst.hasPfix && !inCoreRange ) {inst.hasPfix = true }
+          let instSizeDif = inst.size - instSize
+
+          out.logln( ", \(instSizeDif != 0 ? "" : "(no change)" ) " )
+
+          // Did we replace the instruction?
+          if instSizeDif != 0
+          {
+            // The size of a new instruction is different from the old one, so we need
+            // to update this source size and correct all following source offsets.
+            // This is not perfect because it won't acount for absolute references
+            // whithin the same source, but it will reduce the total
+            // number of replacement iterations
+            madeChange = true
+            source.instructionsEnd += instSizeDif
+            for k in stride(from:j+1, to:sources.count, by:1) {
+              sources[k].instructionsOffset += instSizeDif }
+          }
+        }
+        
+        memIdx += instSize
+      }
+    }
+    
+    // Return early if we did not make changes
+    if ( !madeChange ) {
+      return false }
+    
+   // Compute symbol values
+   
+    /* FIX ME:
+    This is quite an uneficient way of doing it. It would be better to maintain
+    a sequential array of SymInfos, with the symbol tables only pointing
+    to element indexes in the array. This way we could quickly update
+    the symInfo values without having to touch the symboltables at all
+    */
+    for j in 0..<sources.count
+    {
+      let source = sources[j]
+      var memIdx = 0
+      
+      for inst in source.instructions
+      {
+        if inst.labels != nil
+        {
+          for label in inst.labels!
+          //if let label = inst.label
+          {
+            var symInfo = source.localSymTable[label]
+            if symInfo == nil { symInfo = globalSymTable[label] }
+          
+            if symInfo == nil {
+              out.exitWithError( "\(source.shortName.s).s Unresolved symbol: " + label.s ) }
+          
+            out.log( "Replacing: \(label.s), Value: \(symInfo!.value)" )
+          
+            switch symInfo!.bank
+            {
+              case .program  : symInfo!.value = memIdx + source.instructionsOffset
+              default : out.exitWithError( "Unsuported bank (5)" )
+            }
+          
+            out.logln( "...New Value: \(symInfo!.value)" )
+          }
+        }
+        memIdx += inst.size
+      }
+      
+      //source.instructionsEnd = memIdx
+    }
+    return true
   }
   
   //-------------------------------------------------------------------------------------------
@@ -199,14 +370,15 @@ class Assembler
     }
   }
   
-  
-//-------------------------------------------------------------------------------------------
+  //-------------------------------------------------------------------------------------------
   // Assemble a single Source object
   func assembleProgram(source:Source) -> Bool
   {
     // Iterate the Instructions array
     out.log( "\nSource: " )
     out.logln( source.name.s )
+    out.logisimLog( "\nSource: " )
+    out.logisimLogln( source.name.s )
     
     // Memory index
     var memIdx = 0;
@@ -235,13 +407,14 @@ class Assembler
       if let op = inst.exOperand
       {
         thePrefix = TypeP( op:0b11111, ops:[op], rk:[] )
-        thePrefix!.setPrefixValue(a:op.u16value)   // Set the prefix address bits
-        theInst?.setPrefixedValue(a:op.u16value)   // Update the prefixed immediate
+        thePrefix!.setPrefixValue(a:op.value)   // Set the prefix address bits
+        theInst?.setPrefixedValue(a:op.value)   // Update the prefixed immediate
       }
       
       // Initialize some variables.
       // These are used only for log purposes
       var isRelative = false
+      var isImmediate = false
       var aa:Int? = nil
       var bankStr = ""
       
@@ -258,31 +431,39 @@ class Assembler
           here = source.instructionsOffset + memIdx + /*pfixOffs + 1*/ inst.size // add inst.size because the PC always points to the next instruction
         }
         
-        // Compute the destination address
-        let op = inst.symOp!
-        if let symInfo = getMemoryAddress(sym: op.sym!, src:source)
+        if let op = inst.immOp
         {
-          bankStr = symInfo.bank.prefix
-          aa = symInfo.value + op.value - here
-          a16 = UInt16(truncatingIfNeeded:aa!)
+          aa = op.value
+          isImmediate = true
         }
         else
         {
-          out.exitWithError( "\(source.shortName.s).s Unresolved symbol: " + op.sym!.s )
-          return false
+          assert( inst.symOp != nil, "Instruction should have a symOp" )
+          // Compute the destination address
+          let op = inst.symOp!
+          if let symInfo = getMemoryAddress(sym: op.sym!, src:source)
+          {
+            bankStr = symInfo.bank.prefix
+            aa = symInfo.value + op.value - here
+          }
+          else
+          {
+            out.exitWithError( "\(source.shortName.s).s Unresolved symbol: " + op.sym!.s )
+            return false
+          }
         }
         
         // If we have a prefix update its value now
         if ( thePrefix != nil )
         {
           assert( inst.hasPfix, "Too bad, the current instruction should not be prefixed!" )
-          thePrefix!.setPrefixValue(a:a16)   // Set the prefix address bits
-          theInst!.setPrefixedValue(a:a16)   // Set the instrucion address bits
+          thePrefix!.setPrefixValue(a:aa!)   // Set the prefix address bits
+          theInst!.setPrefixedValue(a:aa!)   // Set the instrucion address bits
         }
         else
         {
           assert( !inst.hasPfix, "Too bad, the current instruction should follow a prefix!" )
-          theInst!.setValue(a:a16)  // Set the instrucion address bits
+          theInst!.setCoreValue(a:aa!)  // Set the instrucion address bits
         }
       }
       
@@ -309,10 +490,16 @@ class Assembler
         {
           let str = String(encoding, radix:2) //binary base
           let padd = String(repeating:"0", count:(16 - str.count))
-          var prStr = String(format:"%05d (%04X) : %@%@ (%04X) %@", addr, addr, padd, str, encoding, (inst != nil ? String(reflecting:inst!) : "_pfix") )
-          if ( aa != nil && isRelative)  { prStr += String(format:"  %@:%+d", bankStr, aa!) }
-          if ( aa != nil && !isRelative) { prStr += String(format:"  %@:%05d", bankStr, aa!) }
-          out.logln( prStr )
+          
+          let prStrHead = String(format:"%05d: %@%@ (%04X) ", addr, padd, str, encoding)
+          //let prStrHead = String(format:"%05d (%04X) : %@%@ (%04X) ", addr, addr, padd, str, encoding)
+          let prStrLogisimHead = String(format:"%04X: %05d: (%04X) ", addr, addr, encoding)
+          var prStrInst = (inst != nil ? String(reflecting:inst!) : String(format:"_pfix %d", aa!))
+          
+          if ( aa != nil && isRelative)  { prStrInst += String(format:"  %@:%+d", bankStr, aa!) }
+          if ( aa != nil && !isRelative && !isImmediate ) { prStrInst += String(format:"  %@:%05d", bankStr, aa!) }
+          out.log( prStrHead ); out.logln( prStrInst )
+          out.logisimLog( prStrLogisimHead ); out.logisimLogln( prStrInst )
         }
         
         if ( thePrefix != nil ) { logStuff( inst:nil, encoding:prefixEncoding!, addr:programMemory.count/2-2 ) }
@@ -323,7 +510,6 @@ class Assembler
     // We are done
     return true
   }
-  
 
   //-------------------------------------------------------------------------------------------
   // Assemble a single DataValue
@@ -391,7 +577,7 @@ class Assembler
       if !assembleSingleDataValue(datav:datav, source:source) { break } }
     
     return true
- }
+  }
  
   //-------------------------------------------------------------------------------------------
   // Assemble all iniitalized DataValues
@@ -402,136 +588,12 @@ class Assembler
       if !assembleSingleDataValue(datav:datav, source:source) { break } }
     
     return true
- }
+  }
  
   //-------------------------------------------------------------------------------------------
-  // Optimize immediates by expanding or shringking into the minimal possible instruction
-  func optimizeImmediates() -> Bool
-  {
-    let setup = sources[0]
-    let instend = getInstructionsEnd()
-    setup.localSymTable["setupAddr".d]?.value = instend
-    setup.localSymTable["dataAddr".d]?.value = 0
-    setup.localSymTable["wordLength".d]?.value = (getConstantDataEnd() + getInitializedVarsEnd()) / 2
-  
-    // Replace instructions that must be optimized
-    
-    var madeChange = false
-    for j in 0..<sources.count
-    {
-      let source = sources[j]
-      var memIdx = 0
-      for inst in source.instructions
-      {
-        var aa = 0
-        let instSize = inst.size
-        let mcInst = inst.mcInst;
-        let theInst = mcInst as? InstWithImmediate
-        
-        // We are only interested on intructions with
-        // relative offsets or absolute values/addresses
-        // Use the `isDisjoint(with:)` method to test whether a set has any elements
-        ///   in common with another set
-        if ( theInst != nil && theInst!.refKind.isDisjoint(with:[.relative, .absolute]) == false )
-        {
-          var here = 0;
-          
-          if theInst!.refKind.contains(.relative) {
-            here =  source.instructionsOffset + memIdx + instSize } // add instSize because the PC always points to the next instruction
-          
-          // Compute the destination address
-          assert( inst.symOp != nil, "Instruction should have a symOp" )
-          
-          let op = inst.symOp!
-          if let symInfo = getMemoryAddress(sym: op.sym!, src:source) {
-            aa = symInfo.value + op.value - here }
-          // Get the acceptable range for this instruction
-          let inCoreRange = theInst!.inRange(aa)
-          
-          // Replace the instruction if appropiate
-          
-          if ( inst.hasPfix && inCoreRange ) { inst.hasPfix = false }
-          else if ( !inst.hasPfix && !inCoreRange ) {inst.hasPfix = true }
-          let instSizeDif = inst.size - instSize
-
-          out.logln( "Optimizing: \((op.sym?.s)!), Value: \(aa), \(instSizeDif != 0 ? "" : "(no change)" ) " )
-
-          // Did we replace the instruction?
-          if instSizeDif != 0
-          {
-            // The size of a new instruction is different from the old one, so we need
-            // to update this source size and correct all following source offsets.
-            // This is not perfect because it won't acount for absolute references
-            // whithin the same source, but it will reduce the total
-            // number of replacement iterations
-            madeChange = true
-            source.instructionsEnd += instSizeDif
-            for k in stride(from:j+1, to:sources.count, by:1) {
-              sources[k].instructionsOffset += instSizeDif }
-          }
-        }
-        
-        memIdx += instSize
-      }
-    }
-    
-    // Return early if we did not make changes
-    if ( !madeChange ) {
-      return false }
-    
-   // Compute symbol values
-   
-    /* FIX ME:
-    This is quite an uneficient way of doing it. It would be better to maintain
-    a sequential array of SymInfos, with the symbol tables only pointing
-    to element indexes in the array. This way we could quickly update
-    the symInfo values without having to touch the symboltables at all
-    */
-    for j in 0..<sources.count
-    {
-      let source = sources[j]
-      var memIdx = 0
-      
-      for inst in source.instructions
-      {
-        if inst.labels != nil
-        {
-          for label in inst.labels!
-          //if let label = inst.label
-          {
-            var symInfo = source.localSymTable[label]
-            if symInfo == nil { symInfo = globalSymTable[label] }
-          
-            if symInfo == nil {
-              out.exitWithError( "\(source.shortName.s).s Unresolved symbol: " + label.s ) }
-          
-            out.log( "Replacing: \(label.s), Value: \(symInfo!.value)" )
-          
-            switch symInfo!.bank
-            {
-              case .program  : symInfo!.value = memIdx + source.instructionsOffset
-              default : out.exitWithError( "Unsuported bank (5)" )
-            }
-          
-            out.logln( "...New Value: \(symInfo!.value)" )
-          }
-        }
-        memIdx += inst.size
-      }
-      
-      //source.instructionsEnd = memIdx
-    }
-    
-    return true
- }
-
-  //-------------------------------------------------------------------------------------------
-  // Assemble all available Sources and DataValues
+  // Assemble all available DataValues
   func assembleData()
   {
-    // Compute setup data offset
-    //setupDataLength = (getConstantDataEnd() + getInitializedVarsEnd()) / 2
-    
     // Generate constant data
     
     out.logln( "\nConstant Data:" )
@@ -565,7 +627,6 @@ class Assembler
             "Data memory length should be equal to initialized vars end" )
   
     // Unitialized variables do not require any machine code, so only some log for them
-    
     out.logln( "\nUnitialised Variables:" )
     if out.logEnabled
     {
@@ -577,7 +638,7 @@ class Assembler
   }
 
   //-------------------------------------------------------------------------------------------
-  // Assemble all available Sources and DataValues
+  // Assemble all available Sources
   func assembleProgram()
   {
     for source in sources {
@@ -623,8 +684,6 @@ class Assembler
     return logisimData
   }
 
-	
-	
-}
+} // End class Assembler
 
 

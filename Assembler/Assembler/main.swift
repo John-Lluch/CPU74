@@ -59,10 +59,11 @@ class C74_as
   // Process a single source file
   func parseSources() -> Bool
   {
-    // Create the setup code
-    let setup = assembler.getSetupCode()
-    if !parseSource(data:setup) {
-      out.printError( "Errors parsing setup source" )
+  
+    // Create the init code
+    let initCode = assembler.getInitCode()
+    if !parseSource(data:initCode) {
+      out.printError( "Errors parsing init code" )
       return false
     }
     
@@ -81,8 +82,16 @@ class C74_as
       break
     }
     
+    // Create the setup code
+    let dataCount = assembler.getDataValueCount()
+    let setup = dataCount > 0 ? assembler.getSetupCode() : assembler.getSimpleSetupCode()
+    if !parseSource(data:setup) {
+      out.printError( "Errors parsing setup source" )
+      return false
+    }
+    
     // If we get here something went wrong
-    return false
+    return true
   }
   
 
@@ -95,7 +104,7 @@ class C74_as
     _ = parseSources()
     
     // Did we process all sources?
-    if  assembler.sources.count == console.sources.count + 1
+    if  assembler.sources.count == console.sources.count + 2
     {
       // Assemble all sources together
       //assembleSources()
@@ -113,6 +122,7 @@ class C74_as
     out.logln()
     out.logln( "Assembly completed" )
     out.writeLog()
+    out.writeLogisimLog()
   }
 
 } // class C74

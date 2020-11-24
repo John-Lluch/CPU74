@@ -17,7 +17,6 @@ struct ReferenceKind: OptionSet
   static let shifted  = ReferenceKind(rawValue: 1 << 3)      // Has shifted immediate or register
 }
 
-
 //-------------------------------------------------------------------------------
 // Machine instruction formats and encoding patterns
 //-------------------------------------------------------------------------------
@@ -59,12 +58,7 @@ class InstWithImmediate:MachineInstr
   init( bitSiz siz:Int, rk:ReferenceKind )
   {
   	bitSiz = siz
-  	//hiShift = 4
-  	//loMask = 0b1111
-  	//loOffs = 7
     hiMask = UInt16( (1<<(bitSiz-5)) - 1 )
-    //hiOffs = 0
-    //sOffs = 6
     super.init( rk )
   }
   
@@ -73,44 +67,69 @@ class InstWithImmediate:MachineInstr
     self.init(bitSiz:5, rk:rk)
   }
   
-  func setValue( a:UInt16 )
+  func setRawValue( v:UInt16 )
   {
-    let v = refKind.contains(.shifted) ? a>>1 : a
-    assert( !refKind.contains(.shifted) || (a&1) == 0 , "Shifted value must be even!" )
-  
-    encoding &= ~(loMask << loOffs)
-    encoding |= (loMask & v) << loOffs
-		
-    encoding &= ~(hiMask << hiOffs)
-    encoding |= (hiMask & (v>>hiShift)) << hiOffs
-
-    encoding &= ~(1 << sOffs)
-    encoding |= (1 & (v>>(bitSiz-1)) ) << sOffs
+    let mask:UInt16 = (1<<bitSiz)-1
+    encoding &= ~(mask)
+    encoding |= (mask & v)
   }
   
-  func setPrefixedValue( a:UInt16 )
+//  func setRawValue( v:UInt16 )
+//  {
+//    encoding &= ~(loMask << loOffs)
+//    encoding |= (loMask & v) << loOffs
+//
+//    encoding &= ~(hiMask << hiOffs)
+//    encoding |= (hiMask & (v>>hiShift)) << hiOffs
+//
+//    encoding &= ~(1 << sOffs)
+//    encoding |= (1 & (v>>(bitSiz-1)) ) << sOffs
+//  }
+  
+  func getShiftedValue( _ a:Int) -> Int
   {
-    setValue( a: a & 0b1_1111 )
+    let shifted = refKind.contains(.shifted)
+    if shifted && (a&1) != 0  { out.exitWithError( "Shifted value must be even" ) }
+    return shifted ? a>>1 : a
+  }
+  
+  func setValue( a:UInt16 )
+  {
+    let shifted = refKind.contains(.shifted)
+    if shifted && (a&1) != 0  { out.exitWithError( "Shifted value must be even" ) }
+    setRawValue( v: shifted ? a>>1 : a )
+  }
+  
+  func setCoreValue( a:Int )
+  {
+    let v = getShiftedValue( a )
+    setRawValue( v: UInt16(truncatingIfNeeded: v) )
+  }
+  
+  func setPrefixedValue( a:Int )
+  {
+    let v = getShiftedValue( a )
+    setRawValue( v: UInt16(truncatingIfNeeded: v & 0b1_1111) )
   }
   
   func inRange( _ a:Int ) -> Bool
   {
     // This tests true only for positive values that fit in the mask size
     // Might be overriden to test sign extended immediates
-    let v = refKind.contains(.shifted) ? a/2 : a
-    assert( !refKind.contains(.shifted) || (a&1) == 0 , "Shifted value must be even!" )
-    
+    let v = getShiftedValue( a )
     let mask = (1<<bitSiz)-1
     return (v & mask) == v
+    
+//    let mask = (1<<bitSiz)-1
+//    return v >= 0 && v <= mask
+    
   }
   
   func inSignExtendedRange( _ a:Int ) -> Bool
   {
     // This tests true only for positive or negative values
     // that fit in the mask size
-    let v = refKind.contains(.shifted) ? a/2 : a
-    assert( !refKind.contains(.shifted) || (a&1) == 0 , "Shifted value must be even!" )
-    
+    let v = getShiftedValue( a )
     let mask = (1<<bitSiz)-1
     let half = (mask+1)/2
     return v >= -half && v < half
@@ -126,20 +145,15 @@ class TypeP:InstWithImmediate
     super.init(bitSiz:11, rk:rk)
 		encoding |= (0b11111 & op)  << 11
     setValue(a: a)
-//    super.init(mask:0b111_1111_1111, offs:0, rk:rk )
-//    encoding |= (0b11111 & op)  << 11
-//    encoding |= (mask & a)    << offs
   }
   
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, a:ops[0].u16value, rk:rk ) }
   
-  func setPrefixValue( a:UInt16 )
+  func setPrefixValue( a:Int )
   {
-    setValue( a: a>>5 )
-    // Note that this works because mask is 11 bit and shift is 5 bit
-//    encoding &= ~mask
-//    encoding |= (mask & (a>>5))
+    let v = getShiftedValue( a )
+    setRawValue( v: UInt16(truncatingIfNeeded: v>>5) )
   }
 }
 
@@ -155,13 +169,21 @@ class TypeI2:InstWithImmediate
 {
   init( op:UInt16, rs:UInt16, k:UInt16, rd:UInt16, rk:ReferenceKind )
   {
-  
     super.init(bitSiz:5, rk:rk)
     encoding |= (0b11111 & op)  << 11
-    encoding |= (0b111 & rs)    << 0
-    encoding |= (0b111 & rd)    << 3
+    encoding |= (0b111 & rs)    << 5
+    encoding |= (0b111 & rd)    << 8
     setValue(a: k)
   }
+
+//  init( op:UInt16, rs:UInt16, k:UInt16, rd:UInt16, rk:ReferenceKind )
+//  {
+//    super.init(bitSiz:5, rk:rk)
+//    encoding |= (0b11111 & op)  << 11
+//    encoding |= (0b111 & rs)    << 0
+//    encoding |= (0b111 & rd)    << 3
+//    setValue(a: k)
+//  }
   
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, rs:ops[0].u16value, k:ops[1].u16value, rd:ops[2].u16value,  rk:rk )
@@ -177,14 +199,16 @@ class TypeI2b:TypeI2
   }
 }
 
-//// Same as TypeI2, but the assembly operands
-//// match the cmp instruction order
-//class TypeI2_cc:TypeI2
-//{
-//  required convenience init( op:UInt16, ops:[Operand], rk:ReferenceKind = [] ) {
-//    self.init( op:op, rs:ops[1].u16value, rd:ops[0].u16value, k:ops[2].u16value, rk:rk )
-//  }
-//}
+// Same as TypeI2b but overrides the inRange function for sign extended ranges
+class TypeI2b_s:TypeI2
+{
+  override func inRange( _ v:Int ) -> Bool {
+    return inSignExtendedRange( v ) }
+  
+  required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
+    self.init( op:op, rs:ops[1].u16value, k:ops[2].u16value, rd:ops[0].u16value,  rk:rk )
+  }
+}
 
 // Type I1
 
@@ -194,9 +218,17 @@ class TypeI1:InstWithImmediate
   {
     super.init(bitSiz:8, rk:rk)
     encoding |= (0b11111 & op)    << 11
-    encoding |= (0b111 & rd)       << 3
+    encoding |= (0b111 & rd)       << 8
     setValue(a: k)
   }
+
+//  init( op:UInt16, k:UInt16, rd:UInt16,  rk:ReferenceKind )
+//  {
+//    super.init(bitSiz:8, rk:rk)
+//    encoding |= (0b11111 & op)    << 11
+//    encoding |= (0b111 & rd)       << 3
+//    setValue(a: k)
+//  }
   
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, k:ops[0].u16value, rd:ops[1].u16value,  rk:rk ) }
@@ -238,35 +270,24 @@ class TypeI1d:TypeI1
 
 // Type J
 
-//class TypeJ_cc:InstWithImmediate
-//{
-//  init( cc:UInt16, a:UInt16, rk:ReferenceKind )
-//  {
-//    super.init(mask:0b1_1111_1111, offs:0, rk:rk)
-////    encoding |= (0b0100)             << 12
-////    encoding |= (0b111 & cc)         << 9
-//    encoding |= 0b11                  << 14
-//    encoding |= (0b11111 & cc)         << 9
-//    encoding |= (mask & a )          << offs
-//  }
-//
-//  required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
-//    self.init( cc:ops[0].u16value, a:ops[1].u16value, rk:rk ) }
-//
-//  override func inRange( _ v:Int ) -> Bool {
-//    return signExtendRange( v ) }
-//}
-
 class TypeJ:InstWithImmediate
 {
   init( op:UInt16, a:UInt16, rk:ReferenceKind )
   {
     super.init(bitSiz:9, rk:rk)
     encoding |= 0b00                  << 14
-    encoding |= (0b111 & (op>>2))     << 11
-    encoding |= (0b11 & op)            << 4
+    encoding |= (0b11111 & op)        << 9
     setValue(a: a)
   }
+  
+//  init( op:UInt16, a:UInt16, rk:ReferenceKind )
+//  {
+//    super.init(bitSiz:9, rk:rk)
+//    encoding |= 0b00                  << 14
+//    encoding |= (0b111 & (op>>2))     << 11
+//    encoding |= (0b11 & op)            << 4
+//    setValue(a: a)
+//  }
   
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, a:ops[0].u16value, rk:rk ) }
@@ -288,12 +309,23 @@ class TypeR3:MachineInstr
   init( op:UInt16, rs:UInt16, rn:UInt16, rd:UInt16, rk:ReferenceKind )
   {
     super.init(rk)
-    encoding |= 0b00            << 14
-    encoding |= (0b11111 & op)  << 9
-    encoding |= (0b111 & rn)    << 6
-    encoding |= (0b111 & rd)    << 3
-    encoding |= (0b111 & rs)    << 0
+    encoding |= 0b00                << 14
+    encoding |= (0b111 & (op>>2))   << 11
+    encoding |= (0b11 & op)         << 3
+    encoding |= (0b111 & rd)        << 8
+    encoding |= (0b111 & rs)        << 5
+    encoding |= (0b111 & rn)        << 0
   }
+
+//  init( op:UInt16, rs:UInt16, rn:UInt16, rd:UInt16, rk:ReferenceKind )
+//  {
+//    super.init(rk)
+//    encoding |= 0b00            << 14
+//    encoding |= (0b11111 & op)  << 9
+//    encoding |= (0b111 & rn)    << 6
+//    encoding |= (0b111 & rd)    << 3
+//    encoding |= (0b111 & rs)    << 0
+//  }
   
   required convenience init( op:UInt16, ops:[Operand], rk:ReferenceKind = [] ) {
     self.init( op:op, rs:ops[0].u16value, rn:ops[1].u16value, rd:ops[2].u16value, rk:rk ) }
@@ -307,60 +339,27 @@ class TypeR3b:TypeR3
     self.init( op:op, rs:ops[1].u16value, rn:ops[2].u16value, rd:ops[0].u16value, rk:rk ) }
 }
 
-//// Same as TypeR3, but ignores rd
-//class TypeR3c:TypeR3
-//{
-//  required convenience init( op:UInt16, ops:[Operand], rk:ReferenceKind = [] ) {
-//    self.init( op:op, rs:ops[0].u16value, rn:ops[1].u16value, rd:0, rk:rk ) }
-//}
-
-//class TypeR3_cc:MachineInstr
-//{
-//  init( cc:UInt16, rs:UInt16, rn:UInt16, rd:UInt16, rk:ReferenceKind )
-//  {
-//    super.init(rk)
-//    encoding |= (0b0001)      << 12
-//    encoding |= (0b111 & cc)  << 9
-//    encoding |= (0b111 & rn)  << 6
-//    encoding |= (0b111 & rs)  << 3
-//    encoding |= (0b111 & rd)  << 0
-//  }
-//
-//  required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
-//    self.init( cc:ops[0].u16value, rs:ops[1].u16value, rn:ops[2].u16value, rd:ops[3].u16value, rk:rk ) }
-//}
-
-// Type R2
-
-//class TypeR2_cc:MachineInstr
-//{
-//  init( cc:UInt16, rd:UInt16, rk:ReferenceKind = [] )
-//  {
-//    super.init(rk)
-//    encoding |= (0b0000)      << 12
-//    encoding |= (0b111 & cc)  << 9
-//    encoding |= (0b111)       << 6
-//    encoding |= (0b000)       << 3
-//    encoding |= (0b111 & rd)  << 0
-//  }
-//
-//  required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
-//    self.init( cc:ops[0].u16value, rd:ops[1].u16value, rk:rk )
-//  }
-//}
-
 class TypeR2_0:MachineInstr
 {
   init( op:UInt16, rk:ReferenceKind )
   {
-    //super.init(str, alt);
     super.init(rk)
     encoding |= (0b0000)          << 12
-    encoding |= (0b11111 & op)    << 7
-    encoding |= (0b0)             << 6
-    encoding |= (0b000)           << 3
-    encoding |= (0b000)           << 0
+    encoding |= (0b0)             << 11
+    encoding |= (0b11111 & op)    << 0
+    encoding |= (0b000)           << 8
+    encoding |= (0b000)           << 5
   }
+  
+//  init( op:UInt16, rk:ReferenceKind )
+//  {
+//    super.init(rk)
+//    encoding |= (0b0000)          << 12
+//    encoding |= (0b11111 & op)    << 7
+//    encoding |= (0b0)             << 6
+//    encoding |= (0b000)           << 3
+//    encoding |= (0b000)           << 0
+//  }
   
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, rk:rk ) }
@@ -372,12 +371,22 @@ class TypeR2_1rd:MachineInstr
   {
     super.init(rk)
     encoding |= (0b0000)          << 12
-    encoding |= (0b11111 & op)    << 7
-    encoding |= (0b0)             << 6
-    encoding |= (0b111 & rd)      << 3
-    encoding |= (0b000)           << 0
+    encoding |= (0b0)             << 11
+    encoding |= (0b11111 & op)    << 0
+    encoding |= (0b111 & rd)      << 8
+    encoding |= (0b000)           << 5
   }
-  
+
+//  init( op:UInt16, rd:UInt16, rk:ReferenceKind )
+//  {
+//    super.init(rk)
+//    encoding |= (0b0000)          << 12
+//    encoding |= (0b11111 & op)    << 7
+//    encoding |= (0b0)             << 6
+//    encoding |= (0b111 & rd)      << 3
+//    encoding |= (0b000)           << 0
+//  }
+
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, rd:ops[0].u16value, rk:rk ) }
 }
@@ -388,11 +397,21 @@ class TypeR2_1rs:MachineInstr
   {
     super.init(rk)
     encoding |= (0b0000)          << 12
-    encoding |= (0b11111 & op)    << 7
-    encoding |= (0b0)             << 6
-    encoding |= (0b000)           << 3
-    encoding |= (0b111 & rs)      << 0
+    encoding |= (0b0)             << 11
+    encoding |= (0b11111 & op)    << 0
+    encoding |= (0b000)           << 8
+    encoding |= (0b111 & rs)      << 5
   }
+
+//  init( op:UInt16, rs:UInt16, rk:ReferenceKind )
+//  {
+//    super.init(rk)
+//    encoding |= (0b0000)          << 12
+//    encoding |= (0b11111 & op)    << 7
+//    encoding |= (0b0)             << 6
+//    encoding |= (0b000)           << 3
+//    encoding |= (0b111 & rs)      << 0
+//  }
   
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, rs:ops[0].u16value, rk:rk ) }
@@ -402,14 +421,23 @@ class TypeR2_2:MachineInstr
 {
   init( op:UInt16, rs:UInt16, rd:UInt16, rk:ReferenceKind )
   {
-    //super.init(str, alt);
     super.init(rk)
     encoding |= (0b0000)          << 12
-    encoding |= (0b11111 & op)    << 7
-    encoding |= (0b0)             << 6
-    encoding |= (0b111 & rd)      << 3
-    encoding |= (0b111 & rs)      << 0
+    encoding |= (0b0)             << 11
+    encoding |= (0b11111 & op)    << 0
+    encoding |= (0b111 & rd)      << 8
+    encoding |= (0b111 & rs)      << 5
   }
+
+//  init( op:UInt16, rs:UInt16, rd:UInt16, rk:ReferenceKind )
+//  {
+//    super.init(rk)
+//    encoding |= (0b0000)          << 12
+//    encoding |= (0b11111 & op)    << 7
+//    encoding |= (0b0)             << 6
+//    encoding |= (0b111 & rd)      << 3
+//    encoding |= (0b111 & rs)      << 0
+//  }
   
   required convenience init( op:UInt16, ops:[Operand], rk:ReferenceKind = [] ) {
     self.init( op:op, rs:ops[0].u16value, rd:ops[1].u16value, rk:rk ) }
@@ -441,6 +469,11 @@ class TypeK:InstWithImmediate
     //super.init(mask:0xffff, offs:0, rk:rk)
     encoding = k
   }
+  
+  override func setRawValue( v:UInt16 )
+  {
+    encoding = v
+  }
 
   required convenience init( op:UInt16, ops:[Operand], rk:ReferenceKind = [] ) {
     self.init( k:ops[0].u16value, rk:rk  ) }
@@ -458,16 +491,20 @@ class MachineInstrList
   static let allInstr:Dictionary<Instruction, (ty:MachineInstr.Type, rk:ReferenceKind, op:UInt16)> =
   [
     // Type I2
-    Instruction( "cmp".d,    [OpCC(), OpReg(), OpImm()] )                       : (ty:TypeI2b.self, rk:[], op:0b10100),
-    Instruction( "cmpc".d,   [OpCC(), OpReg(), OpImm()] )                       : (ty:TypeI2b.self, rk:[], op:0b10101),
-    Instruction( "and".d,    [OpReg(), OpImm(), OpReg()] )                      : (ty:TypeI2.self,  rk:[], op:0b10110),
+    Instruction( "cmp".d,    [OpCC(), OpReg(), OpImm()] )                       : (ty:TypeI2b_s.self, rk:.absolute, op:0b10100),
+    Instruction( "cmpc".d,   [OpCC(), OpReg(), OpImm()] )                       : (ty:TypeI2b_s.self, rk:.absolute, op:0b10101),
+    Instruction( "and".d,    [OpReg(), OpImm(), OpReg()] )                      : (ty:TypeI2.self,  rk:.absolute, op:0b10110),
+    
+    Instruction( "cmp".d,    [OpCC(), OpReg(), OpSym()] )                       : (ty:TypeI2b_s.self, rk:.absolute, op:0b10100),
+    Instruction( "cmpc".d,   [OpCC(), OpReg(), OpSym()] )                       : (ty:TypeI2b_s.self, rk:.absolute, op:0b10101),
+    Instruction( "and".d,    [OpReg(), OpSym(), OpReg()] )                      : (ty:TypeI2.self,  rk:.absolute, op:0b10110),
 
-    Instruction( "addx".d,   [OpReg(), OpImm(), OpReg()] )                      : (ty:TypeI2.self,  rk:[], op:0b10111),
-    Instruction( "ld.w".d,   [OpReg(.indirect), OpImm(.indirect), OpReg()] )    : (ty:TypeI2.self,  rk:.shifted, op:0b11000),
-    //Instruction( "ld.zb".d,  [OpReg(.indirect), OpImm(.indirect), OpReg()] )    : (ty:TypeI2.self,  rk:[], op:0b10110),
-    Instruction( "ld.sb".d,  [OpReg(.indirect), OpImm(.indirect), OpReg()] )    : (ty:TypeI2.self,  rk:[], op:0b11001),
-    Instruction( "st.w".d,   [OpReg(), OpReg(.indirect), OpImm(.indirect)] )    : (ty:TypeI2b.self, rk:.shifted, op:0b11010),
-    Instruction( "st.b".d,   [OpReg(), OpReg(.indirect), OpImm(.indirect)] )    : (ty:TypeI2b.self, rk:[], op:0b11011),
+    Instruction( "addx".d,   [OpReg(), OpImm(), OpReg()] )                      : (ty:TypeI2.self,  rk:.absolute, op:0b10111),
+    Instruction( "ld.w".d,   [OpReg(.indirect), OpImm(.indirect), OpReg()] )    : (ty:TypeI2.self,  rk:[.absolute, .shifted], op:0b11000),
+    //Instruction( "ld.zb".d,  [OpReg(.indirect), OpImm(.indirect), OpReg()] )    : (ty:TypeI2.self,  rk:.absolute, op:0b10110),
+    Instruction( "ld.sb".d,  [OpReg(.indirect), OpImm(.indirect), OpReg()] )    : (ty:TypeI2.self,  rk:.absolute, op:0b11001),
+    Instruction( "st.w".d,   [OpReg(), OpReg(.indirect), OpImm(.indirect)] )    : (ty:TypeI2b.self, rk:[.absolute, .shifted], op:0b11010),
+    Instruction( "st.b".d,   [OpReg(), OpReg(.indirect), OpImm(.indirect)] )    : (ty:TypeI2b.self, rk:.absolute, op:0b11011),
     
     Instruction( "addx".d,   [OpReg(), OpSym(), OpReg()] )                      : (ty:TypeI2.self,  rk:.absolute, op:0b10111),
     Instruction( "ld.w".d,   [OpReg(.indirect), OpSym(.indirect), OpReg()] )    : (ty:TypeI2.self,  rk:[.absolute, .shifted], op:0b11000),
@@ -478,29 +515,31 @@ class MachineInstrList
     
     // Type P
     Instruction( "call".d,   [OpSym()] )                                        : (ty:TypeP_call.self, rk:.absolute, op:0b11110),
-    Instruction( "_pfix".d,  [OpImm()] )                                        : (ty:TypeP.self,        rk:[], op:0b11111),
+    Instruction( "_pfix".d,  [OpImm()] )                                        : (ty:TypeP.self,      rk:[], op:0b11111),
     
     // Type I1
-    Instruction( "ld.w".d,   [OpImm(.indirect), OpReg()] )                      : (ty:TypeI1.self,  rk:.shifted, op:0b01000),
-    Instruction( "ld.sb".d,  [OpImm(.indirect), OpReg()] )                      : (ty:TypeI1.self,  rk:[], op:0b01001),
-    Instruction( "st.w".d,   [OpReg(), OpImm(.indirect)] )                      : (ty:TypeI1b.self,   rk:.shifted, op:0b01010),
-    Instruction( "st.b".d,   [OpReg(), OpImm(.indirect)] )                      : (ty:TypeI1b.self,   rk:[], op:0b01011),
+    Instruction( "ld.w".d,   [OpImm(.indirect), OpReg()] )                      : (ty:TypeI1.self,  rk:[.absolute, .shifted], op:0b01000),
+    Instruction( "ld.sb".d,  [OpImm(.indirect), OpReg()] )                      : (ty:TypeI1.self,  rk:.absolute, op:0b01001),
+    Instruction( "st.w".d,   [OpReg(), OpImm(.indirect)] )                      : (ty:TypeI1b.self,   rk:[.absolute, .shifted], op:0b01010),
+    Instruction( "st.b".d,   [OpReg(), OpImm(.indirect)] )                      : (ty:TypeI1b.self,   rk:.absolute, op:0b01011),
     
     Instruction( "ld.w".d,   [OpSym(.indirect), OpReg()] )                      : (ty:TypeI1.self,  rk:[.absolute, .shifted], op:0b01000),
     Instruction( "ld.sb".d,  [OpSym(.indirect), OpReg()] )                      : (ty:TypeI1.self,  rk:.absolute, op:0b01001),
     Instruction( "st.w".d,   [OpReg(), OpSym(.indirect)] )                      : (ty:TypeI1b.self,   rk:[.absolute, .shifted], op:0b01010),
     Instruction( "st.b".d,   [OpReg(), OpSym(.indirect)] )                      : (ty:TypeI1b.self,   rk:.absolute, op:0b01011),
     
-    Instruction( "mov".d,    [OpImm(), OpReg()] )                               : (ty:TypeI1.self, rk:[], op:0b01100),
+    Instruction( "mov".d,    [OpImm(), OpReg()] )                               : (ty:TypeI1_s.self, rk:.absolute, op:0b01100),
     Instruction( "mov".d,    [OpSym(), OpReg()] )                               : (ty:TypeI1_s.self, rk:.absolute, op:0b01100),
-    Instruction( "sub".d,    [OpReg(), OpImm(), OpReg()] )                      : (ty:TypeI1c.self,  rk:[], op:0b01101),
-    Instruction( "add".d,    [OpReg(), OpImm(), OpReg()] )                      : (ty:TypeI1c.self,  rk:[], op:0b01110),
+    Instruction( "sub".d,    [OpReg(), OpImm(), OpReg()] )                      : (ty:TypeI1c.self,  rk:.absolute, op:0b01101),
+    Instruction( "add".d,    [OpReg(), OpImm(), OpReg()] )                      : (ty:TypeI1c.self,  rk:.absolute, op:0b01110),
+    
+    Instruction( "sub".d,    [OpReg(), OpSym(), OpReg()] )                      : (ty:TypeI1c.self,  rk:.absolute, op:0b01101),
 
-    Instruction( "addx".d,   [OpSP(), OpImm(), OpReg()] )                       : (ty:TypeI1c.self, rk:[], op:0b01111),
-    Instruction( "ld.w".d,   [OpSP(.indirect), OpImm(.indirect), OpReg()] )     : (ty:TypeI1c.self, rk:.shifted, op:0b10000),
-    Instruction( "ld.sb".d,  [OpSP(.indirect), OpImm(.indirect), OpReg()] )     : (ty:TypeI1c.self, rk:[], op:0b10001),
-    Instruction( "st.w".d,   [OpReg(), OpSP(.indirect), OpImm(.indirect)] )     : (ty:TypeI1d.self, rk:.shifted, op:0b10010),
-    Instruction( "st.b".d,   [OpReg(), OpSP(.indirect), OpImm(.indirect)] )     : (ty:TypeI1d.self, rk:[], op:0b10011),
+    Instruction( "addx".d,   [OpSP(), OpImm(), OpReg()] )                       : (ty:TypeI1c.self, rk:[.absolute, .shifted], op:0b01111),
+    Instruction( "ld.w".d,   [OpSP(.indirect), OpImm(.indirect), OpReg()] )     : (ty:TypeI1c.self, rk:[.absolute, .shifted], op:0b10000),
+    Instruction( "ld.sb".d,  [OpSP(.indirect), OpImm(.indirect), OpReg()] )     : (ty:TypeI1c.self, rk:.absolute, op:0b10001),
+    Instruction( "st.w".d,   [OpReg(), OpSP(.indirect), OpImm(.indirect)] )     : (ty:TypeI1d.self, rk:[.absolute, .shifted], op:0b10010),
+    Instruction( "st.b".d,   [OpReg(), OpSP(.indirect), OpImm(.indirect)] )     : (ty:TypeI1d.self, rk:.absolute, op:0b10011),
 
 
     // Type R3
@@ -525,8 +564,11 @@ class MachineInstrList
     // Type J_cc, Type J
     Instruction( "brncc".d,  [OpSym()] )                                        : (ty:TypeJ.self, rk:.relative, op:0b11100),
     Instruction( "brcc".d,   [OpSym()] )                                        : (ty:TypeJ.self, rk:.relative, op:0b11101),
-    Instruction( "addx".d,   [OpSP(), OpImm(), OpSP()] )                        : (ty:TypeJ_kq.self, rk:[],     op:0b11110),
+    Instruction( "addx".d,   [OpSP(), OpImm(), OpSP()] )                        : (ty:TypeJ_kq.self, rk:[.absolute, .shifted],     op:0b11110),
     Instruction( "jmp".d,    [OpSym()] )                                        : (ty:TypeJ.self, rk:.relative, op:0b11111),
+
+    Instruction( "brncc".d,  [OpImm()] )                                        : (ty:TypeJ.self, rk:.absolute, op:0b11100),
+    Instruction( "brcc".d,   [OpImm()] )                                        : (ty:TypeJ.self, rk:.absolute, op:0b11101),
 
     // Type R2_2
     Instruction( "mov".d,    [OpReg(), OpReg()] )                               : (ty:TypeR2_2.self,  rk:[], op:0b00000),
@@ -562,6 +604,7 @@ class MachineInstrList
     Instruction( "setcc".d,   [OpReg()] )                                       : (ty:TypeR2_1rd.self,  rk:[], op:0b10111),
 
     // Type R2_0
+    Instruction( "nop".d,    [] )                                               : (ty:TypeR2_0.self,  rk:[], op:0b00000),
     Instruction( "ret".d,    [] )                                               : (ty:TypeR2_0.self,  rk:[], op:0b11000),
     Instruction( "reti".d,   [] )                                               : (ty:TypeR2_0.self,  rk:[], op:0b11001),
     Instruction( "dint".d,   [] )                                               : (ty:TypeR2_0.self,  rk:[], op:0b11010),
@@ -569,11 +612,11 @@ class MachineInstrList
     Instruction( "halt".d,   [] )                                               : (ty:TypeR2_0.self,  rk:[], op:0b11100),
 
     // The following represent immediate words
-    Instruction( "_imm".d,   [OpImm()] )                       : (ty:TypeK.self,   rk:[], op:0),
-    Instruction( "_imm".d,   [OpSym()] )                       : (ty:TypeK.self,   rk:.absolute, op:0),
+    Instruction( "_imm".d,   [OpImm()] )                                        : (ty:TypeK.self,   rk:.absolute, op:0),
+    Instruction( "_imm".d,   [OpSym()] )                                        : (ty:TypeK.self,   rk:.absolute, op:0),
   ]
   
-
+  //-------------------------------------------------------------------------------
   // Returs a new MachineInstr object initialized with a matching Instruction
   static func newMachineInst( _ inst:Instruction ) -> MachineInstr?
   {
@@ -582,15 +625,10 @@ class MachineInstrList
       let machineInst = t.ty.init(op:t.op, ops:inst.ops, rk:t.rk)
       return machineInst
     }
-//    else if let opReg = inst.opSP
-//    {
-//      opReg.opt.remove(.isSP)
-//      return newMachineInst( inst )
-//    }
-
     return nil
   }
-}
+  
+} // End Class MachineInstrList
 
 //-------------------------------------------------------------------------------
 // Machine data types and formats
@@ -695,4 +733,5 @@ class MachineDataList
     }
     return nil
   }
-}
+  
+}  // End class MachineData
