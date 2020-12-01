@@ -48,11 +48,10 @@ class SourceParser:PrimitiveParser
     out.exitWithError( "\(message), file:\(src.shortName.s).s line:\(line)" )
   }
   
+  
   //-------------------------------------------------------------------------------------------
   // The following code is a top-down (not particularly recursive) descendant parser
   // implemented by hand. The entry funcion is 'parse()'
-  
-  
   
   //-------------------------------------------------------------------------------------------
   func parseGlobalToken() -> Data?
@@ -277,22 +276,6 @@ class SourceParser:PrimitiveParser
     
     return false
   }
-
-//  //-------------------------------------------------------------------------------------------
-//  func parseConditionalInstruction() -> Bool
-//  {
-//    if let name:Data? = { if self.parseRawToken( cStr:"br".d ) { return "brcc".d  }
-//                          if self.parseRawToken( cStr:"set".d ) { return "setcc".d }
-//                          if self.parseRawToken( cStr:"sel".d ) { return "selcc".d }
-//                          return nil }()
-//    {
-//      currInst = Instruction( name! )
-//      if parseConditionCode() { return true }
-//      else { error( "Unrecognized condition code for conditional instruction" ) }
-//    }
-//
-//    return false
-//  }
   
   //-------------------------------------------------------------------------------------------
   func parseAnyInstruction() -> Bool
@@ -450,40 +433,6 @@ class SourceParser:PrimitiveParser
     }
     return false
   }
-  
-  //-------------------------------------------------------------------------------------------
-//  func parseSection() -> Bool
-//  {
-//    if parseConcreteToken(cStr: "section".d )
-//    {
-//      skipSpTab()
-//      if nil != parsePrefixedToken(prefix:".".d) || nil != parseToken()
-//      {
-//        skipSpTab()
-//        if parseChar( UInt8(ascii:",") )
-//        {
-//          skipSpTab()
-//          if nil != parseEscapedString()
-//          {
-//            skipSpTab()
-//            if parseChar( UInt8(ascii:",") )
-//            {
-//              skipSpTab()
-//              if nil != parsePrefixedToken(prefix:"@".d)
-//              {
-//                // nothing to do at this time
-//              }
-//            }
-//          }
-//        }
-//        currBank = .constant
-//        out.logln()
-//        return true
-//      }
-//      else { error( "Expecting section name after .section directive" ) }
-//    }
-//    return false
-//  }
   
   //-------------------------------------------------------------------------------------------
   func parseP2Align() -> Bool

@@ -81,22 +81,56 @@ class ProgramMemory
 }
 
 //-------------------------------------------------------------------------------------------
+enum MEMOp : UInt16 { case word, byte, sbyte }
+
 class DataMemory
 {
   // Memory address register and data register (write only)
-  var mar:UInt16 = 0
-  var mdr:UInt16 = 0
+  private var _mar:UInt16 = 0
+  //var mdr:UInt16 = 0
+  private var _op:MEMOp = .word;
   
   // Memory value at current address // (get/set)
-  var value:UInt16 {return self[mar]}
+  //var value:UInt16 {return self[mar]}
+  
+  
+  var mar:(UInt16, MEMOp)
+  {
+    get { return (_mar, _op) }
+    set( v ) { (_mar, _op ) = v }
+  }
+  
+  func write( _ v:UInt16 )
+  {
+    switch _op
+    {
+      case .word : self[_mar] = v
+      case .byte, .sbyte :
+        if (_mar & 1) != 0 { memoryHi[_mar.i/2] = v.lo } else { memoryLo[_mar.i/2] = v.lo }
+        if ( _mar == 0xffff ) { fputc(Int32(v.lo), stdout) }
+    }
+  }
+  
+  var read:UInt16
+  {
+    get
+    {
+      switch _op
+      {
+        case .word : return self[_mar]
+        case .byte : return ( (_mar & 1) != 0 ? memoryHi[_mar.i/2] : memoryLo[_mar.i/2] ).u16
+        case .sbyte : return ( (_mar & 1) != 0 ? memoryHi[_mar.i/2] : memoryLo[_mar.i/2] ).u16.sext
+      }
+    }
+  }
   
   // Memory write
-  func writew() { self[mar] = mdr }
-  func writeb()
-  {
-    if (mar & 1) != 0 { memoryHi[mar.i/2] = mdr.lo } else { memoryLo[mar.i/2] = mdr.lo }
-		if ( mar == 0xffff ) { fputc(Int32(mdr.lo), stdout) }
-  }
+//  func writew() { self[mar] = mdr }
+//  func writeb()
+//  {
+//    if (mar & 1) != 0 { memoryHi[mar.i/2] = mdr.lo } else { memoryLo[mar.i/2] = mdr.lo }
+//    if ( mar == 0xffff ) { fputc(Int32(mdr.lo), stdout) }
+//  }
  
   // Memory size
   var size:UInt16 { return (memoryLo.count + memoryHi.count).u16 }   // size in bytes
@@ -119,16 +153,16 @@ class DataMemory
     }
   }
   
-  // Sign extended byte at current address (get)
-  var sb:UInt16 {
-    get { return ( (mar & 1) != 0 ? memoryHi[mar.i/2] : memoryLo[mar.i/2] ).u16.sext }
-  }
-  
-  // Byte at current address (get/set)
-  var zb:UInt16 {
-    get { return ( (mar & 1) != 0 ? memoryHi[mar.i/2] : memoryLo[mar.i/2] ).u16 }
-    //set(v) { if (mar & 1) != 0 { memoryHi[mar.i/2] = v.lo } else { memoryLo[mar.i/2] = v.lo } }
-  }
+//  // Sign extended byte at current address (get)
+//  var sb:UInt16 {
+//    get { return ( (mar & 1) != 0 ? memoryHi[mar.i/2] : memoryLo[mar.i/2] ).u16.sext }
+//  }
+//
+//  // Byte at current address (get/set)
+//  var zb:UInt16 {
+//    get { return ( (mar & 1) != 0 ? memoryHi[mar.i/2] : memoryLo[mar.i/2] ).u16 }
+//    //set(v) { if (mar & 1) != 0 { memoryHi[mar.i/2] = v.lo } else { memoryLo[mar.i/2] = v.lo } }
+//  }
 }
 
 //-------------------------------------------------------------------------------------------
@@ -137,7 +171,6 @@ class Registers : CustomDebugStringConvertible
   var regs = [UInt16](repeating:0, count:8)
   var sp = UInt16(0)
   subscript(r:UInt16) -> UInt16 { get { return regs[r.i] } set(v) { regs[r.i] = v } }
-  //var sp:UInt16 { get { return regs[7] } set(v) { regs[7] = v } }
   
   var debugDescription: String
   {
@@ -145,6 +178,7 @@ class Registers : CustomDebugStringConvertible
     for i in 0..<8
     {
       str += String(format:"\tr%d=%d", i, regs[i].i16)
+      //str += String(format:"\tr%d=%4X", i, regs[i].i16)
       str += ", "
     }
   
@@ -170,16 +204,8 @@ class PrefixRegister
   var value:UInt16
   {
     get { return _value }
-    set(v) { _value = v /*; enable = true*/ }
+    set(v) { _value = v  }
   }
-  
-//  private var _value:UInt16 = 0
-//  private var _enable = false
-//  var value:UInt16
-//  {
-//    get { let v = _enable ? _value : 0 ; _enable = false ; return v }
-//    set(v) { _value = v ; _enable = true }
-//  }
 }
 
 //-------------------------------------------------------------------------------------------
@@ -268,24 +294,6 @@ class ALU
   func setsr( _ cc:UInt16, _ ct:Condition ) {
     setsr( CC(rawValue:cc)!, ct )
   }
-  
-  
-//  // Returns whether a given condition code matches the status register flags
-//  func hasCC( _ cc:UInt16 ) -> Bool
-//  {
-//    enum CC : UInt16 { case eq = 0, ne, uge, ult, ge, lt, ugt, gt }
-//    switch CC(rawValue:cc)!
-//    {
-//      case .eq : return sr.z
-//      case .ne : return !sr.z
-//      case .uge: return sr.c
-//      case .ult: return !sr.c
-//      case .ge : return sr.s == sr.v
-//      case .lt : return sr.s != sr.v
-//      case .ugt: return sr.c && !sr.z
-//      case .gt : return (sr.s == sr.v) && !sr.z
-//    }
-  //}
   
   // Operations
   

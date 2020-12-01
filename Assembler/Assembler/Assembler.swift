@@ -386,7 +386,7 @@ class Assembler
     // Iterate all instructions
     for inst in source.instructions
     {
-      // Get the unique match of the Instruction as a MachineInstruction
+      // Get an unique match of the Instruction as a MachineInstruction
       let mcInst = inst.mcInst;
 
       // Bail out entirelly it no suitable match was found
@@ -394,9 +394,6 @@ class Assembler
         out.exitWithError( "\(source.shortName.s).s Very very bad, still here with unrecognised Instruction Pattern: " + String(reflecting:inst) )
         return false
       }
-
-      // Get the instruction size
-      //let instSize = inst.size
       
       // Get the instruction as an InstWithImmediate,
       // so we can replace references or prefixed immediates
@@ -407,7 +404,7 @@ class Assembler
       if let op = inst.exOperand
       {
         thePrefix = TypeP( op:0b11111, ops:[op], rk:[] )
-        thePrefix!.setPrefixValue(a:op.value)   // Set the prefix address bits
+        thePrefix!.setPrefixValue(a:op.value, inst:theInst)   // Set the prefix address bits
         theInst?.setPrefixedValue(a:op.value)   // Update the prefixed immediate
       }
       
@@ -457,7 +454,7 @@ class Assembler
         if ( thePrefix != nil )
         {
           assert( inst.hasPfix, "Too bad, the current instruction should not be prefixed!" )
-          thePrefix!.setPrefixValue(a:aa!)   // Set the prefix address bits
+          thePrefix!.setPrefixValue(a:aa!, inst:theInst)   // Set the prefix address bits
           theInst!.setPrefixedValue(a:aa!)   // Set the instrucion address bits
         }
         else
@@ -480,7 +477,7 @@ class Assembler
         memIdx += 1
       }
       
-      if (thePrefix != nil ) { appendToMemory(encoding: prefixEncoding!) }
+      if (prefixEncoding != nil ) { appendToMemory(encoding: prefixEncoding!) }
       appendToMemory(encoding: encoding)
     
       // Debug log stuff...
@@ -502,7 +499,7 @@ class Assembler
           out.logisimLog( prStrLogisimHead ); out.logisimLogln( prStrInst )
         }
         
-        if ( thePrefix != nil ) { logStuff( inst:nil, encoding:prefixEncoding!, addr:programMemory.count/2-2 ) }
+        if ( prefixEncoding != nil ) { logStuff( inst:nil, encoding:prefixEncoding!, addr:programMemory.count/2-2 ) }
         logStuff( inst:inst, encoding:encoding, addr:programMemory.count/2-1 )
       }
     }

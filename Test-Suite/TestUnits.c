@@ -20,12 +20,16 @@
 //
 // Set 'log' to 1 for text logging using the 'printstr' function
 // NOTE that the log feature may use instructions
-// that may not be tested and thus produce unpredictable results,
+// that may not be tested and thus produce unpredictable result
 // unless at least the basic set of tests is passed
+
 #define log 1
 
-// Special 'halt' instruction test behaves opposite than the
-// other tests. This should nornally be disabled
+// The 'halt' instruction test behaves opposite than the
+// other tests. This should nornally be enabled on the
+// first run to veryfy that halt behaves as expected,
+// then disabled for all the other tests
+//
 #define testHalt 0
 
 // Convenience macros to emit assembly instructions
@@ -42,7 +46,7 @@
 // Convenience optional log macros
 
 #if log
-  #define beginTest(str) printstr(str);
+  #define beginTest(str) test(str);
   #define endTest pass();
 #else
   #define beginTest(str)
@@ -52,6 +56,10 @@
 // Pass and Fail log functions
 
 #if log
+__attribute__((noinline))
+void test( char *str) {
+  printstr( str );
+}
 __attribute__((noinline))
 void pass() {
   printstr( "\t...pass\n" );
@@ -65,25 +73,44 @@ void fail() {
 // Convenience macro to check a register value
 
 #if log
-  #define _halt \
+#define _halt \
   as "call @fail" \
   as "halt" \
   as "nop"
+
 #else
-  #define _halt \
+#define _halt \
   as "halt"
 #endif
 
 #if log
-  #define _check(reg, value) \
+#define _check(reg, value) \
   as "cmp.eq " #reg ", " #value \
   as "brcc 3" \
   _halt
+#define _checkcc \
+  as "brncc 1" \
+  as "brcc 3" \
+  _halt
+#define _checkncc \
+  as "brcc 1" \
+  as "brncc 3" \
+  _halt
+
 #else
-  #define _check(reg, value) \
+#define _check(reg, value) \
   as "cmp.eq " #reg ", " #value \
   as "brcc 1" \
   _halt
+#define _checkcc \
+  as "brncc 1" \
+  as "brcc 1" \
+  _halt
+#define _checkncc \
+  as "brcc 1" \
+  as "brncc 1" \
+  _halt
+
 #endif
 
 //
@@ -104,23 +131,29 @@ inline static void preMovCmp()
   beginTest("preMovCmp\n")
   asm_begin  c"pre add cmp"
   as "mov 1, r0"
-  _check( r0, 1 )  c"Error: branch should be taken"
+  _check( r0, 1 )  c"function should be called"
   asm_end
   endTest
 }
 
 // Call test helper
 __attribute__((noinline))
-int function() { return 1; }
+void function()
+{
+  asm_begin
+  as "mov r1, r0"
+  _check( r1, r0 )  c"function should be called"
+  asm_end
+}
 
 // Simple call test
 inline static void preTestCall()
 {
   beginTest("preTestCall\n")
   asm_begin  c"pre call test"
-  as "mov 0, r0"
+  as "mov 3, r1"
   as "call @function"
-  _check( r0, 1 )
+  _check( r0, 3 )
   asm_end
   endTest
 }
@@ -202,6 +235,19 @@ l ".Lba_end:"
   endTest
 }
 
+// Call to direct address
+inline static void callAddress()
+{
+  beginTest( "callAddress\n" );
+  asm_begin
+  as "mov 3, r1"
+  as "mov @function, r0"
+  as "call r0"
+  _check( r0, 3 )
+  asm_end
+  endTest
+}
+
 // Branch condition
 inline static void branchCondtion()
 {
@@ -212,121 +258,213 @@ inline static void branchCondtion()
   as "mov 1, r2"
   
   as "cmp.eq r1, r2"
-  as "brncc .Lcp0_eqerr"
-  as "brcc .Lcp0_eqend"
-l ".Lcp0_eqerr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp0_eqend:"
-
+  _checkcc
   as "cmp.ne r1, r2"
-  as "brcc .Lcp0_neerr"
-  as "brncc .Lcp0_neend"
-l ".Lcp0_neerr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp0_neend:"
-
+  _checkncc
   as "cmp.uge r1, r2"
-  as "brncc .Lcp0_ugeerr"
-  as "brcc .Lcp0_ugeend"
-l ".Lcp0_ugeerr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp0_ugeend:"
-
+  _checkcc
   as "cmp.ult r1, r2"
-  as "brcc .Lcp0_ulterr"
-  as "brncc .Lcp0_ultend"
-l ".Lcp0_ulterr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp0_ultend:"
-  
+  _checkncc
   as "cmp.ge r1, r2"
-  as "brncc .Lcp0_geerr"
-  as "brcc .Lcp0_geend"
-l ".Lcp0_geerr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp0_geend:"
-
+  _checkcc
   as "cmp.lt r1, r2"
-  as "brcc .Lcp0_lterr"
-  as "brncc .Lcp0_ltend"
-l ".Lcp0_lterr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp0_ltend:"
-  
+  _checkncc
   as "cmp.ugt r1, r2"
-  as "brcc .Lcp0_ugterr"
-  as "brncc .Lcp0_ugtend"
-l ".Lcp0_ugterr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp0_ugtend:"
-
+  _checkncc
   as "cmp.gt r1, r2"
-  as "brcc .Lcp0_gterr"
-  as "brncc .Lcp0_gtend"
-l ".Lcp0_gterr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp0_gtend:"
+  _checkncc
+  as "sub r1, r2, r3"
+  _checkcc
+  as "add r1, r2, r3"
+  _checkncc
+  
+  as "cmp.eq r1, 1"
+  _checkcc
+  as "cmp.ne r1, 1"
+  _checkncc
+  as "cmp.uge r1, 1"
+  _checkcc
+  as "cmp.ult r1, 1"
+  _checkncc
+  as "cmp.ge r1, 1"
+  _checkcc
+  as "cmp.lt r1, 1"
+  _checkncc
+  as "cmp.ugt r1, 1"
+  _checkncc
+  as "cmp.gt r1, 1"
+  _checkncc
+  as "sub r1, 1, r1"
+  _checkcc
+  as "add r2, 1, r2"
+  _checkncc
   
   as "mov 1, r4"
   as "mov -1, r5"
-  
   as "cmp.eq r4, r5"
-  as "brcc .Lcp1_eqerr"
-  as "brncc .Lcp1_eqend"
-l ".Lcp1_eqerr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp1_eqend:"
-
+  _checkncc
   as "cmp.ne r4, r5"
-  as "brncc .Lcp1_neerr"
-  as "brcc .Lcp1_neend"
-l ".Lcp1_neerr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp1_neend:"
-
+  _checkcc
   as "cmp.uge r4, r5"
-  as "brcc .Lcp1_ugeerr"
-  as "brncc .Lcp1_ugeend"
-l ".Lcp1_ugeerr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp1_ugeend:"
-
+  _checkncc
   as "cmp.ult r4, r5"
-  as "brncc .Lcp1_ulterr"
-  as "brcc .Lcp1_ultend"
-l ".Lcp1_ulterr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp1_ultend:"
-  
+  _checkcc
   as "cmp.ge r4, r5"
-  as "brncc .Lcp1_geerr"
-  as "brcc .Lcp1_geend"
-l ".Lcp1_geerr:"
-  _halt   c"Error: branch should be taken"
-l ".Lcp1_geend:"
-
+  _checkcc
   as "cmp.lt r4, r5"
-  as "brcc .Lcp1_lterr"
-  as "brncc .Lcp1_ltend"
-l ".Lcp1_lterr:"
-  _halt  c"Error: branch should be taken"
-l ".Lcp1_ltend:"
-  
+  _checkncc
   as "cmp.ugt r4, r5"
-  as "brcc .Lcp1_ugterr"
-  as "brncc .Lcp1_ugtend"
-l ".Lcp1_ugterr:"
-  _halt  c"Error: branch should be taken"
-l ".Lcp1_ugtend:"
-
+  _checkncc
   as "cmp.gt r4, r5"
-  as "brncc .Lcp1_gterr"
-  as "brcc .Lcp1_gtend"
-l ".Lcp1_gterr:"
-  _halt  c"Error: branch should be taken"
-l ".Lcp1_gtend:"
-  asm_end
+  _checkcc
+  as "sub r4, r5, r3"
+  _checkncc
+  as "add r4, r5, r3"
+  _checkcc
   
+  as "cmp.eq r4, -1"
+  _checkncc
+  as "cmp.ne r4, -1"
+  _checkcc
+  as "cmp.uge r4, -1"
+  _checkncc
+  as "cmp.ult r4, -1"
+  _checkcc
+  as "cmp.ge r4, -1"
+  _checkcc
+  as "cmp.lt r4, -1"
+  _checkncc
+  as "cmp.ugt r4, -1"
+  _checkncc
+  as "cmp.gt r4, -1"
+  _checkcc
+  
+  as "add r5, 1, r5"   c"should be 0"
+  _checkcc
+  as "sub r5, 1, r5"  c"should be -1"
+  _checkncc
+  as "sub r5, -1, r5"   c"should be 0"
+  _checkcc
+  as "add r5, -1, r5"   c"should be -1"
+  _checkncc
+  _check( r5, -1 )
+  asm_end
+  endTest
+}
+
+// Branch condition 32 bits
+inline static void branchCondtion32()
+{
+  beginTest( "branchCondtion32\n" )
+  asm_begin
+  as "mov 1, r1"
+  as "mov 1, r2"
+  as "mov 1, r3"
+  as "mov 1, r4"
+  
+  as "cmp.eq r1, r3"   c"low word"
+  as "cmpc.eq r2, r4"  c"high word"
+  _checkcc
+  as "cmp.ne r1, r3"
+  as "cmpc.ne r2, r4"
+  _checkncc
+  as "cmp.uge r1, r3"
+  as "cmpc.uge r2, r4"
+  _checkcc
+  as "cmp.ult r1, r3"
+  as "cmpc.ult r2, r4"
+  _checkncc
+  as "cmp.ge r1, r3"
+  as "cmpc.ge r2, r4"
+  _checkcc
+  as "cmp.lt r1, r3"
+  as "cmpc.lt r2, r4"
+  _checkncc
+  as "cmp.ugt r1, r3"
+  as "cmpc.ugt r2, r4"
+  _checkncc
+  as "cmp.gt r1, r3"
+  as "cmpc.gt r2, r4"
+  _checkncc
+  as "sub r1, r3, r5"
+  as "subc r2, r4, r6"
+  _checkcc
+  as "add r1, r3, r5"
+  as "addc r2, r4, r6"
+  _checkncc
+  
+  as "mov 1, r1"
+  as "mov 1, r2"
+  as "mov 0, r3"
+  as "mov 1, r4"
+  
+  as "cmp.eq r1, r3"   c"low word"
+  as "cmpc.eq r2, r4"  c"high word"
+  _checkncc
+  as "cmp.ne r1, r3"
+  as "cmpc.ne r2, r4"
+  _checkcc
+  as "cmp.uge r1, r3"
+  as "cmpc.uge r2, r4"
+  _checkcc
+  as "cmp.ult r1, r3"
+  as "cmpc.ult r2, r4"
+  _checkncc
+  as "cmp.ge r1, r3"
+  as "cmpc.ge r2, r4"
+  _checkcc
+  as "cmp.lt r1, r3"
+  as "cmpc.lt r2, r4"
+  _checkncc
+  as "cmp.ugt r1, r3"
+  as "cmpc.ugt r2, r4"
+  _checkcc
+  as "cmp.gt r1, r3"
+  as "cmpc.gt r2, r4"
+  _checkcc
+  as "sub r1, r3, r5"
+  as "subc r2, r4, r6"
+  _checkncc
+  as "add r1, r3, r5"
+  as "addc r2, r4, r6"
+  _checkncc
+  
+  as "mov 1, r1"
+  as "mov 1, r2"
+  as "mov 0, r3"
+  as "mov -1, r4"
+  
+  as "cmp.eq r1, r3"   c"low word"
+  as "cmpc.eq r2, r4"  c"high word"
+  _checkncc
+  as "cmp.ne r1, r3"
+  as "cmpc.ne r2, r4"
+  _checkcc
+  as "cmp.uge r1, r3"
+  as "cmpc.uge r2, r4"
+  _checkncc
+  as "cmp.ult r1, r3"
+  as "cmpc.ult r2, r4"
+  _checkcc
+  as "cmp.ge r1, r3"
+  as "cmpc.ge r2, r4"
+  _checkcc
+  as "cmp.lt r1, r3"
+  as "cmpc.lt r2, r4"
+  _checkncc
+  as "cmp.ugt r1, r3"
+  as "cmpc.ugt r2, r4"
+  _checkncc
+  as "cmp.gt r1, r3"
+  as "cmpc.gt r2, r4"
+  _checkcc
+  as "sub r1, r3, r5"
+  as "subc r2, r4, r6"
+  _checkncc
+  as "add r1, r3, r5"
+  as "addc r2, r4, r6"
+  _checkncc
+  asm_end
   endTest
 }
 
@@ -353,7 +491,7 @@ inline static void prefixEdge()
   endTest
 }
 
-
+// Byte shifts and byte extensions
 inline static void byteShiftsAndExtensions()
 {
   beginTest( "byteShiftsAndExtensions\n" )
@@ -381,32 +519,75 @@ inline static void byteShiftsAndExtensions()
   _check( r1, 0x0055 )
   as "zext r7, r1"
   _check( r1, 0x00AA )
+  as "sextw r0, r1"
+  _check( r1, 0xffff)
+  as "sextw r7, r1"
+  _check( r1, 0 )
   asm_end
   
   endTest
 }
 
-//;shifts
-//rASL                                ;expected result ASL & ROL -carry
-//rROL    db  0,2,$86,$04,$82,0
-//rROLc   db  1,3,$87,$05,$83,1       ;expected result ROL +carry
-//rLSR                                ;expected result LSR & ROR -carry
-//rROR    db  $40,0,$61,$41,$20,0
-//rRORc   db  $c0,$80,$e1,$c1,$a0,$80 ;expected result ROR +carry
-//fASL                                ;expected flags for shifts
-//fROL    db  fzc,0,fnc,fc,fn,fz      ;no carry in
-//fROLc   db  fc,0,fnc,fc,fn,0        ;carry in
-//fLSR
-//fROR    db  0,fzc,fc,0,fc,fz        ;no carry in
-//fRORc   db  fn,fnc,fnc,fn,fnc,fn    ;carry in
-
+// Bit shifts
 inline static void bitShifts()
 {
   beginTest( "bitShifts\n" );
+  asm_begin
+  as "mov 0x55AA, r0"
+  as "mov 0xAA55, r2"
+  
+  c"shift left"
+  as "add r0, r0, r1"
+  _check( r1, 0xAB54 )
+  as "add r2, r2, r3"    c"this produces 0x54AA + carry"
+  _check( r3, 0x54AA )
+  as "add r0, r0, r1"
+  as "addc r2, r2, r3"    c"carry should not apply"
+  _check( r3, 0x54AA )
+  as "add r2, r2, r3"    c"this produces 0x54AA + carry"
+  as "addc r3, r3, r3"   c"this consumes carry and produces 0xA955"
+  _check( r3, 0xA955 )
+  as "add r2, r2, r3"    c"this produces 0x54AA + carry"
+  as "addc r2, r2, r3"   c"this consumes carry and procudes 0x54AB + carry"
+  as "addc r3, r3, r3"
+  _check( r3, 0xA957 )
+  
+  c"shift right"
+  as "lsr r0, r1"
+  _check( r1, 0x2AD5 )
+  as "lsr r2, r3"    c"this produces 0x552A + carry"
+  _check( r3, 0x552A )
+  as "lsr r0, r1"
+  as "lsrc r2, r3"    c"carry should not apply"
+  _check( r3, 0x552A )
+  as "lsr r2, r3"    c"this produces 0x552A + carry"
+  as "lsrc r3, r3"   c"this consumes carry and produces 0xAA95"
+  _check( r3, 0xAA95 )
+  as "lsr r2, r3"    c"this produces 0x552A + carry"
+  as "lsrc r2, r3"   c"this consumes carry and procudes 0xD52A + carry"
+  as "lsrc r3, r3"
+  _check( r3, 0xEA95 )
+ 
+  c"arithmetic shift right"
+  as "asr r0, r1"
+  _check( r1, 0x2AD5 )
+  as "asr r2, r3"       c"this produces carry"
+  _check( r3, 0xD52A )
+  as "asr r2, r3"       c"this produces carry, but should not affect asr"
+  as "asr r0, r1"       c"this should still produce 0x2AD5"
+  _check( r1, 0x2AD5 )
+  as "asr r2, r3"       c"this produces carry"
+  as "lsrc r3, r3"      c"this consumes carry and produces 0xAA95"
+  _check( r3, 0xEA95 )
+  as "asr r0, r1"       c"this does not produce carry"
+  as "lsrc r2, r3"
+ _check( r3, 0x552A )   c"carry should not apply"
+ 
+  asm_end
   endTest
 }
   
-
+ // Stack frame
 inline static void stackFrame()
 {
   beginTest( "stackFrame\n" );
@@ -501,27 +682,7 @@ inline static void stackFrame()
   endTest
 }
 
-//inline static void branchRelative()
-//{
-//  asm_begin
-//  as "mov 255, r3"  c"max forward range"
-//l".Lrange_loop"
-//
-//l ".Lrange_fw"
-//
-//l ".Lrange_op"
-//
-//l ".Lrange_adr"
-//
-//l ".Lrange_ok"
-//
-//  as "brcc .Lrange_end"
-//  as "jmp .Lrange_loop"
-//l ".Lrange_end"
-//  asm_end
-//}
-
-
+// Load/store offset
 unsigned int loadStoreOffset_mem[4];
 inline static void loadStoreOffset()
 {
@@ -585,12 +746,20 @@ inline static void loadStoreOffset()
   _check( r1, 0x22AA )
 
   c"long word load/store test"
-  as "st.w r7, [r3, 64]"
-  as "ld.w [r3, 64], r2"
+  as "st.w r7, [r3, 62]"
+  as "ld.w [r3, 62], r2"
   _check( r2, r7 )
-  as "st.w r6, [r3, 66]"
-  as "ld.w [r3, 66], r2"
+  as "st.w r6, [r3, 64]"
+  as "ld.w [r3, 64], r2"
   _check( r2, r6 )
+  
+  c"long word load/store test (2)"
+  as "st.w r4, [r3, 104]"
+  as "ld.w [r3, 104], r2"
+  _check( r2, r4 )
+  as "addx r3, 104, r2"
+  as "ld.w [r2, 0], r2"
+  _check( r2, r4 )
 
   c"long mixed byte load/store test"
   as "st.b r7, [r3, 32]"  c"this should be 0xAA"
@@ -600,8 +769,23 @@ inline static void loadStoreOffset()
   as "st.b r6, [r3, 33]"  c"this should be 0x34"
   as "ld.sb [r3, 33], r2"
   as "sext r6, r1"
+  _check( r1, r2 ) 
+  as "ld.w [r3, 32], r1"
+  _check( r1, 0x34AA )
+  
+  c"long mixed byte load/store test (2)"
+  as "st.b r7, [r3, 104]"  c"this should be 0xAA"
+  as "ld.sb [r3, 104], r2"
+  as "sext r7, r1"
   _check( r1, r2 )
-  as "ld.w [r3, 32], r1" 
+  as "st.b r6, [r3, 105]"  c"this should be 0x34"
+  as "ld.sb [r3, 105], r2"
+  as "sext r6, r1"
+  _check( r1, r2 )
+  as "ld.w [r3, 104], r1"
+  _check( r1, 0x34AA )
+  as "addx r3, 104, r2"
+  as "ld.w [r2, 0], r1"
   _check( r1, 0x34AA )
   
   c"consistency check"
@@ -611,18 +795,13 @@ inline static void loadStoreOffset()
   endTest
 }
 
-//typedef union
-//{
-//  unsigned int w;
-//  struct { unsigned char lo, hi; };
-//} MemWord;
-
-
+// Load/store index
 int loadStoreIndex_mem[8];
 inline static void loadStoreIndex()
 {
-// Code is equivalent to the following C code with minor changes
-/*...........................................
+
+/*
+  // Test code is equivalent to the following C code with minor changes
   volatile static int a[16]; // set volatile to honour all load/stores
 
   // store word
@@ -656,8 +835,7 @@ inline static void loadStoreIndex()
     if ( v.lo != i+0x7C ) asm( "halt" );
     if ( v.hi != i+1+0x7C ) asm ( "halt" );
   }
-........................................*/
-
+*/
 
   beginTest( "loadStoreIndex\n" );
   asm_begin
@@ -739,7 +917,7 @@ l ".Llsi_17:"
   endTest
 }
 
-//
+// Load/store address
 int *dmem0, *dmem2, *dmem4, *dmem6;
 inline static void loadStoreAddress()
 {
@@ -825,12 +1003,305 @@ l ".Llsa_end:"
   endTest
 }
 
-//
-//
-//
+// Select and set
+inline static void selectAndSet()
+{
+  beginTest( "selectAndSet\n" )
+  asm_begin
+  as "mov 0, r0"
+  as "mov 1, r1"
+  as "mov 2, r2"
+  as "mov 3, r3"
+  as "cmp.gt r1, r0"
+  as "selcc r2, r3, r4"
+  as "selcc 0, r3, r5"
+  as "selcc r2, 0, r6"
+  as "setcc r7"
+  _check( r4, 2 )
+  _check( r5, 0 )
+  _check( r6, 2 )
+  _check( r7, 1 )
+  as "cmp.gt r0, r1"
+  as "selcc r2, r3, r4"
+  as "selcc 0, r3, r5"
+  as "selcc r2, 0, r6"
+  as "setcc r7"
+  _check( r4, 3 )
+  _check( r5, 3 )
+  _check( r6, 0 )
+  _check( r7, 0 )
+  asm_end
+  endTest
+}
+
+
+// Arithmetic add, sub, neg
+inline static void addSubNegTest()
+{
+  beginTest( "addSubNegTest\n" )
+
+/*
+  // Add testing code is roughtly equivalent to this
+  int cnt = 0;
+  for (int a=0 ; a<16 ; a++, cnt-=15 )
+    for ( int b=0 ; b<16 ; b++, cnt++ )
+      if ( a+b != cnt ) asm ("halt");
+*/
+
+  asm_begin
+l".def cnt = r2"
+l".def a = r0"
+l".def b = r1"
+  as "mov 0, cnt"
+  as "mov 0, a"
+l ".Lasa_outer:"
+  as "mov 0, b"
+l ".Lasa_inner:"
+  as "add a, b, r3"
+  _check( cnt, r3)
+  as "addx b, 1, b"
+  as "addx cnt, 1, cnt"
+  as "cmp.lt b, 16"
+  as "brcc .Lasa_inner"
+  as "addx a, 1, a"
+  as "sub cnt, 15, cnt"
+  as "cmp.lt a, 16"
+  as "brcc .Lasa_outer"
+  
+/*
+  // Sub testing code is roughtly equivalent to this
+  int cnt = 0;
+  for (int a=15 ; a>=0 ; a--, cnt-=17 )
+    for ( int b=15 ; b>=0 ; b--, cnt++ )
+      if ( a-b != cnt ) asm ("halt");
+*/
+
+  as "mov 0, cnt"
+  as "mov 15, a"
+l ".Lass_outer:"
+  as "mov 15, b"
+l ".Lass_inner:"
+  as "sub a, b, r3"
+  _check( cnt, r3)
+  as "sub b, 1, b"
+  as "addx cnt, 1, cnt"
+  as "cmp.ge b, 0"
+  as "brcc .Lass_inner"
+  as "sub a, 1, a"
+  as "sub cnt, 17, cnt"
+  as "cmp.ge a, 16"
+  as "brcc .Lass_outer"
+  
+/*
+  // Neg testing code is roughtly equivalent to this
+  int cnt = -15;
+  for ( int b=15 ; b>=0 ; b--, cnt++ )
+      if ( -b != cnt ) asm ("halt");
+*/
+  
+  as "mov -15, cnt"
+  as "mov 15, b"
+l ".Lasn_inner:"
+  as "neg b, r3"
+  _check( cnt, r3)
+  as "sub b, 1, b"
+  as "addx cnt, 1, cnt"
+  as "cmp.ge b, 0"
+  as "brcc .Lasn_inner"
+  
+  asm_end
+  endTest
+}
+
+
+// Arithmetic add, sub, neg
+inline static void addSubTest32()
+{
+  beginTest( "addSubTest32\n" )
+
+/*
+  // Add testing code is essentially equivalent to this
+  long cnt = 65530
+  for (long a=65530 ; a<65546 ; a++, cnt-=15 )
+    for ( long b=0 ; b<16 ; b++, cnt++ )
+      if ( a+b != cnt ) asm ("halt");
+*/
+
+  asm_begin
+l".def cntlo = r4"
+l".def cnthi = r5"
+l".def al = r0"
+l".def ah = r1"
+l".def bl = r2"
+l".def bh = r3"
+  as "mov 0, r6"
+  as "mov 0xFFFA, cntlo"
+  as "mov 0x0000, cnthi"
+  as "mov 0xFFFA, al"
+  as "mov 0x0000, ah"
+l ".Lasa32_outer:"
+  as "mov 0, bl"
+  as "mov 0, bh"
+l ".Lasa32_inner:"
+  as "add al, bl, r6"
+  as "addc ah, bh, r7"
+  as "cmp.eq cntlo, r6"
+  as "cmpc.eq cnthi, r7"
+  _checkcc
+  as "add bl, 1, bl"
+  as "mov 0, r6"
+  as "addc bh, r6, bh"
+  as "add cntlo, 1, cntlo"
+  as "addc cnthi, r6, cnthi"
+  as "cmp.lt bl, 16"
+  as "cmpc.lt bh, 0"
+  as "brcc .Lasa32_inner"
+  as "add al, 1, al"
+  as "addc ah, r6, ah"
+  as "sub cntlo, 15, cntlo"
+  as "subc cnthi, r6, cnthi"
+  as "cmp.lt al, 0x000A"
+  as "cmpc.lt ah, 0x0001"
+  as "brcc .Lasa32_outer"
+  
+/*
+  // Sub testing code is essentially equivalent to this
+  long cnt = 65530;
+  for (long a=65545 ; a>=65530 ; a--, cnt-=17 )
+    for ( long b=15 ; b>=0 ; b--, cnt++ )
+      if ( a-b != cnt ) asm ("halt");
+*/
+
+  as "mov 0, r6"
+  as "mov 0xFFFA, cntlo"
+  as "mov 0x0000, cnthi"
+  as "mov 0x0009, al"
+  as "mov 0x0001, ah"
+l ".Lass32_outer:"
+  as "mov 15, bl"
+  as "mov 0, bh"
+l ".Lass32_inner:"
+  as "sub al, bl, r6"
+  as "subc ah, bh, r7"
+  as "cmp.eq cntlo, r6"
+  as "cmpc.eq cnthi, r7"
+  _checkcc
+  as "sub bl, 1, bl"
+  as "mov 0, r6"
+  as "subc bh, r6, bh"
+  as "add cntlo, 1, cntlo"
+  as "addc cnthi, r6, cnthi"
+  as "cmp.ge bl, 0"
+  as "cmpc.ge bh, 0"
+  as "brcc .Lass32_inner"
+  as "sub al, 1, al"
+  as "subc ah, r6, ah"
+  as "sub cntlo, 17, cntlo"
+  as "subc cnthi, r6, cnthi"
+  as "cmp.ge al, 0xFFFA"
+  as "cmpc.ge ah, 0x0000"
+  as "brcc .Lass32_outer"
+  
+  asm_end
+  endTest
+}
+
+// Logic and, or, xor, not
+inline static void andOrXorNotTest()
+{
+  beginTest( "andOrXorNotTest\n" )
+  asm_begin
+  
+  c"test patterns for AND"
+  as "mov 0x0F0F, r0"
+  as "mov 0xFFFF, r1"
+  as "mov 0x7F7F, r2"
+  as "mov 0x8080, r3"
+  as "mov 0xF0F0, r4"
+  as "mov 0xFFFF, r5"
+  as "mov 0xFFFF, r6"
+  as "mov 0xFFFF, r7"
+  as "and r0, r4, r0"
+  _checkcc
+  _check( r0, 0x0000 )
+  as "and r1, r5, r0"
+  _checkncc
+  _check( r0, 0xFFFF )
+  as "and r2, r6, r0"
+  _checkncc
+  _check( r0, 0x7F7F )
+  as "and r3, r7, r0"
+  _checkncc
+  _check( r0, 0x8080 )
+  as "mov 0x0F0F, r0"
+  as "and r0, 0xF0F0, r0"
+  _checkcc
+  _check( r0, 0x0000 )
+  as "and r1, -1, r0"
+  _checkncc
+  _check( r0, 0xFFFF )
+  as "and r2, -1, r0"
+  _checkncc
+  _check( r0, 0x7F7F )
+  as "and r3, -1, r0"
+  _checkncc
+  _check( r0, 0x8080 )
+  as "and r1, 0, r0"
+  _checkcc
+  _check( r0, 0 )
+  
+  c"test patterns for OR"
+  as "mov 0x0000, r0"
+  as "mov 0x1F1F, r1"
+  as "mov 0x7171, r2"
+  as "mov 0x8080, r3"
+  as "mov 0x0000, r4"
+  as "mov 0xF1F1, r5"
+  as "mov 0x1F1F, r6"
+  as "mov 0x0000, r7"
+  as "or r0, r4, r0"
+  _checkcc
+  _check( r0, 0x0000 )
+  as "or r1, r5, r0"
+  _checkncc
+  _check( r0, 0xFFFF )
+  as "or r2, r6, r0"
+  _checkncc
+  _check( r0, 0x7F7F )
+  as "or r3, r7, r0"
+  _checkncc
+  _check( r0, 0x8080 )
+  
+  c"test patterns for XOR"
+  as "mov 0xFFFF, r0"
+  as "mov 0x0F0F, r1"
+  as "mov 0x8F8F, r2"
+  as "mov 0x8F8F, r3"
+  as "mov 0xFFFF, r4"
+  as "mov 0xF0F0, r5"
+  as "mov 0xF0F0, r6"
+  as "mov 0x0F0F, r7"
+  as "xor r0, r4, r0"
+  _checkcc
+  _check( r0, 0x0000 )
+  as "xor r1, r5, r0"
+  _checkncc
+  _check( r0, 0xFFFF )
+  as "xor r2, r6, r0"
+  _checkncc
+  _check( r0, 0x7F7F )
+  as "xor r3, r7, r0"
+  _checkncc
+  _check( r0, 0x8080 )
+  asm_end
+  endTest
+}
+ 
+
+// Entry code
 
 int main()
-{
+{ 
 #if testHalt
   halt();
 #endif
@@ -839,13 +1310,20 @@ int main()
   preTestCall();
   preShortBranch();
   branchAddress();
+  callAddress();
   branchCondtion();
+  branchCondtion32();
   prefixEdge();
   byteShiftsAndExtensions();
+  bitShifts();
   stackFrame();
   loadStoreOffset();
   loadStoreIndex();
   loadStoreAddress();
+  selectAndSet();
+  addSubNegTest();
+  addSubTest32();
+  andOrXorNotTest();
 }
 
 

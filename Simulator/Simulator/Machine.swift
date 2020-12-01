@@ -61,25 +61,36 @@ class Machine
   func add_kr()    { reg[rd] = alu.add( reg[rd], imm ) }
   func sub_kr()    { reg[rd] = alu.sub( reg[rd], imm ) }
   
-  func movw_ar()   { mem.mar = imm<<1 }
-  func movsb_ar()  { mem.mar = imm }
-  func movw_ra()   { (mem.mar, mem.mdr) = (imm<<1, reg[rd]) }
-  func movb_ra()   { (mem.mar, mem.mdr) = (imm, reg[rd]) }
+  func movw_ar()   { mem.mar = (imm<<1, .word) }
+  func movsb_ar()  { mem.mar = (imm, .sbyte) }
+//  func movw_ar()   { mem.mar = imm<<1 }
+//  func movsb_ar()  { mem.mar = imm }
+  func movw_ra()   { mem.mar = (imm<<1, .word) }
+  func movb_ra()   { mem.mar = (imm, .byte) }
+//  func movw_ra()   { (mem.mar, mem.mdr) = (imm<<1, reg[rd]) }
+//  func movb_ra()   { (mem.mar, mem.mdr) = (imm, reg[rd]) }
   
   func lea_qr()    { reg[rd] = alu.adda( reg.sp, imm<<1 ) }
-  func movw_qr()   { mem.mar = alu.adda( imm<<1, reg.sp ) }
-  func movsb_qr()  { mem.mar = alu.adda( imm, reg.sp ) }
-  func movw_rq()   { (mem.mar, mem.mdr) = (alu.adda( imm<<1, reg.sp ), reg[rd]) }
-  func movb_rq()   { (mem.mar, mem.mdr) = (alu.adda( imm, reg.sp ), reg[rd]) }
+  func movw_qr()   { mem.mar = (alu.adda( imm<<1, reg.sp ), .word) }
+  func movsb_qr()  { mem.mar = (alu.adda( imm, reg.sp ), .sbyte) }
+//  func movw_qr()   { mem.mar = alu.adda( imm<<1, reg.sp ) }
+//  func movsb_qr()  { mem.mar = alu.adda( imm, reg.sp ) }
+  func movw_rq()   { mem.mar = (alu.adda( imm<<1, reg.sp ), .word) }
+  func movb_rq()   { mem.mar = (alu.adda( imm, reg.sp ), .byte) }
+//  func movw_rq()   { (mem.mar, mem.mdr) = (alu.adda( imm<<1, reg.sp ), reg[rd]) }
+//  func movb_rq()   { (mem.mar, mem.mdr) = (alu.adda( imm, reg.sp ), reg[rd]) }
   
   // Type I2
   
   func lea_mr()    { reg[rd] = alu.adda( reg[rs], imm ) }
-  func movw_mr()   { mem.mar = alu.adda( reg[rs], imm<<1 ) }
-  //func movzb_mr()  { pc_inhibit=true ; mem.mar = alu.adda( reg[rs], imm ) }
-  func movsb_mr()  { mem.mar = alu.adda( reg[rs], imm ) }
-  func movw_rm()   { (mem.mar, mem.mdr) = (alu.adda( reg[rs], imm<<1 ), reg[rd]) }
-  func movb_rm()   { (mem.mar, mem.mdr) = (alu.adda( reg[rs], imm ), reg[rd]) }
+  func movw_mr()   { mem.mar = (alu.adda( reg[rs], imm<<1 ), .word) }
+  func movsb_mr()  { mem.mar = (alu.adda( reg[rs], imm ), .sbyte) }
+//  func movw_mr()   { mem.mar = alu.adda( reg[rs], imm<<1 ) }
+//  func movsb_mr()  { mem.mar = alu.adda( reg[rs], imm ) }
+  func movw_rm()   { mem.mar = (alu.adda( reg[rs], imm<<1 ), .word) }
+  func movb_rm()   { mem.mar = (alu.adda( reg[rs], imm ), .byte) }
+//  func movw_rm()   { (mem.mar, mem.mdr) = (alu.adda( reg[rs], imm<<1 ), reg[rd]) }
+//  func movb_rm()   { (mem.mar, mem.mdr) = (alu.adda( reg[rs], imm ), reg[rd]) }
   
   
   func and_kr()    { reg[rd] = alu.and( reg[rs], imm ) }
@@ -89,7 +100,7 @@ class Machine
   // Type P
   
   func _pfix()     { /*pfr.value = imm*/ }
-  func call_k()    { (reg.sp, mem.mar) = (alu.deca2( reg.sp ), alu.deca2( reg.sp )) ; mem.mdr = prg.pc }
+  func call_k()    { (mem.mar, reg.sp) = ((alu.deca2( reg.sp ), .word), alu.deca2( reg.sp )) }
   
   // Type R3
   
@@ -103,11 +114,16 @@ class Machine
   func addc_rrr()  { reg[rd] = alu.addc( reg[rs], reg[rn] ) }
   
   func add_rrr()   { reg[rd] = alu.add ( reg[rs], reg[rn] ) }
-  func movw_nr()   { mem.mar = alu.adda( reg[rs], reg[rn]<<1 ) } //
-  func movzb_nr()  { mem.mar = alu.adda( reg[rs], reg[rn] ) }
-  func movsb_nr()  { mem.mar = alu.adda( reg[rs], reg[rn] ) }
-  func movw_rn()   { (mem.mar, mem.mdr) = (alu.adda( reg[rs], reg[rn]<<1 ), reg[rd]) } //
-  func movb_rn()   { (mem.mar, mem.mdr) = (alu.adda( reg[rs], reg[rn] ), reg[rd]) }
+  func movw_nr()   { mem.mar = (alu.adda( reg[rs], reg[rn]<<1 ), .word) }
+  func movzb_nr()  { mem.mar = (alu.adda( reg[rs], reg[rn] ), .byte) }
+  func movsb_nr()  { mem.mar = (alu.adda( reg[rs], reg[rn] ), .sbyte) }
+//  func movw_nr()   { mem.mar = alu.adda( reg[rs], reg[rn]<<1 ) }
+//  func movzb_nr()  { mem.mar = alu.adda( reg[rs], reg[rn] ) }
+//  func movsb_nr()  { mem.mar = alu.adda( reg[rs], reg[rn] ) }
+  func movw_rn()   { mem.mar = (alu.adda( reg[rs], reg[rn]<<1 ), .word) } //
+  func movb_rn()   { mem.mar = (alu.adda( reg[rs], reg[rn] ), .byte) }
+//  func movw_rn()   { (mem.mar, mem.mdr) = (alu.adda( reg[rs], reg[rn]<<1 ), reg[rd]) } //
+//  func movb_rn()   { (mem.mar, mem.mdr) = (alu.adda( reg[rs], reg[rn] ), reg[rd]) }
   
   func sel_crrr()  { reg[rd] = alu.sr.t ? reg[rs] : reg[rn] }
 
@@ -134,7 +150,6 @@ class Machine
   func asr_rr()    { reg[rd] = alu.asr( reg[rs] ) }
   
   func movw_pr()   { prg.pmar = reg[rs] }
-  func movw_pr_1() { prg.pmarsel = true ; reg[rd] = prg.value }
   
   func sel_0rr()   { reg[rd] = alu.sr.t ? 0 : reg[rs] }
   func sel_r0r()   { reg[rd] = alu.sr.t ? reg[rs] : 0 }
@@ -142,8 +157,8 @@ class Machine
   func neg_rr()    { reg[rd] = alu.neg( reg[rs] ) }
   func not_rr()    { reg[rd] = alu.not( reg[rs] ) }
   
-  func jmp_r()     { prg.pc = reg[rs] }
-  func call_r()    { (reg.sp, mem.mar) = (alu.deca2( reg.sp ), alu.deca2( reg.sp )) ; mem.mdr = prg.pc }
+  func jmp_r()     { prg.pc = reg[rs] ; br_taken=true /*aqui*/ }
+  func call_r()    { (mem.mar, reg.sp) = ((alu.deca2( reg.sp ), .word), alu.deca2( reg.sp ) ) }
   
   func set_nt()    { reg[rd] = alu.sr.t ? 0 : 1 }
   func set_t()     { reg[rd] = alu.sr.t ? 1 : 0 }
@@ -152,7 +167,8 @@ class Machine
   func mov_sr()    { }
   func mov_rs()    { }
   
-  func ret()       { (reg.sp, mem.mar) = (alu.inca2( reg.sp ), reg.sp) }
+  func ret()       { mem.mar = (reg.sp, .word) }
+  //func ret()       { (reg.sp, mem.mar) = (alu.inca2( reg.sp ), (reg.sp, .word)) }
   func reti()      { }
   func dint()      { }
   func eint()      { }
@@ -163,31 +179,43 @@ class Machine
   // Micro
   
   func wait()      { }
-  func load_w()    { reg[rd] = mem.value }
-  func load_zb()   { reg[rd] = mem.zb }
-  func load_sb()   { reg[rd] = mem.sb }
-  func store_w()   { mem.writew() }
-  func store_b()   { mem.writeb() }
-  func call_k1()   { mem.writew() ; prg.pc = imm }
-  func call_r1()   { mem.writew() ; prg.pc = reg[rd] }
-  func ret1()      { prg.pc = mem.value }
+  func load()    { reg[rd] = mem.read /*mem.value*/ }
+//  func load_zb()   { reg[rd] = mem.zb }
+//  func load_sb()   { reg[rd] = mem.sb }
+  func store()   { mem.write( reg[rd] ) /* mem.writew()*/ }
+//  func store_b()   { mem.writeb() }
+  func call_k1()   { mem.write( prg.pc ) ; prg.pc = imm ; br_taken=true }
+//  func call_k1()   { mem.writew() ; prg.pc = imm }
+  func call_r1()   { mem.write( prg.pc ) ; prg.pc = reg[rd] ; br_taken=true }
+//  func call_r1()   { mem.writew() ; prg.pc = reg[rd] }
+  func ret1()      { prg.pc = mem.read ; br_taken=true }
+  func ret2()      { reg.sp = alu.inca2( reg.sp ) }
+ // func ret1()      { prg.pc = mem.value }
+ 
+  func movw_pr_1() { prg.pmarsel = true ; reg[rd] = prg.value }
+  func movw_pr_2() { prg.pc = prg.pc ; br_taken=true}
  
   // Instruction Encodings
   
   // Microcode extension codes (codes that correspond to execution of additional cycles)
   enum MCExt:UInt16
   {
-    case me_end      = 0
-    case me_wait     = 0b11_0_0000
-    case me_load_w   = 0b11_0_0001
-    case me_load_zb  = 0b11_0_0010
-    case me_load_sb  = 0b11_0_0011
-    case me_store_w  = 0b11_0_0100
-    case me_store_b  = 0b11_0_0101
+    //case me_end      = 0
+    case me_end     = 0b11_0_0000
+//    case me_end      = 0
+//    case me_wait     = 0b11_0_0000
+    case me_load   = 0b11_0_0001
+//    case me_load_zb  = 0b11_0_0010
+//    case me_load_sb  = 0b11_0_0011
+    case me_store  = 0b11_0_0100
+//    case me_store_b  = 0b11_0_0101
     case me_call_k1  = 0b11_0_0110
     case me_call_r1  = 0b11_0_0111
-    case me_ret1     = 0b11_0_1000
-    case me_movw_pr1 = 0b11_0_1001
+    case me_unused00 = 0b11_0_1000
+    case me_ret1     = 0b11_0_1001
+    case me_ret2     = 0b11_0_1010
+    case me_movw_pr1 = 0b11_0_1011
+    case me_movw_pr2 = 0b11_0_1100
   }
   
   // Microcode table
@@ -212,7 +240,8 @@ class Machine
     0b00_01_110  :  (neg_rr,    .me_end),
     0b00_01_111  :  (not_rr,    .me_end),
     
-    0b00_10_000  :  (jmp_r,     .me_wait),
+    0b00_10_000  :  (jmp_r,     .me_end),
+   // 0b00_10_000  :  (jmp_r,     .me_wait),
     0b00_10_001  :  (call_r,    .me_call_r1),
     0b00_10_010  :  (nop,       .me_end),
     0b00_10_011  :  (nop,       .me_end),
@@ -222,7 +251,8 @@ class Machine
     0b00_10_111  :  (set_t,     .me_end),
     
     0b00_11_000  :  (ret,       .me_ret1),
-    0b00_11_001  :  (reti,      .me_wait), // revisar
+    0b00_11_001  :  (reti,      .me_end), // revisar
+    //0b00_11_001  :  (reti,      .me_wait), // revisar
     0b00_11_010  :  (dint,      .me_end),
     0b00_11_011  :  (eint,      .me_end),
     0b00_11_100  :  (halt,      .me_end),
@@ -243,11 +273,11 @@ class Machine
     0b01_10_000  :  (xor_rrr,   .me_end),
     0b01_10_001  :  (addc_rrr,  .me_end),
     0b01_10_010  :  (add_rrr,   .me_end),
-    0b01_10_011  :  (movw_nr,   .me_load_w),
-    0b01_10_100  :  (movzb_nr,  .me_load_zb),
-    0b01_10_101  :  (movsb_nr,  .me_load_sb),
-    0b01_10_110  :  (movw_rn,   .me_store_w),
-    0b01_10_111  :  (movb_rn,   .me_store_b),
+    0b01_10_011  :  (movw_nr,   .me_load),
+    0b01_10_100  :  (movzb_nr,  .me_load),
+    0b01_10_101  :  (movsb_nr,  .me_load),
+    0b01_10_110  :  (movw_rn,   .me_store),
+    0b01_10_111  :  (movb_rn,   .me_store),
     
     0b01_11_000  :  (nop,       .me_end),
     0b01_11_001  :  (nop,       .me_end),
@@ -259,45 +289,51 @@ class Machine
     0b01_11_111  :  (jmp_k,     .me_end), // aqui hi havia wait
     
     // I1, I2, P
-    0b10_01_000  :  (movw_ar,   .me_load_w),
-    0b10_01_001  :  (movsb_ar,  .me_load_sb),
-    0b10_01_010  :  (movw_ra,   .me_store_w),
-    0b10_01_011  :  (movb_ra,   .me_store_b),
+    0b10_01_000  :  (movw_ar,   .me_load),
+    0b10_01_001  :  (movsb_ar,  .me_load),
+    0b10_01_010  :  (movw_ra,   .me_store),
+    0b10_01_011  :  (movb_ra,   .me_store),
     0b10_01_100  :  (mov_kr,    .me_end),
     0b10_01_101  :  (sub_kr,    .me_end),
     0b10_01_110  :  (add_kr,    .me_end),
     0b10_01_111  :  (lea_qr,    .me_end),
     
-    0b10_10_000  :  (movw_qr,   .me_load_w),
-    0b10_10_001  :  (movsb_qr,  .me_load_sb),
-    0b10_10_010  :  (movw_rq,   .me_store_w),
-    0b10_10_011  :  (movb_rq,   .me_store_b),
+    0b10_10_000  :  (movw_qr,   .me_load),
+    0b10_10_001  :  (movsb_qr,  .me_load),
+    0b10_10_010  :  (movw_rq,   .me_store),
+    0b10_10_011  :  (movb_rq,   .me_store),
     0b10_10_100  :  (cmp_crk,   .me_end),
     0b10_10_101  :  (cmpc_crk,  .me_end),
     0b10_10_110  :  (and_kr,    .me_end),
     0b10_10_111  :  (lea_mr,    .me_end),
     
-    0b10_11_000  :  (movw_mr,   .me_load_w),
-    0b10_11_001  :  (movsb_mr,  .me_load_sb),
-    0b10_11_010  :  (movw_rm,   .me_store_w),
-    0b10_11_011  :  (movb_rm,   .me_store_b),
+    0b10_11_000  :  (movw_mr,   .me_load),
+    0b10_11_001  :  (movsb_mr,  .me_load),
+    0b10_11_010  :  (movw_rm,   .me_store),
+    0b10_11_011  :  (movb_rm,   .me_store),
     0b10_11_100  :  (nop,       .me_end),
     0b10_11_101  :  (nop,       .me_end),
     0b10_11_110  :  (call_k,    .me_call_k1),
     0b10_11_111  :  (_pfix,     .me_end),
     
     // E7 11_ooooo
-    MCExt.me_wait.rawValue      : (wait,      .me_end),
-    MCExt.me_load_w.rawValue    : (load_w,    .me_end),
-    MCExt.me_load_zb.rawValue   : (load_zb,   .me_end),
-    MCExt.me_load_sb.rawValue   : (load_sb,   .me_end),
-    MCExt.me_store_w.rawValue   : (store_w,   .me_end),
-    MCExt.me_store_b.rawValue   : (store_b,   .me_end),
-    MCExt.me_call_k1.rawValue   : (call_k1,   .me_wait),
-    MCExt.me_call_r1.rawValue   : (call_r1,   .me_wait),
+    MCExt.me_end.rawValue      : (wait,      .me_end),
+    //MCExt.me_wait.rawValue      : (wait,      .me_end),
+    MCExt.me_load.rawValue    : (load,    .me_end),
+    //MCExt.me_load_zb.rawValue   : (load_zb,   .me_end),
+    //MCExt.me_load_sb.rawValue   : (load_sb,   .me_end),
+    MCExt.me_store.rawValue   : (store,   .me_end),
+    //MCExt.me_store_b.rawValue   : (store_b,   .me_end),
+    MCExt.me_call_k1.rawValue   : (call_k1,   .me_end),
+    //MCExt.me_call_k1.rawValue   : (call_k1,   .me_wait),
+    MCExt.me_call_r1.rawValue   : (call_r1,   .me_end),
+    //MCExt.me_call_r1.rawValue   : (call_r1,   .me_wait),
     
-    MCExt.me_ret1.rawValue      : (ret1,      .me_wait),
-    MCExt.me_movw_pr1.rawValue  : (movw_pr_1, .me_wait),
+    MCExt.me_ret1.rawValue      : (ret1,      .me_ret2),
+    MCExt.me_ret2.rawValue      : (ret2,      .me_end),
+    MCExt.me_movw_pr1.rawValue  : (movw_pr_1, .me_movw_pr2),
+    MCExt.me_movw_pr2.rawValue  : (movw_pr_2, .me_end),
+    //MCExt.me_movw_pr2.rawValue  : (movw_pr_2, .me_wait),
   ]
   
   //-------------------------------------------------------------------------------------------
@@ -321,7 +357,7 @@ class Machine
   {
     // Decode register and condition code operands
     
-    rn = ir[2,0]
+    rn = ir[4,2]
     rs = ir[7,5]
     rd = ir[10,8]
     cc = rd
@@ -358,12 +394,8 @@ class Machine
       im = im.sext(8,0)   // Type J, sign extended 9 bit
     }
 
-    // Prefix
+    // Prefixed value
     imm = pfr.enable ? im[4,0] | (pfr.value<<5) : im
-    
-    // The pfix register is updated on every cycle
-    pfr.value = im[10,0]
-    pfr.enable = (ir[15,11] == 0b11111) // valid for the next cycle
 
     // Instruction decode
 
@@ -373,143 +405,53 @@ class Machine
     var ol:UInt16 = 0     // yyyyy
     
     if ir15_12 == 0b0000 { oh = 0 ; ol = ir[4,0] }    // Type R2
-    else if ir15_12 >= 0b0001 && ir15_12 <= 0b0010 { oh = 1 ; ol = ir[4,3] | ir[13,11]<<2 }  // Type R3
+    else if ir15_12 >= 0b0001 && ir15_12 <= 0b0010 { oh = 1 ; ol = ir[1,0] | ir[13,11]<<2 }  // Type R3
     else if ir15_12 == 0b0011 { oh = 1 ; ol = ir[13,9] }  // Type J
     else { oh = 2 ; ol = ir[15,11] } // Types P, I1, I2
     
     // Get the instruction opcode
-    let op = br_taken ? MCExt.me_wait.rawValue /*0b11_00000*/ :
-        mir != MCExt.me_end.rawValue ? mir : (oh<<5) | ol
-
-    // Get the instruction opcode
-//    let op =  br_taken ? 0b11_00000 :
-//          control.1 != .me_end ? mir : (oh<<5) | ol
+    let op = mir != MCExt.me_end.rawValue ? mir : (oh<<5) | ol
 
     // Log
     if out.logEnabled { logDecode() }
-    
-    // Statistics
-//    if !(pc_inhibit || br_taken) { instCount += 1 }
-//    cycleCount += 1
 
-    if (prg.pc == 3 )
+    if (prg.pc == 1 )
     {
+      // place a setpoint here to stop execution at any address
+      // for debug purposes
       let stop = 1
     }
 
     // Decode the instruction (get the instruction control bits)
     if let f = instrP0[op] { control = f }  // Decoder Pattern
     else { out.exitWithError( "Unrecognized instruction opcode" ) }
-
+    
+    // The pfix register is updated after every instruction end
+    if control.1 == .me_end
+    {
+      pfr.value = imm // im[10,0]
+      pfr.enable = (ir[15,11] == 0b11111) // valid for the next instruction
+    }
+    
     // These can only be set to true by the exec code, so we clear it first
-    //pfr.enable = false
     prg.pmarsel = false
     br_taken = false
   }
   
-  
-//  //-------------------------------------------------------------------------------------------
-//  func decode()
-//  {
-//    // Decode register and condition code operands
-//
-//    rs = ir[2,0]
-//    rd = ir[5,3]
-//    rn = ir[8,6]
-//    cc = rd
-//
-//    // Decode embeeded immediate fields
-//
-//    let ir15_13 = ir[15,13]
-//    var im:UInt16
-//
-//    // P
-//    if ir15_13 == 0b111
-//    {
-//      im = ir[10,7] | (ir[6,0]<<4)  // Type P, zero extended 11 bit
-//    }
-//
-//    // I2
-//    else if ir15_13 >= 0b101 && ir15_13 <= 0b110
-//    {
-//      im = ir[10,7] | (ir[6,6]<<4)        // Type I2, zero extended 5 bit
-//      if ir[15,12] == 0b1010 { im = im.sext(4,0) }  // Type I2, sign extended 5 bit
-//    }
-//
-//    // I1
-//    else if ir15_13 >= 0b010 && ir15_13 <= 0b100
-//    {
-//      im =  ir[10,7] | (ir[2,0]<<4) | (ir[6,6]<<7)  // Type I1, zero extended 8 bit
-//      if ir[15,11] == 0b01100 { im = im.sext(7,0) } // Type I1, sign extended 8 bit
-//    }
-//
-//    // J
-//    else
-//    {
-//      im = ir[10,7] | (ir[3,0]<<4) | (ir[6,6]<<8)
-//      im = im.sext(8,0)   // Type J, sign extended 9 bit
-//    }
-//
-//    // Prefix
-//    imm = pfr.enable ? im[4,0] | (pfr.value<<5) : im
-//
-//    // The pfix register is updated on every cycle
-//    pfr.value = im[10,0]
-//    pfr.enable = (ir[15,11] == 0b11111) // valid for the next cycle
-//
-//    // Instruction decode
-//
-//    let ir15_12 = ir[15,12]
-//
-//    var oh:UInt16 = 0     // xx
-//    var ol:UInt16 = 0     // yyyyy
-//
-//    if ir15_12 == 0b0000 { oh = 0 ; ol = ir[11,7] }    // Type R2
-//    else if ir15_12 >= 0b0001 && ir15_12 <= 0b0010 { oh = 1 ; ol = ir[13,9] }  // Type R3
-//    else if ir15_12 == 0b0011 { oh = 1 ; ol = ir[5,4] | (ir[13,11]<<2) }  // Type J
-//    else { oh = 2 ; ol = ir[15,11] } // Types P, I1, I2
-//
-//    // Get the instruction opcode
-//    let op = br_taken ? MCExt.me_wait.rawValue /*0b11_00000*/ :
-//        mir != MCExt.me_end.rawValue ? mir : (oh<<5) | ol
-//
-//    // Get the instruction opcode
-////    let op =  br_taken ? 0b11_00000 :
-////          control.1 != .me_end ? mir : (oh<<5) | ol
-//
-//    // Log
-//    if out.logEnabled { logDecode() }
-//
-//    // Statistics
-////    if !(pc_inhibit || br_taken) { instCount += 1 }
-////    cycleCount += 1
-//
-//    if (prg.pc == 3 )
-//    {
-//      let stop = 1
-//    }
-//
-//    // Decode the instruction (get the instruction control bits)
-//    if let f = instrP0[op] { control = f }  // Decoder Pattern
-//    else { out.exitWithError( "Unrecognized instruction opcode" ) }
-//
-//    // These can only be set to true by the exec code, so we clear it first
-//    //pfr.enable = false
-//    prg.pmarsel = false
-//    br_taken = false
-//  }
-
 
   //-------------------------------------------------------------------------------------------
   // This represents the execution of control signals
   func process() -> Bool
   {
     // Prefetch next instruction, either update mir or ir
-    if control.1 != .me_end { mir = control.1.rawValue }
-    else { ir = prg.value ; mir = MCExt.me_end.rawValue }
+    mir = control.1.rawValue
+    if control.1 == .me_end { ir = prg.value }
     
     // Execute control lines
     control.0(self)()    // process the instruction
+    
+    // Create a wait cycle if branch is taken
+    if br_taken { ir = 0 }
     
     // Only increment PC if we have to
     if ( !br_taken && control.1 == .me_end )
@@ -517,10 +459,9 @@ class Machine
       prg.pc = prg.pc &+ 1
       instCount += 1
     }
-    cycleCount += 1
     
-    // Only increment PC if we have to
-   // if !(pc_inhibit || br_inhibit)  { prg.pc = prg.pc &+ 1 }
+    // Increment cycle count
+    cycleCount += 1
     
     // Log
     if out.logEnabled { logExecute() }
@@ -564,8 +505,6 @@ class Machine
     let mir_prefix = control.1 != .me_end ? ">" : " "
     var str_mir = String(mir, radix:2) //binary base
     str_mir = String(repeating:"0", count:(10 - str_mir.count)) + str_mir
-    
-    
     
     let addr = (br_taken || control.1 != .me_end) ? "-----" : String(format:"%05d", prg.pc &- 1)
     //let addr = (pc_inhibit || br_taken) ? "-----" : String(format:"%05d", prg.pc &- 1)

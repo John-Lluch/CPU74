@@ -47,18 +47,18 @@ class MachineInstr
 class InstWithImmediate:MachineInstr
 {
 	let bitSiz:Int
-	let hiShift:Int = 4
-  let loMask:UInt16 = 0b1111
+	//let hiShift:Int = 4
+  //let loMask:UInt16 = 0b1111
   let loOffs:Int = 7
-	let hiMask:UInt16
-  let hiOffs:Int = 0
-  let sOffs:Int = 6
+	//let hiMask:UInt16
+  //let hiOffs:Int = 0
+  //let sOffs:Int = 6
 	
   
   init( bitSiz siz:Int, rk:ReferenceKind )
   {
   	bitSiz = siz
-    hiMask = UInt16( (1<<(bitSiz-5)) - 1 )
+    //hiMask = UInt16( (1<<(bitSiz-5)) - 1 )
     super.init( rk )
   }
   
@@ -116,12 +116,10 @@ class InstWithImmediate:MachineInstr
   {
     // This tests true only for positive values that fit in the mask size
     // Might be overriden to test sign extended immediates
-    let v = getShiftedValue( a )
-    let mask = (1<<bitSiz)-1
-    return (v & mask) == v
+    let v = UInt16(truncatingIfNeeded:getShiftedValue( a ))
+    let max = (1<<bitSiz)
     
-//    let mask = (1<<bitSiz)-1
-//    return v >= 0 && v <= mask
+    return v >= 0 && v < max
     
   }
   
@@ -129,9 +127,11 @@ class InstWithImmediate:MachineInstr
   {
     // This tests true only for positive or negative values
     // that fit in the mask size
-    let v = getShiftedValue( a )
-    let mask = (1<<bitSiz)-1
-    let half = (mask+1)/2
+    
+    
+    let v = Int16(truncatingIfNeeded:getShiftedValue( a ))
+    let max = (1<<bitSiz)
+    let half = max/2
     return v >= -half && v < half
   }
 }
@@ -150,10 +150,10 @@ class TypeP:InstWithImmediate
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, a:ops[0].u16value, rk:rk ) }
   
-  func setPrefixValue( a:Int )
+  func setPrefixValue( a:Int, inst:InstWithImmediate? )
   {
-    let v = getShiftedValue( a )
-    setRawValue( v: UInt16(truncatingIfNeeded: v>>5) )
+    if let v = inst?.getShiftedValue( a ) {
+      setRawValue( v: UInt16(truncatingIfNeeded: v>>5) ) }
   }
 }
 
@@ -175,15 +175,6 @@ class TypeI2:InstWithImmediate
     encoding |= (0b111 & rd)    << 8
     setValue(a: k)
   }
-
-//  init( op:UInt16, rs:UInt16, k:UInt16, rd:UInt16, rk:ReferenceKind )
-//  {
-//    super.init(bitSiz:5, rk:rk)
-//    encoding |= (0b11111 & op)  << 11
-//    encoding |= (0b111 & rs)    << 0
-//    encoding |= (0b111 & rd)    << 3
-//    setValue(a: k)
-//  }
   
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, rs:ops[0].u16value, k:ops[1].u16value, rd:ops[2].u16value,  rk:rk )
@@ -221,14 +212,6 @@ class TypeI1:InstWithImmediate
     encoding |= (0b111 & rd)       << 8
     setValue(a: k)
   }
-
-//  init( op:UInt16, k:UInt16, rd:UInt16,  rk:ReferenceKind )
-//  {
-//    super.init(bitSiz:8, rk:rk)
-//    encoding |= (0b11111 & op)    << 11
-//    encoding |= (0b111 & rd)       << 3
-//    setValue(a: k)
-//  }
   
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, k:ops[0].u16value, rd:ops[1].u16value,  rk:rk ) }
@@ -280,15 +263,6 @@ class TypeJ:InstWithImmediate
     setValue(a: a)
   }
   
-//  init( op:UInt16, a:UInt16, rk:ReferenceKind )
-//  {
-//    super.init(bitSiz:9, rk:rk)
-//    encoding |= 0b00                  << 14
-//    encoding |= (0b111 & (op>>2))     << 11
-//    encoding |= (0b11 & op)            << 4
-//    setValue(a: a)
-//  }
-  
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, a:ops[0].u16value, rk:rk ) }
   
@@ -311,21 +285,11 @@ class TypeR3:MachineInstr
     super.init(rk)
     encoding |= 0b00                << 14
     encoding |= (0b111 & (op>>2))   << 11
-    encoding |= (0b11 & op)         << 3
+    encoding |= (0b11 & op)         << 0
     encoding |= (0b111 & rd)        << 8
     encoding |= (0b111 & rs)        << 5
-    encoding |= (0b111 & rn)        << 0
+    encoding |= (0b111 & rn)        << 2
   }
-
-//  init( op:UInt16, rs:UInt16, rn:UInt16, rd:UInt16, rk:ReferenceKind )
-//  {
-//    super.init(rk)
-//    encoding |= 0b00            << 14
-//    encoding |= (0b11111 & op)  << 9
-//    encoding |= (0b111 & rn)    << 6
-//    encoding |= (0b111 & rd)    << 3
-//    encoding |= (0b111 & rs)    << 0
-//  }
   
   required convenience init( op:UInt16, ops:[Operand], rk:ReferenceKind = [] ) {
     self.init( op:op, rs:ops[0].u16value, rn:ops[1].u16value, rd:ops[2].u16value, rk:rk ) }
@@ -351,16 +315,6 @@ class TypeR2_0:MachineInstr
     encoding |= (0b000)           << 5
   }
   
-//  init( op:UInt16, rk:ReferenceKind )
-//  {
-//    super.init(rk)
-//    encoding |= (0b0000)          << 12
-//    encoding |= (0b11111 & op)    << 7
-//    encoding |= (0b0)             << 6
-//    encoding |= (0b000)           << 3
-//    encoding |= (0b000)           << 0
-//  }
-  
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, rk:rk ) }
 }
@@ -377,16 +331,6 @@ class TypeR2_1rd:MachineInstr
     encoding |= (0b000)           << 5
   }
 
-//  init( op:UInt16, rd:UInt16, rk:ReferenceKind )
-//  {
-//    super.init(rk)
-//    encoding |= (0b0000)          << 12
-//    encoding |= (0b11111 & op)    << 7
-//    encoding |= (0b0)             << 6
-//    encoding |= (0b111 & rd)      << 3
-//    encoding |= (0b000)           << 0
-//  }
-
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, rd:ops[0].u16value, rk:rk ) }
 }
@@ -402,16 +346,6 @@ class TypeR2_1rs:MachineInstr
     encoding |= (0b000)           << 8
     encoding |= (0b111 & rs)      << 5
   }
-
-//  init( op:UInt16, rs:UInt16, rk:ReferenceKind )
-//  {
-//    super.init(rk)
-//    encoding |= (0b0000)          << 12
-//    encoding |= (0b11111 & op)    << 7
-//    encoding |= (0b0)             << 6
-//    encoding |= (0b000)           << 3
-//    encoding |= (0b111 & rs)      << 0
-//  }
   
   required convenience init(op:UInt16, ops:[Operand], rk:ReferenceKind = []) {
     self.init( op:op, rs:ops[0].u16value, rk:rk ) }
@@ -428,16 +362,6 @@ class TypeR2_2:MachineInstr
     encoding |= (0b111 & rd)      << 8
     encoding |= (0b111 & rs)      << 5
   }
-
-//  init( op:UInt16, rs:UInt16, rd:UInt16, rk:ReferenceKind )
-//  {
-//    super.init(rk)
-//    encoding |= (0b0000)          << 12
-//    encoding |= (0b11111 & op)    << 7
-//    encoding |= (0b0)             << 6
-//    encoding |= (0b111 & rd)      << 3
-//    encoding |= (0b111 & rs)      << 0
-//  }
   
   required convenience init( op:UInt16, ops:[Operand], rk:ReferenceKind = [] ) {
     self.init( op:op, rs:ops[0].u16value, rd:ops[1].u16value, rk:rk ) }

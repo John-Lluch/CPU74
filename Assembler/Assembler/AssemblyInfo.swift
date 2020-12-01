@@ -19,8 +19,6 @@ struct OpOption: OptionSet
   let rawValue:Int
   static let indirect = OpOption(rawValue: 1 << 0)      // Indirect memory addressing
   static let prgIndirect = OpOption(rawValue: 1 << 1)   // Indirect program addressing
-  //static let isSP = OpOption(rawValue: 1 << 2)          // SP flag for register operands
-  //static let isCC = OpOption(rawValue: 1 << 3)          // flag for condition codes
 }
 
 // Base class for assembly instruction operands
@@ -319,8 +317,7 @@ class Source
   {
     instr.mcInst = MachineInstrList.newMachineInst(instr)
     instructions.append(instr)
-    instructionsEnd += instr.size //( instr.hasPfix ? 2 : 1 )
-    //instructionsEnd += ( instr.hasExOperand ? 2 : 1 )
+    instructionsEnd += instr.size
   }
   
   // Appends a DataValue at the end of the constant datas array
