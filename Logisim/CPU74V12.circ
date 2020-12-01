@@ -540,6 +540,15 @@
       <a name="label" val="dbg_pmaddr"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="1" loc="(130,220)" name="Pin">
+      <a name="label" val="SLOW"/>
+    </comp>
+    <comp lib="1" loc="(130,250)" name="Pin">
+      <a name="label" val="RUN"/>
+    </comp>
+    <comp lib="1" loc="(130,320)" name="Pin">
+      <a name="label" val="RESET"/>
+    </comp>
     <comp lib="1" loc="(1310,1420)" name="Tunnel">
       <a name="label" val="MWE_n"/>
     </comp>
@@ -554,6 +563,10 @@
     </comp>
     <comp lib="1" loc="(1310,840)" name="Tunnel">
       <a name="label" val="BR"/>
+    </comp>
+    <comp lib="1" loc="(140,280)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="CTRL_HLT"/>
     </comp>
     <comp lib="1" loc="(1410,710)" name="Probe">
       <a name="facing" val="west"/>
@@ -571,25 +584,6 @@
       <a name="facing" val="west"/>
       <a name="label" val="Q"/>
       <a name="labelloc" val="east"/>
-    </comp>
-    <comp lib="1" loc="(1460,1010)" name="Pin">
-      <a name="label" val="SLOW"/>
-    </comp>
-    <comp lib="1" loc="(1460,1040)" name="Pin">
-      <a name="label" val="RUN"/>
-    </comp>
-    <comp lib="1" loc="(1460,1110)" name="Pin">
-      <a name="label" val="RESET"/>
-    </comp>
-    <comp lib="1" loc="(1470,1070)" name="Tunnel">
-      <a name="facing" val="east"/>
-      <a name="label" val="CTRL_HLT"/>
-    </comp>
-    <comp lib="1" loc="(1640,1010)" name="Tunnel">
-      <a name="label" val="CLK"/>
-    </comp>
-    <comp lib="1" loc="(1640,1110)" name="Tunnel">
-      <a name="label" val="nRST"/>
     </comp>
     <comp lib="1" loc="(1660,1910)" name="Splitter">
       <a name="appear" val="center"/>
@@ -689,6 +683,12 @@
     <comp lib="1" loc="(270,1670)" name="Tunnel">
       <a name="facing" val="east"/>
       <a name="label" val="CTRL_D_Q"/>
+    </comp>
+    <comp lib="1" loc="(310,220)" name="Tunnel">
+      <a name="label" val="CLK"/>
+    </comp>
+    <comp lib="1" loc="(310,320)" name="Tunnel">
+      <a name="label" val="nRST"/>
     </comp>
     <comp lib="1" loc="(380,1300)" name="Probe">
       <a name="facing" val="west"/>
@@ -1035,7 +1035,7 @@
       <a name="negate1" val="true"/>
       <a name="size" val="30"/>
     </comp>
-    <comp lib="2" loc="(1590,1110)" name="NOT Gate"/>
+    <comp lib="2" loc="(260,320)" name="NOT Gate"/>
     <comp lib="2" loc="(940,2510)" name="OR Gate">
       <a name="size" val="30"/>
     </comp>
@@ -1046,99 +1046,53 @@
     <comp lib="5" loc="(130,1760)" name="ROM">
       <a name="addrWidth" val="16"/>
       <a name="contents">addr/data: 16 16
-f814 3e1c f27d 18 6000 f27d 18 600a
-f27d 18 20 1020 3a03 f007 1c 0
-18 6014 f002 6101 6201 1028 3801 3a03
-f007 1c 0 1128 3a01 3803 f007 1c
-0 1228 3801 3a03 f007 1c 0 1328
-3a01 3803 f007 1c 0 1428 3801 3a03
-f007 1c 0 1528 3a01 3803 f007 1c
-0 1628 3a01 3803 f007 1c 0 1728
-3a01 3803 f007 1c 0 132b 3801 3a03
-f007 1c 0 232a 3a01 3803 f007 1c
-0 a021 3801 3a03 f007 1c 0 a121
-3a01 3803 f007 1c 0 a221 3801 3a03
-f007 1c 0 a321 3a01 3803 f007 1c
-0 a421 3801 3a03 f007 1c 0 a521
-3a01 3803 f007 1c 0 a621 3a01 3803
-f007 1c 0 a721 3a01 3803 f007 1c
-0 6901 3801 3a03 f007 1c 0 7201
-3a01 3803 f007 1c 0 6401 65ff 1094
-3a01 3803 f007 1c 0 1194 3801 3a03
-f007 1c 0 1294 3a01 3803 f007 1c
-0 1394 3801 3a03 f007 1c 0 1494
-3801 3a03 f007 1c 0 1594 3a01 3803
-f007 1c 0 1694 3a01 3803 f007 1c
-0 1794 3801 3a03 f007 1c 0 1397
-3a01 3803 f007 1c 0 2396 3801 3a03
-f007 1c 0 a09f 3a01 3803 f007 1c
-0 a19f 3801 3a03 f007 1c 0 a29f
-3a01 3803 f007 1c 0 a39f 3801 3a03
-f007 1c 0 a49f 3801 3a03 f007 1c
-0 a59f 3a01 3803 f007 1c 0 a69f
-3a01 3803 f007 1c 0 a79f 3801 3a03
-f007 1c 0 7501 3801 3a03 f007 1c
-0 6d01 3a01 3803 f007 1c 0 ffff
-6d1f 3801 3a03 f007 1c 0 ffff 751f
-3a01 3803 f007 1c 0 a0bf 3a03 f007
-1c 0 f004 6024 f002 6000 6101 6202
-6303 1720 1c4e 56c 64d 717 a082 3a03
-f007 1c 0 a0a0 3a03 f007 1c 0
-a0c2 3a03 f007 1c 0 a0e1 3a03 f007
-1c 0 1704 1c4e 56c 64d 717 a083
-3a03 f007 1c 0 a0a3 3a03 f007 1c
-0 a0c0 3a03 f007 1c 0 a0e0 3a03
-f007 1c 0 f004 6032 f002 6200 6000
-6100 2306 104c 3a03 f007 1c 0 b921
-ba41 f800 a530 3bf5 b801 6a0f f800 a510
-3bef 6200 600f 610f 1307 104c 3a03 f007
-1c 0 6901 ba41 a420 3bf6 6801 6a11
-f800 a410 3bf0 62f1 610f 32e 104c 3a03
-f007 1c 0 6901 ba41 a420 3bf6 f004
-6041 f002 f878 600f 61ff fbfb 621f fc04
-6300 ff87 6410 65ff 66ff 67ff 1810 3801
-3a03 f007 1c 0 a000 3a03 f007 1c
-0 1834 3a01 3803 f007 1c 0 a01f
-3a03 f007 1c 0 1858 3a01 3803 f007
-1c 0 fbfb a01f 3a03 f007 1c 0
-187c 3a01 3803 f007 1c 0 fc04 a000
-3a03 f007 1c 0 f878 600f ff87 b010
-3801 3a03 f007 1c 0 a000 3a03 f007
-1c 0 ffff b03f 3a01 3803 f007 1c
-0 a01f 3a03 f007 1c 0 ffff b05f
-3a01 3803 f007 1c 0 fbfb a01f 3a03
-f007 1c 0 ffff b07f 3a01 3803 f007
-1c 0 fc04 a000 3a03 f007 1c 0
-b020 3801 3a03 f007 1c 0 a000 3a03
-f007 1c 0 6000 f8f8 611f fb8b 6211
-fc04 6300 6400 ff8f 6511 f8f8 661f 6700
-1811 3801 3a03 f007 1c 0 a000 3a03
-f007 1c 0 1835 3a01 3803 f007 1c
-0 a01f 3a03 f007 1c 0 1859 3a01
-3803 f007 1c 0 fbfb a01f 3a03 f007
-1c 0 187d 3a01 3803 f007 1c 0
-fc04 a000 3a03 f007 1c 0 60ff f878
-610f fc7c 620f fc7c 630f 64ff ff87 6510
-ff87 6610 f878 670f 2010 3801 3a03 f007
-1c 0 a000 3a03 f007 1c 0 2034
-3a01 3803 f007 1c 0 a01f 3a03 f007
-1c 0 2058 3a01 3803 f007 1c 0
-fbfb a01f 3a03 f007 1c 0 207c 3a01
-3803 f007 1c 0 fc04 a000 3a03 f007
-1c 0 f004 6000 18 c900 a020 3a08
-b801 ffff 591f ba01 c900 a020 40 39f9
-18 3dff 9400 6100 6252 2447 1310 6330
-3a05 6330 1013 1210 bb61 3bfc ffff 5b1f
-b921 a025 39f2 8400 3c01 18 fff8 6000
-1 f815 610f 6200 602e a000 3a06 32b
-d340 7101 7202 6801 3ff8 f011 1c 2e09
-2e2e 6170 7373 a 2e09 2e2e 6166 6c69
-a 7262 6e61 6863 6f43 646e 6974 6e6f
-a 6573 656c 7463 6e41 5364 7465 a
-6461 5364 6275 654e 5467 7365 a74 6100
-646e 724f 6f58 4e72 746f 6554 7473 a
-2710 3e8 64 a 1
-</a>
+compressed
+eJyNWkmy3CoQ3HMK1l4xD8dBA/c/ws8EqVstwN+OFx2Sai6KpADXZA9pT51kTXaXVeEJf0Ep9f0i
++pfyy2OU1Ao/tigrqlJZ6l2qLq0d2JShlJYFP4Jc8suFJ0++evHpruMgs5VzZrOLzmzgXDT4Zk+D
+V4snY90pbVKpiYnuifoTNti3RfuHNn4u9Gg79eOzzTV8X8Vls8XbA8Gr8QWu1kpzRkYlwp8tGy2N
+VkGGTI9+PQ+JhvJZ7xjc9g2YSg+pW4LsIkE+ffi1QOCaOU+MVL9taW0StWhSfwjmKfEcKkvCW0KA
+4FY2/MpGeKp62ogrG9ZsUxvGmjK1UZTR0ziKNnpqo5inxFOVNXpuw61s+JWNMCNQIi5soFDmNqJR
+cxvB4VvwKDytspunU5MwGzKT3XzI7FPiOWRupoo2/Mx4G/2VjbiyYXOcxmFsDvMhU7nOh0znOh8y
+Q8JsyOxT4mf0aWNG8E9VTxthZSMubERPSJgQwvEc/YeNin+g6rc+8aVGrxduqK0u4DQk8YEW2aAF
+SKp7rQFkdvz4XqdvbALSgKr93F3ADajGv2eeuDEHVOvnhQ7gAdUNsh2TgT6g+plsh6Bd6LCiRsoi
+T/M69QZzK3gzjdd4c0oTFvH+5E998yd6/mbW7vxN6+A3f0Pux/z9TN15/sQd5Sp/oudP9vzNcn/n
+b7UuVNHzN4n3k785HP7kTwTXYO5Tf6OEeNTfIn+i52+Kelf+5rn/yd+Q+zF/4rf+5KT+xG/9LZD1
+U3+TeCf195rOIqhYrk7BRnQbZCkq1rchLNMNMnZQnXoPMsQcx4O9H57K3d49WEJQFYR9QBUsTw1u
+1Dtrwemmr0H40C42MOp2lQo9hHp4g4jYtZVyyBDRemqy1coG0ZShsM+mw4Bo/ZBb6AbRvySvUjrd
+QrJ1ikHAgzRLBGwGOqrElMi3W+1QRqd9hfKsIsY/OnTHaRahtDgjhYaB0Wec+vjMvK59Lej5bq0+
+xgDVgjEwug9JoXY3YKN1hWL0KQzRNFmw5L+wUIGx4YANRxvRL1ig5YcvDoll+599+ObuocS6RCfy
+14mfrQKa1O7lnIHSNmTmwX19fDNAQ2OqT6afwS0vB380gHgO9vvgkriQ/jKMtn/Ko6xC7Ax3Pfir
+AL714Pi6w09AkGPpYosXCBKHPzk7Dxk5ve0BWMkOEWcP2YyykjmCkCINUVVR55DaFGgI6kE93Nur
+hHapmyyqDGiU3O1GUekYWq0MX3bdNqrYyE2orXsCCzbBYBmmSMqEJExVMcEOUuN6lqfcEWu/9i2/
+lQBqAx7dJtWQktyUjuibcsP1cZIHrHoywyFiOPaiWh98JZrHyCd7TXXsE/gKVbqnjv7ZPMTG/Wbd
+tjn2Jd2H7ERe7JD21NAv6w5T77zYA6tSMsndLG5gqdzHp8LZ3GFyzQLH96RbJuGLM+Mga+7MsfZy
+M7YjAxh21oNyMzwUV/3reyVKoAbLBewfZ8LhgpWHD0YeIWhxxKDkHsO0/vuY7iGs6h9e7R5aVvUv
+dxe6cTGr/z2H8F1p3ikENb6WGvFDfZfvo0BBnZZvn7OgTsuXBCuW5XtcDgXRyvegjVa+eHqWL16h
+Sgf0K6vyBRVFgfKdrnyg9vKl7DHkRYdH+b7zckSU724ie1S/v/PSUoKBv552E1hrPg1dT+Nz0d18
+eALf0Du1Pm4rIYHFqRULVNWPyRLY1djrnGjGe7KiLl5sVfYpL0AxQiCXad/UHBOwmrqLO12cWhVX
+ELCaP7z51+o7MTDtXqbFNCfaPVycJIZTKqphkK6FLnChi/LeBHcJ9p1JGtNmPDbWRqP1wHIp20Ff
+aS7nCjYKgC1K++G1mot0SG+DP6JXg00L0cRdmGJs57h6ZNvOIvPFVjj5jBLRRlRbYNbcsJRRXPyI
+24+4ag5e4kasxL/WxVeciYB3HwUOAGucg5I4TKqL6WgZeI8FLBielGHi53P/QC1HQMdZqyE/ACte
+AOtdidL7EqQPGHkfi5MulihWACtdAHND7RnAOl/8t8F4O+4c1P82GL+lWKTLAJJlP3+z1DXU3izH
+ul24WfYX6E5Yygt5xQ91G7sHccFvY/GXp1cLcX/bRQPi+3V7oPH9LUmni1tDMqh+DcmghjUkgxrX
+kAwPUBaxN1SHdEY1MN1HQNBGYpea+pPDiP4FKcl7In03b14iZQMa17aZC7gUN+REQk6+IId3LPfh
+R7vGsDxlAcrv7kRx75gN6Kw1d3XJvAd01g1gW27eQWNCjKcNzNXMih2OUFV538Zg+PaJ5XMJs/Ex
+ydvVDQO/8NOi0JaAthV3w5Inqm3Vy43lH0ovUhK04kVO/WiuTCkWZwu7v5q7V+3wvWkuzjSlod3S
+QKm+MZQHFiDwtKTqrs+a86vuefg3UXejW3ocaTQQC64WAFtzlE+aeWh+8+AQvQKWmmiIoBmrqdqO
+9S1B02dszDLyvNH4LV/Oe4+fI9CX85SRF3BGYzqGnWnxWxHFEyQOosx2+tE1lT/XTbW7hl5r4wnW
++T+u8V6t69M2lodrxWGlLnv3qvaEa21hcte6ecWsw7W9JfEMn+p53ibWFFtOq2iXcHWrG48oKoHD
+dU+B47GfOPG6BGsHj84jTxQTB3VysFk4Dd8HCck+Ljp+5oN+965CJz+54eIEoH+UGM4pUtynh4Qt
+jolD4hN5D3BTs2Dacf8YTLsg2ID6i0u1Z0TiKeHnVwqfsGaGxHYdOo7ZuGMbeoO2HEyOq2fBNOyo
+ifsuzYHfUisB/SiB4HodVG7SCCBtk6ZZByzMpOeH44s68P+cNdRBnh7fLhOGOmgtRTuLnuZqQC/F
+um/FQFSqOwqpTVM+CYRfZTs/79PA63tChHYES7GI2WOm5fPMwfPwTdn5jeMsInPtdcaIxhyIS2KY
+C1fWFnOhI0OrAzTqe25da28oUl8eWvn6DFsbPfmyuKuzhpw9wJNdX4GvJRyJDGxvsXBwxx9sPxDy
+/QmIiPXZgLBtgdCJVq1b2mjpavE9LZh+LmV3oly6jgkYCavRnjS5d+C/j1/TJ9IgeS9+WPgaCcKx
+9QZtrKimEgyRBoPWBD+GymLbHVhZfr5i6x927LQKtxlKuAP7+Qg8lOFw4EUDH1sD4iP0e++A1tEC
+WEGE3H7JSW8hF7jRA93gmzMiYAcJn4JtTNhLfz8Eh6UQ3xxcgmCBW31S7uBwurUb3NbTKp0Wo4ZK
+D1xADBnbQBDqvzFZY+3tdQiMNiF8OAT/fUB/IyLPJWAaAslbMmU6QXl47XxoSUiMz1OxbYp7EO3/
+nDgqvEVFEy0tbwiS8YWwcTxoJGA7IJC3FjBS4iCFIKp0lcoDh8dz0KITWJpZhyAi2/CmxitD8Is7
+IXwrdGvJdiddMumC/sYr6Sxe/DjuqHu+vL+M6oaVFOIndzI3kQJ3MTAA+t6tmfgkXcnmiAhE5KRP
+rTpYX5WNJc82rhJwvMKKhJwT84Ap0+I/9vvjng==</a>
       <a name="dataWidth" val="16"/>
     </comp>
     <comp lib="5" loc="(1340,1670)" name="RAM">
@@ -1162,7 +1116,7 @@ a 6573 656c 7463 6e41 5364 7465 a
       <a name="label" val="CLEAR"/>
       <a name="labelloc" val="west"/>
     </comp>
-    <comp lib="6" loc="(1460,970)" name="Button">
+    <comp lib="6" loc="(130,180)" name="Button">
       <a name="label" val="TICK"/>
       <a name="labelloc" val="west"/>
     </comp>
@@ -1170,747 +1124,2162 @@ a 6573 656c 7463 6e41 5364 7465 a
       <a name="cols" val="50"/>
       <a name="contents">
 Source: init
-0000: 00000: (F814) _pfix 668  Program:+668
-0001: 00001: (3E1C) jmp $setup  Program:+668
+0000: 00000: (F83D) _pfix 1976  Program:+1976
+0001: 00001: (3E18) jmp $setup  Program:+1976
 
 Source: TestUnits.c
-0002: 00002: (F27D) call printstr  Program:00637
-0003: 00003: (0018) ret
-0004: 00004: (6000) mov .L.str, r0  Data:00000
-0005: 00005: (F27D) call printstr  Program:00637
-0006: 00006: (0018) ret
-0007: 00007: (600A) mov .L.str.1, r0  Data:00010
-0008: 00008: (F27D) call printstr  Program:00637
-0009: 00009: (0018) ret
-000A: 00010: (0020) mov r1, r0
-000B: 00011: (1020) cmp eq, r1, r0
-000C: 00012: (3A03) brcc 3
-000D: 00013: (F007) call fail  Program:00007
-000E: 00014: (001C) halt
-000F: 00015: (0000) nop
-0010: 00016: (0018) ret
-0011: 00017: (6014) mov .L.str.2, r0  Data:00020
-0012: 00018: (F002) call test  Program:00002
-0013: 00019: (6101) mov 1, r1
-0014: 00020: (6201) mov 1, r2
-0015: 00021: (1028) cmp eq, r1, r2
-0016: 00022: (3801) brncc 1
-0017: 00023: (3A03) brcc 3
-0018: 00024: (F007) call fail  Program:00007
-0019: 00025: (001C) halt
-001A: 00026: (0000) nop
-001B: 00027: (1128) cmp ne, r1, r2
-001C: 00028: (3A01) brcc 1
-001D: 00029: (3803) brncc 3
-001E: 00030: (F007) call fail  Program:00007
-001F: 00031: (001C) halt
-0020: 00032: (0000) nop
-0021: 00033: (1228) cmp uge, r1, r2
-0022: 00034: (3801) brncc 1
-0023: 00035: (3A03) brcc 3
-0024: 00036: (F007) call fail  Program:00007
-0025: 00037: (001C) halt
-0026: 00038: (0000) nop
-0027: 00039: (1328) cmp ult, r1, r2
-0028: 00040: (3A01) brcc 1
-0029: 00041: (3803) brncc 3
-002A: 00042: (F007) call fail  Program:00007
-002B: 00043: (001C) halt
-002C: 00044: (0000) nop
-002D: 00045: (1428) cmp ge, r1, r2
-002E: 00046: (3801) brncc 1
-002F: 00047: (3A03) brcc 3
-0030: 00048: (F007) call fail  Program:00007
-0031: 00049: (001C) halt
-0032: 00050: (0000) nop
-0033: 00051: (1528) cmp lt, r1, r2
-0034: 00052: (3A01) brcc 1
-0035: 00053: (3803) brncc 3
-0036: 00054: (F007) call fail  Program:00007
-0037: 00055: (001C) halt
-0038: 00056: (0000) nop
-0039: 00057: (1628) cmp ugt, r1, r2
-003A: 00058: (3A01) brcc 1
-003B: 00059: (3803) brncc 3
-003C: 00060: (F007) call fail  Program:00007
-003D: 00061: (001C) halt
-003E: 00062: (0000) nop
-003F: 00063: (1728) cmp gt, r1, r2
-0040: 00064: (3A01) brcc 1
-0041: 00065: (3803) brncc 3
-0042: 00066: (F007) call fail  Program:00007
-0043: 00067: (001C) halt
-0044: 00068: (0000) nop
-0045: 00069: (132B) sub r1, r2, r3
-0046: 00070: (3801) brncc 1
-0047: 00071: (3A03) brcc 3
-0048: 00072: (F007) call fail  Program:00007
-0049: 00073: (001C) halt
-004A: 00074: (0000) nop
-004B: 00075: (232A) add r1, r2, r3
-004C: 00076: (3A01) brcc 1
-004D: 00077: (3803) brncc 3
-004E: 00078: (F007) call fail  Program:00007
-004F: 00079: (001C) halt
-0050: 00080: (0000) nop
-0051: 00081: (A021) cmp eq, r1, 1
-0052: 00082: (3801) brncc 1
-0053: 00083: (3A03) brcc 3
-0054: 00084: (F007) call fail  Program:00007
-0055: 00085: (001C) halt
-0056: 00086: (0000) nop
-0057: 00087: (A121) cmp ne, r1, 1
-0058: 00088: (3A01) brcc 1
-0059: 00089: (3803) brncc 3
-005A: 00090: (F007) call fail  Program:00007
-005B: 00091: (001C) halt
-005C: 00092: (0000) nop
-005D: 00093: (A221) cmp uge, r1, 1
-005E: 00094: (3801) brncc 1
-005F: 00095: (3A03) brcc 3
-0060: 00096: (F007) call fail  Program:00007
-0061: 00097: (001C) halt
-0062: 00098: (0000) nop
-0063: 00099: (A321) cmp ult, r1, 1
-0064: 00100: (3A01) brcc 1
-0065: 00101: (3803) brncc 3
-0066: 00102: (F007) call fail  Program:00007
-0067: 00103: (001C) halt
-0068: 00104: (0000) nop
-0069: 00105: (A421) cmp ge, r1, 1
-006A: 00106: (3801) brncc 1
-006B: 00107: (3A03) brcc 3
-006C: 00108: (F007) call fail  Program:00007
-006D: 00109: (001C) halt
-006E: 00110: (0000) nop
-006F: 00111: (A521) cmp lt, r1, 1
-0070: 00112: (3A01) brcc 1
-0071: 00113: (3803) brncc 3
-0072: 00114: (F007) call fail  Program:00007
-0073: 00115: (001C) halt
-0074: 00116: (0000) nop
-0075: 00117: (A621) cmp ugt, r1, 1
-0076: 00118: (3A01) brcc 1
-0077: 00119: (3803) brncc 3
-0078: 00120: (F007) call fail  Program:00007
-0079: 00121: (001C) halt
-007A: 00122: (0000) nop
-007B: 00123: (A721) cmp gt, r1, 1
-007C: 00124: (3A01) brcc 1
-007D: 00125: (3803) brncc 3
-007E: 00126: (F007) call fail  Program:00007
-007F: 00127: (001C) halt
-0080: 00128: (0000) nop
-0081: 00129: (6901) sub r1, 1, r1
-0082: 00130: (3801) brncc 1
-0083: 00131: (3A03) brcc 3
-0084: 00132: (F007) call fail  Program:00007
-0085: 00133: (001C) halt
-0086: 00134: (0000) nop
-0087: 00135: (7201) add r2, 1, r2
-0088: 00136: (3A01) brcc 1
-0089: 00137: (3803) brncc 3
-008A: 00138: (F007) call fail  Program:00007
-008B: 00139: (001C) halt
-008C: 00140: (0000) nop
-008D: 00141: (6401) mov 1, r4
-008E: 00142: (65FF) mov -1, r5
-008F: 00143: (1094) cmp eq, r4, r5
-0090: 00144: (3A01) brcc 1
-0091: 00145: (3803) brncc 3
-0092: 00146: (F007) call fail  Program:00007
-0093: 00147: (001C) halt
-0094: 00148: (0000) nop
-0095: 00149: (1194) cmp ne, r4, r5
-0096: 00150: (3801) brncc 1
-0097: 00151: (3A03) brcc 3
-0098: 00152: (F007) call fail  Program:00007
-0099: 00153: (001C) halt
-009A: 00154: (0000) nop
-009B: 00155: (1294) cmp uge, r4, r5
-009C: 00156: (3A01) brcc 1
-009D: 00157: (3803) brncc 3
-009E: 00158: (F007) call fail  Program:00007
-009F: 00159: (001C) halt
-00A0: 00160: (0000) nop
-00A1: 00161: (1394) cmp ult, r4, r5
-00A2: 00162: (3801) brncc 1
-00A3: 00163: (3A03) brcc 3
-00A4: 00164: (F007) call fail  Program:00007
-00A5: 00165: (001C) halt
-00A6: 00166: (0000) nop
-00A7: 00167: (1494) cmp ge, r4, r5
-00A8: 00168: (3801) brncc 1
-00A9: 00169: (3A03) brcc 3
-00AA: 00170: (F007) call fail  Program:00007
-00AB: 00171: (001C) halt
-00AC: 00172: (0000) nop
-00AD: 00173: (1594) cmp lt, r4, r5
-00AE: 00174: (3A01) brcc 1
-00AF: 00175: (3803) brncc 3
-00B0: 00176: (F007) call fail  Program:00007
-00B1: 00177: (001C) halt
-00B2: 00178: (0000) nop
-00B3: 00179: (1694) cmp ugt, r4, r5
-00B4: 00180: (3A01) brcc 1
-00B5: 00181: (3803) brncc 3
-00B6: 00182: (F007) call fail  Program:00007
-00B7: 00183: (001C) halt
-00B8: 00184: (0000) nop
-00B9: 00185: (1794) cmp gt, r4, r5
-00BA: 00186: (3801) brncc 1
-00BB: 00187: (3A03) brcc 3
-00BC: 00188: (F007) call fail  Program:00007
-00BD: 00189: (001C) halt
-00BE: 00190: (0000) nop
-00BF: 00191: (1397) sub r4, r5, r3
-00C0: 00192: (3A01) brcc 1
-00C1: 00193: (3803) brncc 3
-00C2: 00194: (F007) call fail  Program:00007
-00C3: 00195: (001C) halt
-00C4: 00196: (0000) nop
-00C5: 00197: (2396) add r4, r5, r3
-00C6: 00198: (3801) brncc 1
-00C7: 00199: (3A03) brcc 3
-00C8: 00200: (F007) call fail  Program:00007
-00C9: 00201: (001C) halt
-00CA: 00202: (0000) nop
-00CB: 00203: (A09F) cmp eq, r4, -1
-00CC: 00204: (3A01) brcc 1
-00CD: 00205: (3803) brncc 3
-00CE: 00206: (F007) call fail  Program:00007
-00CF: 00207: (001C) halt
-00D0: 00208: (0000) nop
-00D1: 00209: (A19F) cmp ne, r4, -1
-00D2: 00210: (3801) brncc 1
-00D3: 00211: (3A03) brcc 3
-00D4: 00212: (F007) call fail  Program:00007
-00D5: 00213: (001C) halt
-00D6: 00214: (0000) nop
-00D7: 00215: (A29F) cmp uge, r4, -1
-00D8: 00216: (3A01) brcc 1
-00D9: 00217: (3803) brncc 3
-00DA: 00218: (F007) call fail  Program:00007
-00DB: 00219: (001C) halt
-00DC: 00220: (0000) nop
-00DD: 00221: (A39F) cmp ult, r4, -1
-00DE: 00222: (3801) brncc 1
-00DF: 00223: (3A03) brcc 3
-00E0: 00224: (F007) call fail  Program:00007
-00E1: 00225: (001C) halt
-00E2: 00226: (0000) nop
-00E3: 00227: (A49F) cmp ge, r4, -1
-00E4: 00228: (3801) brncc 1
-00E5: 00229: (3A03) brcc 3
-00E6: 00230: (F007) call fail  Program:00007
-00E7: 00231: (001C) halt
-00E8: 00232: (0000) nop
-00E9: 00233: (A59F) cmp lt, r4, -1
-00EA: 00234: (3A01) brcc 1
-00EB: 00235: (3803) brncc 3
-00EC: 00236: (F007) call fail  Program:00007
-00ED: 00237: (001C) halt
-00EE: 00238: (0000) nop
-00EF: 00239: (A69F) cmp ugt, r4, -1
-00F0: 00240: (3A01) brcc 1
-00F1: 00241: (3803) brncc 3
-00F2: 00242: (F007) call fail  Program:00007
-00F3: 00243: (001C) halt
-00F4: 00244: (0000) nop
-00F5: 00245: (A79F) cmp gt, r4, -1
-00F6: 00246: (3801) brncc 1
-00F7: 00247: (3A03) brcc 3
-00F8: 00248: (F007) call fail  Program:00007
-00F9: 00249: (001C) halt
-00FA: 00250: (0000) nop
-00FB: 00251: (7501) add r5, 1, r5
-00FC: 00252: (3801) brncc 1
-00FD: 00253: (3A03) brcc 3
-00FE: 00254: (F007) call fail  Program:00007
-00FF: 00255: (001C) halt
-0100: 00256: (0000) nop
-0101: 00257: (6D01) sub r5, 1, r5
-0102: 00258: (3A01) brcc 1
-0103: 00259: (3803) brncc 3
-0104: 00260: (F007) call fail  Program:00007
-0105: 00261: (001C) halt
-0106: 00262: (0000) nop
-0107: 00263: (FFFF) _pfix -1
-0108: 00264: (6D1F) sub r5, -1, r5
-0109: 00265: (3801) brncc 1
-010A: 00266: (3A03) brcc 3
-010B: 00267: (F007) call fail  Program:00007
-010C: 00268: (001C) halt
-010D: 00269: (0000) nop
-010E: 00270: (FFFF) _pfix -1
-010F: 00271: (751F) add r5, -1, r5
-0110: 00272: (3A01) brcc 1
-0111: 00273: (3803) brncc 3
-0112: 00274: (F007) call fail  Program:00007
-0113: 00275: (001C) halt
-0114: 00276: (0000) nop
-0115: 00277: (A0BF) cmp eq, r5, -1
-0116: 00278: (3A03) brcc 3
-0117: 00279: (F007) call fail  Program:00007
-0118: 00280: (001C) halt
-0119: 00281: (0000) nop
-011A: 00282: (F004) call pass  Program:00004
-011B: 00283: (6024) mov .L.str.3, r0  Data:00036
-011C: 00284: (F002) call test  Program:00002
-011D: 00285: (6000) mov 0, r0
-011E: 00286: (6101) mov 1, r1
-011F: 00287: (6202) mov 2, r2
-0120: 00288: (6303) mov 3, r3
-0121: 00289: (1720) cmp gt, r1, r0
-0122: 00290: (1C4E) selcc r2, r3, r4
-0123: 00291: (056C) selcc 0, r3, r5
-0124: 00292: (064D) selcc r2, 0, r6
-0125: 00293: (0717) setcc r7
-0126: 00294: (A082) cmp eq, r4, 2
-0127: 00295: (3A03) brcc 3
-0128: 00296: (F007) call fail  Program:00007
-0129: 00297: (001C) halt
-012A: 00298: (0000) nop
-012B: 00299: (A0A0) cmp eq, r5, 0
-012C: 00300: (3A03) brcc 3
-012D: 00301: (F007) call fail  Program:00007
-012E: 00302: (001C) halt
-012F: 00303: (0000) nop
-0130: 00304: (A0C2) cmp eq, r6, 2
-0131: 00305: (3A03) brcc 3
-0132: 00306: (F007) call fail  Program:00007
-0133: 00307: (001C) halt
-0134: 00308: (0000) nop
-0135: 00309: (A0E1) cmp eq, r7, 1
+0002: 00002: (F83C) _pfix 1944  Program:01944
+0003: 00003: (F018) call printstr  Program:01944
+0004: 00004: (0018) ret
+0005: 00005: (6000) mov .L.str, r0  Data:00000
+0006: 00006: (F83C) _pfix 1944  Program:01944
+0007: 00007: (F018) call printstr  Program:01944
+0008: 00008: (0018) ret
+0009: 00009: (600A) mov .L.str.1, r0  Data:00010
+000A: 00010: (F83C) _pfix 1944  Program:01944
+000B: 00011: (F018) call printstr  Program:01944
+000C: 00012: (0018) ret
+000D: 00013: (0020) mov r1, r0
+000E: 00014: (1020) cmp eq, r1, r0
+000F: 00015: (3A03) brcc 3
+0010: 00016: (F009) call fail  Program:00009
+0011: 00017: (001C) halt
+0012: 00018: (0000) nop
+0013: 00019: (0018) ret
+0014: 00020: (6014) mov .L.str.2, r0  Data:00020
+0015: 00021: (F002) call test  Program:00002
+0016: 00022: (6001) mov 1, r0
+0017: 00023: (A001) cmp eq, r0, 1
+0018: 00024: (3A03) brcc 3
+0019: 00025: (F009) call fail  Program:00009
+001A: 00026: (001C) halt
+001B: 00027: (0000) nop
+001C: 00028: (F005) call pass  Program:00005
+001D: 00029: (601F) mov .L.str.3, r0  Data:00031
+001E: 00030: (F002) call test  Program:00002
+001F: 00031: (6103) mov 3, r1
+0020: 00032: (F00D) call function  Program:00013
+0021: 00033: (A003) cmp eq, r0, 3
+0022: 00034: (3A03) brcc 3
+0023: 00035: (F009) call fail  Program:00009
+0024: 00036: (001C) halt
+0025: 00037: (0000) nop
+0026: 00038: (F005) call pass  Program:00005
+0027: 00039: (602C) mov .L.str.4, r0  Data:00044
+0028: 00040: (F002) call test  Program:00002
+0029: 00041: (6200) mov 0, r2
+002A: 00042: (7205) add r2, 5, r2
+002B: 00043: (3E22) jmp .Lpsb_test  Program:+34
+002C: 00044: (6305) mov 5, r3
+002D: 00045: (234E) add r2, r3, r3
+002E: 00046: (3808) brncc .Lpsb_forw  Program:+8
+002F: 00047: (F009) call fail  Program:00009
+0030: 00048: (001C) halt
+0031: 00049: (0000) nop
+0032: 00050: (6B01) sub r3, 1, r3
+0033: 00051: (6B01) sub r3, 1, r3
+0034: 00052: (6B01) sub r3, 1, r3
+0035: 00053: (6B01) sub r3, 1, r3
+0036: 00054: (6B01) sub r3, 1, r3
+0037: 00055: (6B01) sub r3, 1, r3
+0038: 00056: (6B01) sub r3, 1, r3
+0039: 00057: (6B01) sub r3, 1, r3
+003A: 00058: (6B01) sub r3, 1, r3
+003B: 00059: (6B01) sub r3, 1, r3
+003C: 00060: (3A15) brcc .Lpsb_fwok  Program:+21
+003D: 00061: (F009) call fail  Program:00009
+003E: 00062: (001C) halt
+003F: 00063: (0000) nop
+0040: 00064: (6A01) sub r2, 1, r2
+0041: 00065: (6A01) sub r2, 1, r2
+0042: 00066: (6A01) sub r2, 1, r2
+0043: 00067: (6A01) sub r2, 1, r2
+0044: 00068: (6A01) sub r2, 1, r2
+0045: 00069: (6A01) sub r2, 1, r2
+0046: 00070: (6A01) sub r2, 1, r2
+0047: 00071: (6A01) sub r2, 1, r2
+0048: 00072: (6A01) sub r2, 1, r2
+0049: 00073: (6A01) sub r2, 1, r2
+004A: 00074: (3BE1) brcc .Lpsb_bwok  Program:-31
+004B: 00075: (F009) call fail  Program:00009
+004C: 00076: (001C) halt
+004D: 00077: (0000) nop
+004E: 00078: (39F6) brncc .Lpsb_back  Program:-10
+004F: 00079: (F009) call fail  Program:00009
+0050: 00080: (001C) halt
+0051: 00081: (0000) nop
+0052: 00082: (F005) call pass  Program:00005
+0053: 00083: (603C) mov .L.str.5, r0  Data:00060
+0054: 00084: (F002) call test  Program:00002
+0055: 00085: (6005) mov 5, r0
+0056: 00086: (625A) mov .Lba0, r2  Program:00090
+0057: 00087: (61FF) mov -1, r1
+0058: 00088: (2342) add r2, r0, r3
+0059: 00089: (0070) jmp r3
+005A: 00090: (B921) addx r1, 1, r1
+005B: 00091: (B921) addx r1, 1, r1
+005C: 00092: (B921) addx r1, 1, r1
+005D: 00093: (B921) addx r1, 1, r1
+005E: 00094: (B921) addx r1, 1, r1
+005F: 00095: (B921) addx r1, 1, r1
+0060: 00096: (2106) add r0, r1, r1
+0061: 00097: (6905) sub r1, 5, r1
+0062: 00098: (3A03) brcc .LbaNext  Program:+3
+0063: 00099: (F009) call fail  Program:00009
+0064: 00100: (001C) halt
+0065: 00101: (0000) nop
+0066: 00102: (6801) sub r0, 1, r0
+0067: 00103: (39EF) brncc .Lba_loop  Program:-17
+0068: 00104: (F005) call pass  Program:00005
+0069: 00105: (604B) mov .L.str.6, r0  Data:00075
+006A: 00106: (F002) call test  Program:00002
+006B: 00107: (6103) mov 3, r1
+006C: 00108: (600D) mov function, r0  Program:00013
+006D: 00109: (0011) call r0
+006E: 00110: (A003) cmp eq, r0, 3
+006F: 00111: (3A03) brcc 3
+0070: 00112: (F009) call fail  Program:00009
+0071: 00113: (001C) halt
+0072: 00114: (0000) nop
+0073: 00115: (F005) call pass  Program:00005
+0074: 00116: (6058) mov .L.str.7, r0  Data:00088
+0075: 00117: (F002) call test  Program:00002
+0076: 00118: (6101) mov 1, r1
+0077: 00119: (6201) mov 1, r2
+0078: 00120: (1028) cmp eq, r1, r2
+0079: 00121: (3801) brncc 1
+007A: 00122: (3A03) brcc 3
+007B: 00123: (F009) call fail  Program:00009
+007C: 00124: (001C) halt
+007D: 00125: (0000) nop
+007E: 00126: (1128) cmp ne, r1, r2
+007F: 00127: (3A01) brcc 1
+0080: 00128: (3803) brncc 3
+0081: 00129: (F009) call fail  Program:00009
+0082: 00130: (001C) halt
+0083: 00131: (0000) nop
+0084: 00132: (1228) cmp uge, r1, r2
+0085: 00133: (3801) brncc 1
+0086: 00134: (3A03) brcc 3
+0087: 00135: (F009) call fail  Program:00009
+0088: 00136: (001C) halt
+0089: 00137: (0000) nop
+008A: 00138: (1328) cmp ult, r1, r2
+008B: 00139: (3A01) brcc 1
+008C: 00140: (3803) brncc 3
+008D: 00141: (F009) call fail  Program:00009
+008E: 00142: (001C) halt
+008F: 00143: (0000) nop
+0090: 00144: (1428) cmp ge, r1, r2
+0091: 00145: (3801) brncc 1
+0092: 00146: (3A03) brcc 3
+0093: 00147: (F009) call fail  Program:00009
+0094: 00148: (001C) halt
+0095: 00149: (0000) nop
+0096: 00150: (1528) cmp lt, r1, r2
+0097: 00151: (3A01) brcc 1
+0098: 00152: (3803) brncc 3
+0099: 00153: (F009) call fail  Program:00009
+009A: 00154: (001C) halt
+009B: 00155: (0000) nop
+009C: 00156: (1628) cmp ugt, r1, r2
+009D: 00157: (3A01) brcc 1
+009E: 00158: (3803) brncc 3
+009F: 00159: (F009) call fail  Program:00009
+00A0: 00160: (001C) halt
+00A1: 00161: (0000) nop
+00A2: 00162: (1728) cmp gt, r1, r2
+00A3: 00163: (3A01) brcc 1
+00A4: 00164: (3803) brncc 3
+00A5: 00165: (F009) call fail  Program:00009
+00A6: 00166: (001C) halt
+00A7: 00167: (0000) nop
+00A8: 00168: (132B) sub r1, r2, r3
+00A9: 00169: (3801) brncc 1
+00AA: 00170: (3A03) brcc 3
+00AB: 00171: (F009) call fail  Program:00009
+00AC: 00172: (001C) halt
+00AD: 00173: (0000) nop
+00AE: 00174: (232A) add r1, r2, r3
+00AF: 00175: (3A01) brcc 1
+00B0: 00176: (3803) brncc 3
+00B1: 00177: (F009) call fail  Program:00009
+00B2: 00178: (001C) halt
+00B3: 00179: (0000) nop
+00B4: 00180: (A021) cmp eq, r1, 1
+00B5: 00181: (3801) brncc 1
+00B6: 00182: (3A03) brcc 3
+00B7: 00183: (F009) call fail  Program:00009
+00B8: 00184: (001C) halt
+00B9: 00185: (0000) nop
+00BA: 00186: (A121) cmp ne, r1, 1
+00BB: 00187: (3A01) brcc 1
+00BC: 00188: (3803) brncc 3
+00BD: 00189: (F009) call fail  Program:00009
+00BE: 00190: (001C) halt
+00BF: 00191: (0000) nop
+00C0: 00192: (A221) cmp uge, r1, 1
+00C1: 00193: (3801) brncc 1
+00C2: 00194: (3A03) brcc 3
+00C3: 00195: (F009) call fail  Program:00009
+00C4: 00196: (001C) halt
+00C5: 00197: (0000) nop
+00C6: 00198: (A321) cmp ult, r1, 1
+00C7: 00199: (3A01) brcc 1
+00C8: 00200: (3803) brncc 3
+00C9: 00201: (F009) call fail  Program:00009
+00CA: 00202: (001C) halt
+00CB: 00203: (0000) nop
+00CC: 00204: (A421) cmp ge, r1, 1
+00CD: 00205: (3801) brncc 1
+00CE: 00206: (3A03) brcc 3
+00CF: 00207: (F009) call fail  Program:00009
+00D0: 00208: (001C) halt
+00D1: 00209: (0000) nop
+00D2: 00210: (A521) cmp lt, r1, 1
+00D3: 00211: (3A01) brcc 1
+00D4: 00212: (3803) brncc 3
+00D5: 00213: (F009) call fail  Program:00009
+00D6: 00214: (001C) halt
+00D7: 00215: (0000) nop
+00D8: 00216: (A621) cmp ugt, r1, 1
+00D9: 00217: (3A01) brcc 1
+00DA: 00218: (3803) brncc 3
+00DB: 00219: (F009) call fail  Program:00009
+00DC: 00220: (001C) halt
+00DD: 00221: (0000) nop
+00DE: 00222: (A721) cmp gt, r1, 1
+00DF: 00223: (3A01) brcc 1
+00E0: 00224: (3803) brncc 3
+00E1: 00225: (F009) call fail  Program:00009
+00E2: 00226: (001C) halt
+00E3: 00227: (0000) nop
+00E4: 00228: (6901) sub r1, 1, r1
+00E5: 00229: (3801) brncc 1
+00E6: 00230: (3A03) brcc 3
+00E7: 00231: (F009) call fail  Program:00009
+00E8: 00232: (001C) halt
+00E9: 00233: (0000) nop
+00EA: 00234: (7201) add r2, 1, r2
+00EB: 00235: (3A01) brcc 1
+00EC: 00236: (3803) brncc 3
+00ED: 00237: (F009) call fail  Program:00009
+00EE: 00238: (001C) halt
+00EF: 00239: (0000) nop
+00F0: 00240: (6401) mov 1, r4
+00F1: 00241: (65FF) mov -1, r5
+00F2: 00242: (1094) cmp eq, r4, r5
+00F3: 00243: (3A01) brcc 1
+00F4: 00244: (3803) brncc 3
+00F5: 00245: (F009) call fail  Program:00009
+00F6: 00246: (001C) halt
+00F7: 00247: (0000) nop
+00F8: 00248: (1194) cmp ne, r4, r5
+00F9: 00249: (3801) brncc 1
+00FA: 00250: (3A03) brcc 3
+00FB: 00251: (F009) call fail  Program:00009
+00FC: 00252: (001C) halt
+00FD: 00253: (0000) nop
+00FE: 00254: (1294) cmp uge, r4, r5
+00FF: 00255: (3A01) brcc 1
+0100: 00256: (3803) brncc 3
+0101: 00257: (F009) call fail  Program:00009
+0102: 00258: (001C) halt
+0103: 00259: (0000) nop
+0104: 00260: (1394) cmp ult, r4, r5
+0105: 00261: (3801) brncc 1
+0106: 00262: (3A03) brcc 3
+0107: 00263: (F009) call fail  Program:00009
+0108: 00264: (001C) halt
+0109: 00265: (0000) nop
+010A: 00266: (1494) cmp ge, r4, r5
+010B: 00267: (3801) brncc 1
+010C: 00268: (3A03) brcc 3
+010D: 00269: (F009) call fail  Program:00009
+010E: 00270: (001C) halt
+010F: 00271: (0000) nop
+0110: 00272: (1594) cmp lt, r4, r5
+0111: 00273: (3A01) brcc 1
+0112: 00274: (3803) brncc 3
+0113: 00275: (F009) call fail  Program:00009
+0114: 00276: (001C) halt
+0115: 00277: (0000) nop
+0116: 00278: (1694) cmp ugt, r4, r5
+0117: 00279: (3A01) brcc 1
+0118: 00280: (3803) brncc 3
+0119: 00281: (F009) call fail  Program:00009
+011A: 00282: (001C) halt
+011B: 00283: (0000) nop
+011C: 00284: (1794) cmp gt, r4, r5
+011D: 00285: (3801) brncc 1
+011E: 00286: (3A03) brcc 3
+011F: 00287: (F009) call fail  Program:00009
+0120: 00288: (001C) halt
+0121: 00289: (0000) nop
+0122: 00290: (1397) sub r4, r5, r3
+0123: 00291: (3A01) brcc 1
+0124: 00292: (3803) brncc 3
+0125: 00293: (F009) call fail  Program:00009
+0126: 00294: (001C) halt
+0127: 00295: (0000) nop
+0128: 00296: (2396) add r4, r5, r3
+0129: 00297: (3801) brncc 1
+012A: 00298: (3A03) brcc 3
+012B: 00299: (F009) call fail  Program:00009
+012C: 00300: (001C) halt
+012D: 00301: (0000) nop
+012E: 00302: (A09F) cmp eq, r4, -1
+012F: 00303: (3A01) brcc 1
+0130: 00304: (3803) brncc 3
+0131: 00305: (F009) call fail  Program:00009
+0132: 00306: (001C) halt
+0133: 00307: (0000) nop
+0134: 00308: (A19F) cmp ne, r4, -1
+0135: 00309: (3801) brncc 1
 0136: 00310: (3A03) brcc 3
-0137: 00311: (F007) call fail  Program:00007
+0137: 00311: (F009) call fail  Program:00009
 0138: 00312: (001C) halt
 0139: 00313: (0000) nop
-013A: 00314: (1704) cmp gt, r0, r1
-013B: 00315: (1C4E) selcc r2, r3, r4
-013C: 00316: (056C) selcc 0, r3, r5
-013D: 00317: (064D) selcc r2, 0, r6
-013E: 00318: (0717) setcc r7
-013F: 00319: (A083) cmp eq, r4, 3
-0140: 00320: (3A03) brcc 3
-0141: 00321: (F007) call fail  Program:00007
-0142: 00322: (001C) halt
-0143: 00323: (0000) nop
-0144: 00324: (A0A3) cmp eq, r5, 3
-0145: 00325: (3A03) brcc 3
-0146: 00326: (F007) call fail  Program:00007
-0147: 00327: (001C) halt
-0148: 00328: (0000) nop
-0149: 00329: (A0C0) cmp eq, r6, 0
-014A: 00330: (3A03) brcc 3
-014B: 00331: (F007) call fail  Program:00007
-014C: 00332: (001C) halt
-014D: 00333: (0000) nop
-014E: 00334: (A0E0) cmp eq, r7, 0
-014F: 00335: (3A03) brcc 3
-0150: 00336: (F007) call fail  Program:00007
-0151: 00337: (001C) halt
-0152: 00338: (0000) nop
-0153: 00339: (F004) call pass  Program:00004
-0154: 00340: (6032) mov .L.str.4, r0  Data:00050
-0155: 00341: (F002) call test  Program:00002
-0156: 00342: (6200) mov 0, r2
-0157: 00343: (6000) mov 0, r0
-0158: 00344: (6100) mov 0, r1
-0159: 00345: (2306) add r0, r1, r3
-015A: 00346: (104C) cmp eq, r2, r3
-015B: 00347: (3A03) brcc 3
-015C: 00348: (F007) call fail  Program:00007
-015D: 00349: (001C) halt
-015E: 00350: (0000) nop
-015F: 00351: (B921) addx r1, 1, r1
-0160: 00352: (BA41) addx r2, 1, r2
-0161: 00353: (F800) _pfix 16
-0162: 00354: (A530) cmp lt, r1, 16
-0163: 00355: (3BF5) brcc .Lasa_inner  Program:-11
-0164: 00356: (B801) addx r0, 1, r0
-0165: 00357: (6A0F) sub r2, 15, r2
-0166: 00358: (F800) _pfix 16
-0167: 00359: (A510) cmp lt, r0, 16
-0168: 00360: (3BEF) brcc .Lasa_outer  Program:-17
-0169: 00361: (6200) mov 0, r2
-016A: 00362: (600F) mov 15, r0
-016B: 00363: (610F) mov 15, r1
-016C: 00364: (1307) sub r0, r1, r3
-016D: 00365: (104C) cmp eq, r2, r3
-016E: 00366: (3A03) brcc 3
-016F: 00367: (F007) call fail  Program:00007
-0170: 00368: (001C) halt
-0171: 00369: (0000) nop
-0172: 00370: (6901) sub r1, 1, r1
-0173: 00371: (BA41) addx r2, 1, r2
-0174: 00372: (A420) cmp ge, r1, 0
-0175: 00373: (3BF6) brcc .Lass_inner  Program:-10
-0176: 00374: (6801) sub r0, 1, r0
-0177: 00375: (6A11) sub r2, 17, r2
-0178: 00376: (F800) _pfix 16
-0179: 00377: (A410) cmp ge, r0, 16
-017A: 00378: (3BF0) brcc .Lass_outer  Program:-16
-017B: 00379: (62F1) mov -15, r2
-017C: 00380: (610F) mov 15, r1
-017D: 00381: (032E) neg r1, r3
-017E: 00382: (104C) cmp eq, r2, r3
-017F: 00383: (3A03) brcc 3
-0180: 00384: (F007) call fail  Program:00007
-0181: 00385: (001C) halt
-0182: 00386: (0000) nop
-0183: 00387: (6901) sub r1, 1, r1
-0184: 00388: (BA41) addx r2, 1, r2
-0185: 00389: (A420) cmp ge, r1, 0
-0186: 00390: (3BF6) brcc .Lasn_inner  Program:-10
-0187: 00391: (F004) call pass  Program:00004
-0188: 00392: (6041) mov .L.str.5, r0  Data:00065
-0189: 00393: (F002) call test  Program:00002
-018A: 00394: (F878) _pfix 3855
-018B: 00395: (600F) mov 3855, r0
-018C: 00396: (61FF) mov 65535, r1
-018D: 00397: (FBFB) _pfix 32639
-018E: 00398: (621F) mov 32639, r2
-018F: 00399: (FC04) _pfix 32896
-0190: 00400: (6300) mov 32896, r3
-0191: 00401: (FF87) _pfix 61680
-0192: 00402: (6410) mov 61680, r4
-0193: 00403: (65FF) mov 65535, r5
-0194: 00404: (66FF) mov 65535, r6
-0195: 00405: (67FF) mov 65535, r7
-0196: 00406: (1810) and r0, r4, r0
-0197: 00407: (3801) brncc 1
-0198: 00408: (3A03) brcc 3
-0199: 00409: (F007) call fail  Program:00007
-019A: 00410: (001C) halt
-019B: 00411: (0000) nop
-019C: 00412: (A000) cmp eq, r0, 0
-019D: 00413: (3A03) brcc 3
-019E: 00414: (F007) call fail  Program:00007
-019F: 00415: (001C) halt
-01A0: 00416: (0000) nop
-01A1: 00417: (1834) and r1, r5, r0
-01A2: 00418: (3A01) brcc 1
-01A3: 00419: (3803) brncc 3
-01A4: 00420: (F007) call fail  Program:00007
+013A: 00314: (A29F) cmp uge, r4, -1
+013B: 00315: (3A01) brcc 1
+013C: 00316: (3803) brncc 3
+013D: 00317: (F009) call fail  Program:00009
+013E: 00318: (001C) halt
+013F: 00319: (0000) nop
+0140: 00320: (A39F) cmp ult, r4, -1
+0141: 00321: (3801) brncc 1
+0142: 00322: (3A03) brcc 3
+0143: 00323: (F009) call fail  Program:00009
+0144: 00324: (001C) halt
+0145: 00325: (0000) nop
+0146: 00326: (A49F) cmp ge, r4, -1
+0147: 00327: (3801) brncc 1
+0148: 00328: (3A03) brcc 3
+0149: 00329: (F009) call fail  Program:00009
+014A: 00330: (001C) halt
+014B: 00331: (0000) nop
+014C: 00332: (A59F) cmp lt, r4, -1
+014D: 00333: (3A01) brcc 1
+014E: 00334: (3803) brncc 3
+014F: 00335: (F009) call fail  Program:00009
+0150: 00336: (001C) halt
+0151: 00337: (0000) nop
+0152: 00338: (A69F) cmp ugt, r4, -1
+0153: 00339: (3A01) brcc 1
+0154: 00340: (3803) brncc 3
+0155: 00341: (F009) call fail  Program:00009
+0156: 00342: (001C) halt
+0157: 00343: (0000) nop
+0158: 00344: (A79F) cmp gt, r4, -1
+0159: 00345: (3801) brncc 1
+015A: 00346: (3A03) brcc 3
+015B: 00347: (F009) call fail  Program:00009
+015C: 00348: (001C) halt
+015D: 00349: (0000) nop
+015E: 00350: (7501) add r5, 1, r5
+015F: 00351: (3801) brncc 1
+0160: 00352: (3A03) brcc 3
+0161: 00353: (F009) call fail  Program:00009
+0162: 00354: (001C) halt
+0163: 00355: (0000) nop
+0164: 00356: (6D01) sub r5, 1, r5
+0165: 00357: (3A01) brcc 1
+0166: 00358: (3803) brncc 3
+0167: 00359: (F009) call fail  Program:00009
+0168: 00360: (001C) halt
+0169: 00361: (0000) nop
+016A: 00362: (FFFF) _pfix -1
+016B: 00363: (6D1F) sub r5, -1, r5
+016C: 00364: (3801) brncc 1
+016D: 00365: (3A03) brcc 3
+016E: 00366: (F009) call fail  Program:00009
+016F: 00367: (001C) halt
+0170: 00368: (0000) nop
+0171: 00369: (FFFF) _pfix -1
+0172: 00370: (751F) add r5, -1, r5
+0173: 00371: (3A01) brcc 1
+0174: 00372: (3803) brncc 3
+0175: 00373: (F009) call fail  Program:00009
+0176: 00374: (001C) halt
+0177: 00375: (0000) nop
+0178: 00376: (A0BF) cmp eq, r5, -1
+0179: 00377: (3A03) brcc 3
+017A: 00378: (F009) call fail  Program:00009
+017B: 00379: (001C) halt
+017C: 00380: (0000) nop
+017D: 00381: (F005) call pass  Program:00005
+017E: 00382: (6068) mov .L.str.8, r0  Data:00104
+017F: 00383: (F002) call test  Program:00002
+0180: 00384: (6101) mov 1, r1
+0181: 00385: (6201) mov 1, r2
+0182: 00386: (6301) mov 1, r3
+0183: 00387: (6401) mov 1, r4
+0184: 00388: (102C) cmp eq, r1, r3
+0185: 00389: (1051) cmpc eq, r2, r4
+0186: 00390: (3801) brncc 1
+0187: 00391: (3A03) brcc 3
+0188: 00392: (F009) call fail  Program:00009
+0189: 00393: (001C) halt
+018A: 00394: (0000) nop
+018B: 00395: (112C) cmp ne, r1, r3
+018C: 00396: (1151) cmpc ne, r2, r4
+018D: 00397: (3A01) brcc 1
+018E: 00398: (3803) brncc 3
+018F: 00399: (F009) call fail  Program:00009
+0190: 00400: (001C) halt
+0191: 00401: (0000) nop
+0192: 00402: (122C) cmp uge, r1, r3
+0193: 00403: (1251) cmpc uge, r2, r4
+0194: 00404: (3801) brncc 1
+0195: 00405: (3A03) brcc 3
+0196: 00406: (F009) call fail  Program:00009
+0197: 00407: (001C) halt
+0198: 00408: (0000) nop
+0199: 00409: (132C) cmp ult, r1, r3
+019A: 00410: (1351) cmpc ult, r2, r4
+019B: 00411: (3A01) brcc 1
+019C: 00412: (3803) brncc 3
+019D: 00413: (F009) call fail  Program:00009
+019E: 00414: (001C) halt
+019F: 00415: (0000) nop
+01A0: 00416: (142C) cmp ge, r1, r3
+01A1: 00417: (1451) cmpc ge, r2, r4
+01A2: 00418: (3801) brncc 1
+01A3: 00419: (3A03) brcc 3
+01A4: 00420: (F009) call fail  Program:00009
 01A5: 00421: (001C) halt
 01A6: 00422: (0000) nop
-01A7: 00423: (A01F) cmp eq, r0, 65535
-01A8: 00424: (3A03) brcc 3
-01A9: 00425: (F007) call fail  Program:00007
-01AA: 00426: (001C) halt
-01AB: 00427: (0000) nop
-01AC: 00428: (1858) and r2, r6, r0
-01AD: 00429: (3A01) brcc 1
-01AE: 00430: (3803) brncc 3
-01AF: 00431: (F007) call fail  Program:00007
-01B0: 00432: (001C) halt
-01B1: 00433: (0000) nop
-01B2: 00434: (FBFB) _pfix 32639
-01B3: 00435: (A01F) cmp eq, r0, 32639
-01B4: 00436: (3A03) brcc 3
-01B5: 00437: (F007) call fail  Program:00007
-01B6: 00438: (001C) halt
-01B7: 00439: (0000) nop
-01B8: 00440: (187C) and r3, r7, r0
-01B9: 00441: (3A01) brcc 1
-01BA: 00442: (3803) brncc 3
-01BB: 00443: (F007) call fail  Program:00007
-01BC: 00444: (001C) halt
-01BD: 00445: (0000) nop
-01BE: 00446: (FC04) _pfix 32896
-01BF: 00447: (A000) cmp eq, r0, 32896
-01C0: 00448: (3A03) brcc 3
-01C1: 00449: (F007) call fail  Program:00007
-01C2: 00450: (001C) halt
-01C3: 00451: (0000) nop
-01C4: 00452: (F878) _pfix 3855
-01C5: 00453: (600F) mov 3855, r0
-01C6: 00454: (FF87) _pfix 61680
-01C7: 00455: (B010) and r0, 61680, r0
-01C8: 00456: (3801) brncc 1
-01C9: 00457: (3A03) brcc 3
-01CA: 00458: (F007) call fail  Program:00007
-01CB: 00459: (001C) halt
-01CC: 00460: (0000) nop
-01CD: 00461: (A000) cmp eq, r0, 0
-01CE: 00462: (3A03) brcc 3
-01CF: 00463: (F007) call fail  Program:00007
-01D0: 00464: (001C) halt
-01D1: 00465: (0000) nop
-01D2: 00466: (FFFF) _pfix -1
-01D3: 00467: (B03F) and r1, -1, r0
-01D4: 00468: (3A01) brcc 1
-01D5: 00469: (3803) brncc 3
-01D6: 00470: (F007) call fail  Program:00007
-01D7: 00471: (001C) halt
-01D8: 00472: (0000) nop
-01D9: 00473: (A01F) cmp eq, r0, 65535
-01DA: 00474: (3A03) brcc 3
-01DB: 00475: (F007) call fail  Program:00007
-01DC: 00476: (001C) halt
-01DD: 00477: (0000) nop
-01DE: 00478: (FFFF) _pfix -1
-01DF: 00479: (B05F) and r2, -1, r0
-01E0: 00480: (3A01) brcc 1
-01E1: 00481: (3803) brncc 3
-01E2: 00482: (F007) call fail  Program:00007
-01E3: 00483: (001C) halt
-01E4: 00484: (0000) nop
-01E5: 00485: (FBFB) _pfix 32639
-01E6: 00486: (A01F) cmp eq, r0, 32639
-01E7: 00487: (3A03) brcc 3
-01E8: 00488: (F007) call fail  Program:00007
-01E9: 00489: (001C) halt
-01EA: 00490: (0000) nop
-01EB: 00491: (FFFF) _pfix -1
-01EC: 00492: (B07F) and r3, -1, r0
-01ED: 00493: (3A01) brcc 1
-01EE: 00494: (3803) brncc 3
-01EF: 00495: (F007) call fail  Program:00007
-01F0: 00496: (001C) halt
-01F1: 00497: (0000) nop
-01F2: 00498: (FC04) _pfix 32896
-01F3: 00499: (A000) cmp eq, r0, 32896
-01F4: 00500: (3A03) brcc 3
-01F5: 00501: (F007) call fail  Program:00007
+01A7: 00423: (152C) cmp lt, r1, r3
+01A8: 00424: (1551) cmpc lt, r2, r4
+01A9: 00425: (3A01) brcc 1
+01AA: 00426: (3803) brncc 3
+01AB: 00427: (F009) call fail  Program:00009
+01AC: 00428: (001C) halt
+01AD: 00429: (0000) nop
+01AE: 00430: (162C) cmp ugt, r1, r3
+01AF: 00431: (1651) cmpc ugt, r2, r4
+01B0: 00432: (3A01) brcc 1
+01B1: 00433: (3803) brncc 3
+01B2: 00434: (F009) call fail  Program:00009
+01B3: 00435: (001C) halt
+01B4: 00436: (0000) nop
+01B5: 00437: (172C) cmp gt, r1, r3
+01B6: 00438: (1751) cmpc gt, r2, r4
+01B7: 00439: (3A01) brcc 1
+01B8: 00440: (3803) brncc 3
+01B9: 00441: (F009) call fail  Program:00009
+01BA: 00442: (001C) halt
+01BB: 00443: (0000) nop
+01BC: 00444: (152F) sub r1, r3, r5
+01BD: 00445: (1652) subc r2, r4, r6
+01BE: 00446: (3801) brncc 1
+01BF: 00447: (3A03) brcc 3
+01C0: 00448: (F009) call fail  Program:00009
+01C1: 00449: (001C) halt
+01C2: 00450: (0000) nop
+01C3: 00451: (252E) add r1, r3, r5
+01C4: 00452: (2651) addc r2, r4, r6
+01C5: 00453: (3A01) brcc 1
+01C6: 00454: (3803) brncc 3
+01C7: 00455: (F009) call fail  Program:00009
+01C8: 00456: (001C) halt
+01C9: 00457: (0000) nop
+01CA: 00458: (6101) mov 1, r1
+01CB: 00459: (6201) mov 1, r2
+01CC: 00460: (6300) mov 0, r3
+01CD: 00461: (6401) mov 1, r4
+01CE: 00462: (102C) cmp eq, r1, r3
+01CF: 00463: (1051) cmpc eq, r2, r4
+01D0: 00464: (3A01) brcc 1
+01D1: 00465: (3803) brncc 3
+01D2: 00466: (F009) call fail  Program:00009
+01D3: 00467: (001C) halt
+01D4: 00468: (0000) nop
+01D5: 00469: (112C) cmp ne, r1, r3
+01D6: 00470: (1151) cmpc ne, r2, r4
+01D7: 00471: (3801) brncc 1
+01D8: 00472: (3A03) brcc 3
+01D9: 00473: (F009) call fail  Program:00009
+01DA: 00474: (001C) halt
+01DB: 00475: (0000) nop
+01DC: 00476: (122C) cmp uge, r1, r3
+01DD: 00477: (1251) cmpc uge, r2, r4
+01DE: 00478: (3801) brncc 1
+01DF: 00479: (3A03) brcc 3
+01E0: 00480: (F009) call fail  Program:00009
+01E1: 00481: (001C) halt
+01E2: 00482: (0000) nop
+01E3: 00483: (132C) cmp ult, r1, r3
+01E4: 00484: (1351) cmpc ult, r2, r4
+01E5: 00485: (3A01) brcc 1
+01E6: 00486: (3803) brncc 3
+01E7: 00487: (F009) call fail  Program:00009
+01E8: 00488: (001C) halt
+01E9: 00489: (0000) nop
+01EA: 00490: (142C) cmp ge, r1, r3
+01EB: 00491: (1451) cmpc ge, r2, r4
+01EC: 00492: (3801) brncc 1
+01ED: 00493: (3A03) brcc 3
+01EE: 00494: (F009) call fail  Program:00009
+01EF: 00495: (001C) halt
+01F0: 00496: (0000) nop
+01F1: 00497: (152C) cmp lt, r1, r3
+01F2: 00498: (1551) cmpc lt, r2, r4
+01F3: 00499: (3A01) brcc 1
+01F4: 00500: (3803) brncc 3
+01F5: 00501: (F009) call fail  Program:00009
 01F6: 00502: (001C) halt
 01F7: 00503: (0000) nop
-01F8: 00504: (B020) and r1, 0, r0
-01F9: 00505: (3801) brncc 1
-01FA: 00506: (3A03) brcc 3
-01FB: 00507: (F007) call fail  Program:00007
-01FC: 00508: (001C) halt
-01FD: 00509: (0000) nop
-01FE: 00510: (A000) cmp eq, r0, 0
-01FF: 00511: (3A03) brcc 3
-0200: 00512: (F007) call fail  Program:00007
-0201: 00513: (001C) halt
-0202: 00514: (0000) nop
-0203: 00515: (6000) mov 0, r0
-0204: 00516: (F8F8) _pfix 7967
-0205: 00517: (611F) mov 7967, r1
-0206: 00518: (FB8B) _pfix 29041
-0207: 00519: (6211) mov 29041, r2
-0208: 00520: (FC04) _pfix 32896
-0209: 00521: (6300) mov 32896, r3
-020A: 00522: (6400) mov 0, r4
-020B: 00523: (FF8F) _pfix 61937
-020C: 00524: (6511) mov 61937, r5
-020D: 00525: (F8F8) _pfix 7967
-020E: 00526: (661F) mov 7967, r6
-020F: 00527: (6700) mov 0, r7
-0210: 00528: (1811) or r0, r4, r0
-0211: 00529: (3801) brncc 1
-0212: 00530: (3A03) brcc 3
-0213: 00531: (F007) call fail  Program:00007
-0214: 00532: (001C) halt
-0215: 00533: (0000) nop
-0216: 00534: (A000) cmp eq, r0, 0
-0217: 00535: (3A03) brcc 3
-0218: 00536: (F007) call fail  Program:00007
-0219: 00537: (001C) halt
-021A: 00538: (0000) nop
-021B: 00539: (1835) or r1, r5, r0
-021C: 00540: (3A01) brcc 1
-021D: 00541: (3803) brncc 3
-021E: 00542: (F007) call fail  Program:00007
-021F: 00543: (001C) halt
-0220: 00544: (0000) nop
-0221: 00545: (A01F) cmp eq, r0, 65535
+01F8: 00504: (162C) cmp ugt, r1, r3
+01F9: 00505: (1651) cmpc ugt, r2, r4
+01FA: 00506: (3801) brncc 1
+01FB: 00507: (3A03) brcc 3
+01FC: 00508: (F009) call fail  Program:00009
+01FD: 00509: (001C) halt
+01FE: 00510: (0000) nop
+01FF: 00511: (172C) cmp gt, r1, r3
+0200: 00512: (1751) cmpc gt, r2, r4
+0201: 00513: (3801) brncc 1
+0202: 00514: (3A03) brcc 3
+0203: 00515: (F009) call fail  Program:00009
+0204: 00516: (001C) halt
+0205: 00517: (0000) nop
+0206: 00518: (152F) sub r1, r3, r5
+0207: 00519: (1652) subc r2, r4, r6
+0208: 00520: (3A01) brcc 1
+0209: 00521: (3803) brncc 3
+020A: 00522: (F009) call fail  Program:00009
+020B: 00523: (001C) halt
+020C: 00524: (0000) nop
+020D: 00525: (252E) add r1, r3, r5
+020E: 00526: (2651) addc r2, r4, r6
+020F: 00527: (3A01) brcc 1
+0210: 00528: (3803) brncc 3
+0211: 00529: (F009) call fail  Program:00009
+0212: 00530: (001C) halt
+0213: 00531: (0000) nop
+0214: 00532: (6101) mov 1, r1
+0215: 00533: (6201) mov 1, r2
+0216: 00534: (6300) mov 0, r3
+0217: 00535: (64FF) mov -1, r4
+0218: 00536: (102C) cmp eq, r1, r3
+0219: 00537: (1051) cmpc eq, r2, r4
+021A: 00538: (3A01) brcc 1
+021B: 00539: (3803) brncc 3
+021C: 00540: (F009) call fail  Program:00009
+021D: 00541: (001C) halt
+021E: 00542: (0000) nop
+021F: 00543: (112C) cmp ne, r1, r3
+0220: 00544: (1151) cmpc ne, r2, r4
+0221: 00545: (3801) brncc 1
 0222: 00546: (3A03) brcc 3
-0223: 00547: (F007) call fail  Program:00007
+0223: 00547: (F009) call fail  Program:00009
 0224: 00548: (001C) halt
 0225: 00549: (0000) nop
-0226: 00550: (1859) or r2, r6, r0
-0227: 00551: (3A01) brcc 1
-0228: 00552: (3803) brncc 3
-0229: 00553: (F007) call fail  Program:00007
-022A: 00554: (001C) halt
-022B: 00555: (0000) nop
-022C: 00556: (FBFB) _pfix 32639
-022D: 00557: (A01F) cmp eq, r0, 32639
-022E: 00558: (3A03) brcc 3
-022F: 00559: (F007) call fail  Program:00007
-0230: 00560: (001C) halt
-0231: 00561: (0000) nop
-0232: 00562: (187D) or r3, r7, r0
-0233: 00563: (3A01) brcc 1
-0234: 00564: (3803) brncc 3
-0235: 00565: (F007) call fail  Program:00007
-0236: 00566: (001C) halt
-0237: 00567: (0000) nop
-0238: 00568: (FC04) _pfix 32896
-0239: 00569: (A000) cmp eq, r0, 32896
-023A: 00570: (3A03) brcc 3
-023B: 00571: (F007) call fail  Program:00007
-023C: 00572: (001C) halt
-023D: 00573: (0000) nop
-023E: 00574: (60FF) mov 65535, r0
-023F: 00575: (F878) _pfix 3855
-0240: 00576: (610F) mov 3855, r1
-0241: 00577: (FC7C) _pfix 36751
-0242: 00578: (620F) mov 36751, r2
-0243: 00579: (FC7C) _pfix 36751
-0244: 00580: (630F) mov 36751, r3
-0245: 00581: (64FF) mov 65535, r4
-0246: 00582: (FF87) _pfix 61680
-0247: 00583: (6510) mov 61680, r5
-0248: 00584: (FF87) _pfix 61680
-0249: 00585: (6610) mov 61680, r6
-024A: 00586: (F878) _pfix 3855
-024B: 00587: (670F) mov 3855, r7
-024C: 00588: (2010) xor r0, r4, r0
-024D: 00589: (3801) brncc 1
-024E: 00590: (3A03) brcc 3
-024F: 00591: (F007) call fail  Program:00007
-0250: 00592: (001C) halt
-0251: 00593: (0000) nop
-0252: 00594: (A000) cmp eq, r0, 0
-0253: 00595: (3A03) brcc 3
-0254: 00596: (F007) call fail  Program:00007
+0226: 00550: (122C) cmp uge, r1, r3
+0227: 00551: (1251) cmpc uge, r2, r4
+0228: 00552: (3A01) brcc 1
+0229: 00553: (3803) brncc 3
+022A: 00554: (F009) call fail  Program:00009
+022B: 00555: (001C) halt
+022C: 00556: (0000) nop
+022D: 00557: (132C) cmp ult, r1, r3
+022E: 00558: (1351) cmpc ult, r2, r4
+022F: 00559: (3801) brncc 1
+0230: 00560: (3A03) brcc 3
+0231: 00561: (F009) call fail  Program:00009
+0232: 00562: (001C) halt
+0233: 00563: (0000) nop
+0234: 00564: (142C) cmp ge, r1, r3
+0235: 00565: (1451) cmpc ge, r2, r4
+0236: 00566: (3801) brncc 1
+0237: 00567: (3A03) brcc 3
+0238: 00568: (F009) call fail  Program:00009
+0239: 00569: (001C) halt
+023A: 00570: (0000) nop
+023B: 00571: (152C) cmp lt, r1, r3
+023C: 00572: (1551) cmpc lt, r2, r4
+023D: 00573: (3A01) brcc 1
+023E: 00574: (3803) brncc 3
+023F: 00575: (F009) call fail  Program:00009
+0240: 00576: (001C) halt
+0241: 00577: (0000) nop
+0242: 00578: (162C) cmp ugt, r1, r3
+0243: 00579: (1651) cmpc ugt, r2, r4
+0244: 00580: (3A01) brcc 1
+0245: 00581: (3803) brncc 3
+0246: 00582: (F009) call fail  Program:00009
+0247: 00583: (001C) halt
+0248: 00584: (0000) nop
+0249: 00585: (172C) cmp gt, r1, r3
+024A: 00586: (1751) cmpc gt, r2, r4
+024B: 00587: (3801) brncc 1
+024C: 00588: (3A03) brcc 3
+024D: 00589: (F009) call fail  Program:00009
+024E: 00590: (001C) halt
+024F: 00591: (0000) nop
+0250: 00592: (152F) sub r1, r3, r5
+0251: 00593: (1652) subc r2, r4, r6
+0252: 00594: (3A01) brcc 1
+0253: 00595: (3803) brncc 3
+0254: 00596: (F009) call fail  Program:00009
 0255: 00597: (001C) halt
 0256: 00598: (0000) nop
-0257: 00599: (2034) xor r1, r5, r0
-0258: 00600: (3A01) brcc 1
-0259: 00601: (3803) brncc 3
-025A: 00602: (F007) call fail  Program:00007
-025B: 00603: (001C) halt
-025C: 00604: (0000) nop
-025D: 00605: (A01F) cmp eq, r0, 65535
-025E: 00606: (3A03) brcc 3
-025F: 00607: (F007) call fail  Program:00007
-0260: 00608: (001C) halt
-0261: 00609: (0000) nop
-0262: 00610: (2058) xor r2, r6, r0
-0263: 00611: (3A01) brcc 1
-0264: 00612: (3803) brncc 3
-0265: 00613: (F007) call fail  Program:00007
+0257: 00599: (252E) add r1, r3, r5
+0258: 00600: (2651) addc r2, r4, r6
+0259: 00601: (3A01) brcc 1
+025A: 00602: (3803) brncc 3
+025B: 00603: (F009) call fail  Program:00009
+025C: 00604: (001C) halt
+025D: 00605: (0000) nop
+025E: 00606: (F005) call pass  Program:00005
+025F: 00607: (607A) mov .L.str.9, r0  Data:00122
+0260: 00608: (F002) call test  Program:00002
+0261: 00609: (637F) mov 127, r3
+0262: 00610: (F803) _pfix 127
+0263: 00611: (A07F) cmp eq, r3, 127
+0264: 00612: (3A03) brcc 3
+0265: 00613: (F009) call fail  Program:00009
 0266: 00614: (001C) halt
 0267: 00615: (0000) nop
-0268: 00616: (FBFB) _pfix 32639
-0269: 00617: (A01F) cmp eq, r0, 32639
-026A: 00618: (3A03) brcc 3
-026B: 00619: (F007) call fail  Program:00007
-026C: 00620: (001C) halt
-026D: 00621: (0000) nop
-026E: 00622: (207C) xor r3, r7, r0
-026F: 00623: (3A01) brcc 1
-0270: 00624: (3803) brncc 3
-0271: 00625: (F007) call fail  Program:00007
-0272: 00626: (001C) halt
-0273: 00627: (0000) nop
-0274: 00628: (FC04) _pfix 32896
-0275: 00629: (A000) cmp eq, r0, 32896
-0276: 00630: (3A03) brcc 3
-0277: 00631: (F007) call fail  Program:00007
-0278: 00632: (001C) halt
-0279: 00633: (0000) nop
-027A: 00634: (F004) call pass  Program:00004
-027B: 00635: (6000) mov 0, r0
-027C: 00636: (0018) ret
+0268: 00616: (6280) mov -128, r2
+0269: 00617: (FFFC) _pfix -128
+026A: 00618: (A040) cmp eq, r2, -128
+026B: 00619: (3A03) brcc 3
+026C: 00620: (F009) call fail  Program:00009
+026D: 00621: (001C) halt
+026E: 00622: (0000) nop
+026F: 00623: (F804) _pfix 128
+0270: 00624: (6100) mov 128, r1
+0271: 00625: (F804) _pfix 128
+0272: 00626: (A020) cmp eq, r1, 128
+0273: 00627: (3A03) brcc 3
+0274: 00628: (F009) call fail  Program:00009
+0275: 00629: (001C) halt
+0276: 00630: (0000) nop
+0277: 00631: (660F) mov 15, r6
+0278: 00632: (A0CF) cmp eq, r6, 15
+0279: 00633: (3A03) brcc 3
+027A: 00634: (F009) call fail  Program:00009
+027B: 00635: (001C) halt
+027C: 00636: (0000) nop
+027D: 00637: (65F0) mov -16, r5
+027E: 00638: (A0B0) cmp eq, r5, -16
+027F: 00639: (3A03) brcc 3
+0280: 00640: (F009) call fail  Program:00009
+0281: 00641: (001C) halt
+0282: 00642: (0000) nop
+0283: 00643: (6410) mov 16, r4
+0284: 00644: (F800) _pfix 16
+0285: 00645: (A090) cmp eq, r4, 16
+0286: 00646: (3A03) brcc 3
+0287: 00647: (F009) call fail  Program:00009
+0288: 00648: (001C) halt
+0289: 00649: (0000) nop
+028A: 00650: (F005) call pass  Program:00005
+028B: 00651: (F804) _pfix 134  Data:00134
+028C: 00652: (6006) mov .L.str.10, r0  Data:00134
+028D: 00653: (F002) call test  Program:00002
+028E: 00654: (FD52) _pfix 43605
+028F: 00655: (6015) mov 43605, r0
+0290: 00656: (FAAD) _pfix 21930
+0291: 00657: (670A) mov 21930, r7
+0292: 00658: (0105) asrb r0, r1
+0293: 00659: (FFFD) _pfix 65450
+0294: 00660: (A02A) cmp eq, r1, 65450
+0295: 00661: (3A03) brcc 3
+0296: 00662: (F009) call fail  Program:00009
+0297: 00663: (001C) halt
+0298: 00664: (0000) nop
+0299: 00665: (01E5) asrb r7, r1
+029A: 00666: (F802) _pfix 85
+029B: 00667: (A035) cmp eq, r1, 85
+029C: 00668: (3A03) brcc 3
+029D: 00669: (F009) call fail  Program:00009
+029E: 00670: (001C) halt
+029F: 00671: (0000) nop
+02A0: 00672: (0104) lsrb r0, r1
+02A1: 00673: (F805) _pfix 170
+02A2: 00674: (A02A) cmp eq, r1, 170
+02A3: 00675: (3A03) brcc 3
+02A4: 00676: (F009) call fail  Program:00009
+02A5: 00677: (001C) halt
+02A6: 00678: (0000) nop
+02A7: 00679: (01E4) lsrb r7, r1
+02A8: 00680: (F802) _pfix 85
+02A9: 00681: (A035) cmp eq, r1, 85
+02AA: 00682: (3A03) brcc 3
+02AB: 00683: (F009) call fail  Program:00009
+02AC: 00684: (001C) halt
+02AD: 00685: (0000) nop
+02AE: 00686: (0106) lslb r0, r1
+02AF: 00687: (FAA8) _pfix 21760
+02B0: 00688: (A020) cmp eq, r1, 21760
+02B1: 00689: (3A03) brcc 3
+02B2: 00690: (F009) call fail  Program:00009
+02B3: 00691: (001C) halt
+02B4: 00692: (0000) nop
+02B5: 00693: (01E6) lslb r7, r1
+02B6: 00694: (FD50) _pfix 43520
+02B7: 00695: (A020) cmp eq, r1, 43520
+02B8: 00696: (3A03) brcc 3
+02B9: 00697: (F009) call fail  Program:00009
+02BA: 00698: (001C) halt
+02BB: 00699: (0000) nop
+02BC: 00700: (0103) sext r0, r1
+02BD: 00701: (F802) _pfix 85
+02BE: 00702: (A035) cmp eq, r1, 85
+02BF: 00703: (3A03) brcc 3
+02C0: 00704: (F009) call fail  Program:00009
+02C1: 00705: (001C) halt
+02C2: 00706: (0000) nop
+02C3: 00707: (01E3) sext r7, r1
+02C4: 00708: (FFFD) _pfix 65450
+02C5: 00709: (A02A) cmp eq, r1, 65450
+02C6: 00710: (3A03) brcc 3
+02C7: 00711: (F009) call fail  Program:00009
+02C8: 00712: (001C) halt
+02C9: 00713: (0000) nop
+02CA: 00714: (0102) zext r0, r1
+02CB: 00715: (F802) _pfix 85
+02CC: 00716: (A035) cmp eq, r1, 85
+02CD: 00717: (3A03) brcc 3
+02CE: 00718: (F009) call fail  Program:00009
+02CF: 00719: (001C) halt
+02D0: 00720: (0000) nop
+02D1: 00721: (01E2) zext r7, r1
+02D2: 00722: (F805) _pfix 170
+02D3: 00723: (A02A) cmp eq, r1, 170
+02D4: 00724: (3A03) brcc 3
+02D5: 00725: (F009) call fail  Program:00009
+02D6: 00726: (001C) halt
+02D7: 00727: (0000) nop
+02D8: 00728: (0107) sextw r0, r1
+02D9: 00729: (A03F) cmp eq, r1, 65535
+02DA: 00730: (3A03) brcc 3
+02DB: 00731: (F009) call fail  Program:00009
+02DC: 00732: (001C) halt
+02DD: 00733: (0000) nop
+02DE: 00734: (01E7) sextw r7, r1
+02DF: 00735: (A020) cmp eq, r1, 0
+02E0: 00736: (3A03) brcc 3
+02E1: 00737: (F009) call fail  Program:00009
+02E2: 00738: (001C) halt
+02E3: 00739: (0000) nop
+02E4: 00740: (F005) call pass  Program:00005
+02E5: 00741: (F804) _pfix 159  Data:00159
+02E6: 00742: (601F) mov .L.str.11, r0  Data:00159
+02E7: 00743: (F002) call test  Program:00002
+02E8: 00744: (FAAD) _pfix 21930
+02E9: 00745: (600A) mov 21930, r0
+02EA: 00746: (FD52) _pfix 43605
+02EB: 00747: (6215) mov 43605, r2
+02EC: 00748: (2102) add r0, r0, r1
+02ED: 00749: (FD5A) _pfix 43860
+02EE: 00750: (A034) cmp eq, r1, 43860
+02EF: 00751: (3A03) brcc 3
+02F0: 00752: (F009) call fail  Program:00009
+02F1: 00753: (001C) halt
+02F2: 00754: (0000) nop
+02F3: 00755: (234A) add r2, r2, r3
+02F4: 00756: (FAA5) _pfix 21674
+02F5: 00757: (A06A) cmp eq, r3, 21674
+02F6: 00758: (3A03) brcc 3
+02F7: 00759: (F009) call fail  Program:00009
+02F8: 00760: (001C) halt
+02F9: 00761: (0000) nop
+02FA: 00762: (2102) add r0, r0, r1
+02FB: 00763: (2349) addc r2, r2, r3
+02FC: 00764: (FAA5) _pfix 21674
+02FD: 00765: (A06A) cmp eq, r3, 21674
+02FE: 00766: (3A03) brcc 3
+02FF: 00767: (F009) call fail  Program:00009
+0300: 00768: (001C) halt
+0301: 00769: (0000) nop
+0302: 00770: (234A) add r2, r2, r3
+0303: 00771: (236D) addc r3, r3, r3
+0304: 00772: (FD4A) _pfix 43349
+0305: 00773: (A075) cmp eq, r3, 43349
+0306: 00774: (3A03) brcc 3
+0307: 00775: (F009) call fail  Program:00009
+0308: 00776: (001C) halt
+0309: 00777: (0000) nop
+030A: 00778: (234A) add r2, r2, r3
+030B: 00779: (2349) addc r2, r2, r3
+030C: 00780: (236D) addc r3, r3, r3
+030D: 00781: (FD4A) _pfix 43351
+030E: 00782: (A077) cmp eq, r3, 43351
+030F: 00783: (3A03) brcc 3
+0310: 00784: (F009) call fail  Program:00009
+0311: 00785: (001C) halt
+0312: 00786: (0000) nop
+0313: 00787: (0108) lsr r0, r1
+0314: 00788: (F956) _pfix 10965
+0315: 00789: (A035) cmp eq, r1, 10965
+0316: 00790: (3A03) brcc 3
+0317: 00791: (F009) call fail  Program:00009
+0318: 00792: (001C) halt
+0319: 00793: (0000) nop
+031A: 00794: (0348) lsr r2, r3
+031B: 00795: (FAA9) _pfix 21802
+031C: 00796: (A06A) cmp eq, r3, 21802
+031D: 00797: (3A03) brcc 3
+031E: 00798: (F009) call fail  Program:00009
+031F: 00799: (001C) halt
+0320: 00800: (0000) nop
+0321: 00801: (0108) lsr r0, r1
+0322: 00802: (0349) lsrc r2, r3
+0323: 00803: (FAA9) _pfix 21802
+0324: 00804: (A06A) cmp eq, r3, 21802
+0325: 00805: (3A03) brcc 3
+0326: 00806: (F009) call fail  Program:00009
+0327: 00807: (001C) halt
+0328: 00808: (0000) nop
+0329: 00809: (0348) lsr r2, r3
+032A: 00810: (0369) lsrc r3, r3
+032B: 00811: (FD54) _pfix 43669
+032C: 00812: (A075) cmp eq, r3, 43669
+032D: 00813: (3A03) brcc 3
+032E: 00814: (F009) call fail  Program:00009
+032F: 00815: (001C) halt
+0330: 00816: (0000) nop
+0331: 00817: (0348) lsr r2, r3
+0332: 00818: (0349) lsrc r2, r3
+0333: 00819: (0369) lsrc r3, r3
+0334: 00820: (FF54) _pfix 60053
+0335: 00821: (A075) cmp eq, r3, 60053
+0336: 00822: (3A03) brcc 3
+0337: 00823: (F009) call fail  Program:00009
+0338: 00824: (001C) halt
+0339: 00825: (0000) nop
+033A: 00826: (010A) asr r0, r1
+033B: 00827: (F956) _pfix 10965
+033C: 00828: (A035) cmp eq, r1, 10965
+033D: 00829: (3A03) brcc 3
+033E: 00830: (F009) call fail  Program:00009
+033F: 00831: (001C) halt
+0340: 00832: (0000) nop
+0341: 00833: (034A) asr r2, r3
+0342: 00834: (FEA9) _pfix 54570
+0343: 00835: (A06A) cmp eq, r3, 54570
+0344: 00836: (3A03) brcc 3
+0345: 00837: (F009) call fail  Program:00009
+0346: 00838: (001C) halt
+0347: 00839: (0000) nop
+0348: 00840: (034A) asr r2, r3
+0349: 00841: (010A) asr r0, r1
+034A: 00842: (F956) _pfix 10965
+034B: 00843: (A035) cmp eq, r1, 10965
+034C: 00844: (3A03) brcc 3
+034D: 00845: (F009) call fail  Program:00009
+034E: 00846: (001C) halt
+034F: 00847: (0000) nop
+0350: 00848: (034A) asr r2, r3
+0351: 00849: (0369) lsrc r3, r3
+0352: 00850: (FF54) _pfix 60053
+0353: 00851: (A075) cmp eq, r3, 60053
+0354: 00852: (3A03) brcc 3
+0355: 00853: (F009) call fail  Program:00009
+0356: 00854: (001C) halt
+0357: 00855: (0000) nop
+0358: 00856: (010A) asr r0, r1
+0359: 00857: (0349) lsrc r2, r3
+035A: 00858: (FAA9) _pfix 21802
+035B: 00859: (A06A) cmp eq, r3, 21802
+035C: 00860: (3A03) brcc 3
+035D: 00861: (F009) call fail  Program:00009
+035E: 00862: (001C) halt
+035F: 00863: (0000) nop
+0360: 00864: (F005) call pass  Program:00005
+0361: 00865: (F805) _pfix 170  Data:00170
+0362: 00866: (600A) mov .L.str.12, r0  Data:00170
+0363: 00867: (F002) call test  Program:00002
+0364: 00868: (FAAD) _pfix 21930
+0365: 00869: (640A) mov 21930, r4
+0366: 00870: (FC09) _pfix 33076
+0367: 00871: (6514) mov 33076, r5
+0368: 00872: (FFF8) _pfix 65280
+0369: 00873: (6600) mov 65280, r6
+036A: 00874: (FD5E) _pfix 43981
+036B: 00875: (670D) mov 43981, r7
+036C: 00876: (7800) addx SP, 0, r0
+036D: 00877: (3DFC) addx SP, -8, SP
+036E: 00878: (9403) st.w r4, [SP, 6]
+036F: 00879: (9502) st.w r5, [SP, 4]
+0370: 00880: (9601) st.w r6, [SP, 2]
+0371: 00881: (9700) st.w r7, [SP, 0]
+0372: 00882: (8703) ld.w [SP, 6], r7
+0373: 00883: (FAAD) _pfix 21930
+0374: 00884: (A0EA) cmp eq, r7, 21930
+0375: 00885: (3A03) brcc 3
+0376: 00886: (F009) call fail  Program:00009
+0377: 00887: (001C) halt
+0378: 00888: (0000) nop
+0379: 00889: (8602) ld.w [SP, 4], r6
+037A: 00890: (FC09) _pfix 33076
+037B: 00891: (A0D4) cmp eq, r6, 33076
+037C: 00892: (3A03) brcc 3
+037D: 00893: (F009) call fail  Program:00009
+037E: 00894: (001C) halt
+037F: 00895: (0000) nop
+0380: 00896: (8501) ld.w [SP, 2], r5
+0381: 00897: (FFF8) _pfix 65280
+0382: 00898: (A0A0) cmp eq, r5, 65280
+0383: 00899: (3A03) brcc 3
+0384: 00900: (F009) call fail  Program:00009
+0385: 00901: (001C) halt
+0386: 00902: (0000) nop
+0387: 00903: (8400) ld.w [SP, 0], r4
+0388: 00904: (FD5E) _pfix 43981
+0389: 00905: (A08D) cmp eq, r4, 43981
+038A: 00906: (3A03) brcc 3
+038B: 00907: (F009) call fail  Program:00009
+038C: 00908: (001C) halt
+038D: 00909: (0000) nop
+038E: 00910: (7903) addx SP, 6, r1
+038F: 00911: (C120) ld.w [r1, 0], r1
+0390: 00912: (103C) cmp eq, r1, r7
+0391: 00913: (3A03) brcc 3
+0392: 00914: (F009) call fail  Program:00009
+0393: 00915: (001C) halt
+0394: 00916: (0000) nop
+0395: 00917: (7903) addx SP, 6, r1
+0396: 00918: (FFFF) _pfix -6
+0397: 00919: (C13D) ld.w [r1, -6], r1
+0398: 00920: (1030) cmp eq, r1, r4
+0399: 00921: (3A03) brcc 3
+039A: 00922: (F009) call fail  Program:00009
+039B: 00923: (001C) halt
+039C: 00924: (0000) nop
+039D: 00925: (8906) ld.sb [SP, 6], r1
+039E: 00926: (FFFD) _pfix 65450
+039F: 00927: (A02A) cmp eq, r1, 65450
+03A0: 00928: (3A03) brcc 3
+03A1: 00929: (F009) call fail  Program:00009
+03A2: 00930: (001C) halt
+03A3: 00931: (0000) nop
+03A4: 00932: (8907) ld.sb [SP, 7], r1
+03A5: 00933: (F802) _pfix 85
+03A6: 00934: (A035) cmp eq, r1, 85
+03A7: 00935: (3A03) brcc 3
+03A8: 00936: (F009) call fail  Program:00009
+03A9: 00937: (001C) halt
+03AA: 00938: (0000) nop
+03AB: 00939: (8905) ld.sb [SP, 5], r1
+03AC: 00940: (FFFC) _pfix 65409
+03AD: 00941: (A021) cmp eq, r1, 65409
+03AE: 00942: (3A03) brcc 3
+03AF: 00943: (F009) call fail  Program:00009
+03B0: 00944: (001C) halt
+03B1: 00945: (0000) nop
+03B2: 00946: (8904) ld.sb [SP, 4], r1
+03B3: 00947: (F801) _pfix 52
+03B4: 00948: (A034) cmp eq, r1, 52
+03B5: 00949: (3A03) brcc 3
+03B6: 00950: (F009) call fail  Program:00009
+03B7: 00951: (001C) halt
+03B8: 00952: (0000) nop
+03B9: 00953: (8902) ld.sb [SP, 2], r1
+03BA: 00954: (A020) cmp eq, r1, 0
+03BB: 00955: (3A03) brcc 3
+03BC: 00956: (F009) call fail  Program:00009
+03BD: 00957: (001C) halt
+03BE: 00958: (0000) nop
+03BF: 00959: (8903) ld.sb [SP, 3], r1
+03C0: 00960: (A03F) cmp eq, r1, 65535
+03C1: 00961: (3A03) brcc 3
+03C2: 00962: (F009) call fail  Program:00009
+03C3: 00963: (001C) halt
+03C4: 00964: (0000) nop
+03C5: 00965: (6122) mov 34, r1
+03C6: 00966: (9907) st.b r1, [SP, 7]
+03C7: 00967: (F806) _pfix 221
+03C8: 00968: (611D) mov 221, r1
+03C9: 00969: (9904) st.b r1, [SP, 4]
+03CA: 00970: (6177) mov 119, r1
+03CB: 00971: (9903) st.b r1, [SP, 3]
+03CC: 00972: (F804) _pfix 153
+03CD: 00973: (6119) mov 153, r1
+03CE: 00974: (9900) st.b r1, [SP, 0]
+03CF: 00975: (8100) ld.w [SP, 0], r1
+03D0: 00976: (FD5C) _pfix 43929
+03D1: 00977: (A039) cmp eq, r1, 43929
+03D2: 00978: (3A03) brcc 3
+03D3: 00979: (F009) call fail  Program:00009
+03D4: 00980: (001C) halt
+03D5: 00981: (0000) nop
+03D6: 00982: (8101) ld.w [SP, 2], r1
+03D7: 00983: (FBB8) _pfix 30464
+03D8: 00984: (A020) cmp eq, r1, 30464
+03D9: 00985: (3A03) brcc 3
+03DA: 00986: (F009) call fail  Program:00009
+03DB: 00987: (001C) halt
+03DC: 00988: (0000) nop
+03DD: 00989: (8102) ld.w [SP, 4], r1
+03DE: 00990: (FC0E) _pfix 33245
+03DF: 00991: (A03D) cmp eq, r1, 33245
+03E0: 00992: (3A03) brcc 3
+03E1: 00993: (F009) call fail  Program:00009
+03E2: 00994: (001C) halt
+03E3: 00995: (0000) nop
+03E4: 00996: (8103) ld.w [SP, 6], r1
+03E5: 00997: (F915) _pfix 8874
+03E6: 00998: (A02A) cmp eq, r1, 8874
+03E7: 00999: (3A03) brcc 3
+03E8: 01000: (F009) call fail  Program:00009
+03E9: 01001: (001C) halt
+03EA: 01002: (0000) nop
+03EB: 01003: (3D7F) addx SP, -258, SP
+03EC: 01004: (8284) ld.w [SP, 264], r2
+03ED: 01005: (F915) _pfix 8874
+03EE: 01006: (A04A) cmp eq, r2, 8874
+03EF: 01007: (3A03) brcc 3
+03F0: 01008: (F009) call fail  Program:00009
+03F1: 01009: (001C) halt
+03F2: 01010: (0000) nop
+03F3: 01011: (F808) _pfix 264
+03F4: 01012: (8A08) ld.sb [SP, 264], r2
+03F5: 01013: (FFFD) _pfix 65450
+03F6: 01014: (A04A) cmp eq, r2, 65450
+03F7: 01015: (3A03) brcc 3
+03F8: 01016: (F009) call fail  Program:00009
+03F9: 01017: (001C) halt
+03FA: 01018: (0000) nop
+03FB: 01019: (F808) _pfix 265
+03FC: 01020: (8A09) ld.sb [SP, 265], r2
+03FD: 01021: (3C81) addx SP, 258, SP
+03FE: 01022: (F801) _pfix 34
+03FF: 01023: (A042) cmp eq, r2, 34
+0400: 01024: (3A03) brcc 3
+0401: 01025: (F009) call fail  Program:00009
+0402: 01026: (001C) halt
+0403: 01027: (0000) nop
+0404: 01028: (7916) addx SP, 44, r1
+0405: 01029: (692C) sub r1, 44, r1
+0406: 01030: (0021) mov r1, SP
+0407: 01031: (3C04) addx SP, 8, SP
+0408: 01032: (7900) addx SP, 0, r1
+0409: 01033: (1004) cmp eq, r0, r1
+040A: 01034: (3A03) brcc 3
+040B: 01035: (F009) call fail  Program:00009
+040C: 01036: (001C) halt
+040D: 01037: (0000) nop
+040E: 01038: (F005) call pass  Program:00005
+040F: 01039: (F805) _pfix 182  Data:00182
+0410: 01040: (6016) mov .L.str.13, r0  Data:00182
+0411: 01041: (F002) call test  Program:00002
+0412: 01042: (F809) _pfix 304  Data:00304
+0413: 01043: (6310) mov loadStoreOffset_mem, r3  Data:00304
+0414: 01044: (FAAD) _pfix 21930
+0415: 01045: (640A) mov 21930, r4
+0416: 01046: (FC09) _pfix 33076
+0417: 01047: (6514) mov 33076, r5
+0418: 01048: (FFF8) _pfix 65280
+0419: 01049: (6600) mov 65280, r6
+041A: 01050: (FD5E) _pfix 43981
+041B: 01051: (670D) mov 43981, r7
+041C: 01052: (D463) st.w r4, [r3, 6]
+041D: 01053: (D562) st.w r5, [r3, 4]
+041E: 01054: (D661) st.w r6, [r3, 2]
+041F: 01055: (D760) st.w r7, [r3, 0]
+0420: 01056: (C763) ld.w [r3, 6], r7
+0421: 01057: (FAAD) _pfix 21930
+0422: 01058: (A0EA) cmp eq, r7, 21930
+0423: 01059: (3A03) brcc 3
+0424: 01060: (F009) call fail  Program:00009
+0425: 01061: (001C) halt
+0426: 01062: (0000) nop
+0427: 01063: (C662) ld.w [r3, 4], r6
+0428: 01064: (FC09) _pfix 33076
+0429: 01065: (A0D4) cmp eq, r6, 33076
+042A: 01066: (3A03) brcc 3
+042B: 01067: (F009) call fail  Program:00009
+042C: 01068: (001C) halt
+042D: 01069: (0000) nop
+042E: 01070: (C561) ld.w [r3, 2], r5
+042F: 01071: (FFF8) _pfix 65280
+0430: 01072: (A0A0) cmp eq, r5, 65280
+0431: 01073: (3A03) brcc 3
+0432: 01074: (F009) call fail  Program:00009
+0433: 01075: (001C) halt
+0434: 01076: (0000) nop
+0435: 01077: (C460) ld.w [r3, 0], r4
+0436: 01078: (FD5E) _pfix 43981
+0437: 01079: (A08D) cmp eq, r4, 43981
+0438: 01080: (3A03) brcc 3
+0439: 01081: (F009) call fail  Program:00009
+043A: 01082: (001C) halt
+043B: 01083: (0000) nop
+043C: 01084: (C966) ld.sb [r3, 6], r1
+043D: 01085: (FFFD) _pfix 65450
+043E: 01086: (A02A) cmp eq, r1, 65450
+043F: 01087: (3A03) brcc 3
+0440: 01088: (F009) call fail  Program:00009
+0441: 01089: (001C) halt
+0442: 01090: (0000) nop
+0443: 01091: (C967) ld.sb [r3, 7], r1
+0444: 01092: (F802) _pfix 85
+0445: 01093: (A035) cmp eq, r1, 85
+0446: 01094: (3A03) brcc 3
+0447: 01095: (F009) call fail  Program:00009
+0448: 01096: (001C) halt
+0449: 01097: (0000) nop
+044A: 01098: (C965) ld.sb [r3, 5], r1
+044B: 01099: (FFFC) _pfix 65409
+044C: 01100: (A021) cmp eq, r1, 65409
+044D: 01101: (3A03) brcc 3
+044E: 01102: (F009) call fail  Program:00009
+044F: 01103: (001C) halt
+0450: 01104: (0000) nop
+0451: 01105: (C964) ld.sb [r3, 4], r1
+0452: 01106: (F801) _pfix 52
+0453: 01107: (A034) cmp eq, r1, 52
+0454: 01108: (3A03) brcc 3
+0455: 01109: (F009) call fail  Program:00009
+0456: 01110: (001C) halt
+0457: 01111: (0000) nop
+0458: 01112: (C962) ld.sb [r3, 2], r1
+0459: 01113: (A020) cmp eq, r1, 0
+045A: 01114: (3A03) brcc 3
+045B: 01115: (F009) call fail  Program:00009
+045C: 01116: (001C) halt
+045D: 01117: (0000) nop
+045E: 01118: (C963) ld.sb [r3, 3], r1
+045F: 01119: (A03F) cmp eq, r1, 65535
+0460: 01120: (3A03) brcc 3
+0461: 01121: (F009) call fail  Program:00009
+0462: 01122: (001C) halt
+0463: 01123: (0000) nop
+0464: 01124: (6122) mov 34, r1
+0465: 01125: (D967) st.b r1, [r3, 7]
+0466: 01126: (F806) _pfix 221
+0467: 01127: (611D) mov 221, r1
+0468: 01128: (D964) st.b r1, [r3, 4]
+0469: 01129: (6177) mov 119, r1
+046A: 01130: (D963) st.b r1, [r3, 3]
+046B: 01131: (F804) _pfix 153
+046C: 01132: (6119) mov 153, r1
+046D: 01133: (D960) st.b r1, [r3, 0]
+046E: 01134: (C160) ld.w [r3, 0], r1
+046F: 01135: (FD5C) _pfix 43929
+0470: 01136: (A039) cmp eq, r1, 43929
+0471: 01137: (3A03) brcc 3
+0472: 01138: (F009) call fail  Program:00009
+0473: 01139: (001C) halt
+0474: 01140: (0000) nop
+0475: 01141: (C161) ld.w [r3, 2], r1
+0476: 01142: (FBB8) _pfix 30464
+0477: 01143: (A020) cmp eq, r1, 30464
+0478: 01144: (3A03) brcc 3
+0479: 01145: (F009) call fail  Program:00009
+047A: 01146: (001C) halt
+047B: 01147: (0000) nop
+047C: 01148: (C162) ld.w [r3, 4], r1
+047D: 01149: (FC0E) _pfix 33245
+047E: 01150: (A03D) cmp eq, r1, 33245
+047F: 01151: (3A03) brcc 3
+0480: 01152: (F009) call fail  Program:00009
+0481: 01153: (001C) halt
+0482: 01154: (0000) nop
+0483: 01155: (C163) ld.w [r3, 6], r1
+0484: 01156: (F915) _pfix 8874
+0485: 01157: (A02A) cmp eq, r1, 8874
+0486: 01158: (3A03) brcc 3
+0487: 01159: (F009) call fail  Program:00009
+0488: 01160: (001C) halt
+0489: 01161: (0000) nop
+048A: 01162: (D77F) st.w r7, [r3, 62]
+048B: 01163: (C27F) ld.w [r3, 62], r2
+048C: 01164: (105C) cmp eq, r2, r7
+048D: 01165: (3A03) brcc 3
+048E: 01166: (F009) call fail  Program:00009
+048F: 01167: (001C) halt
+0490: 01168: (0000) nop
+0491: 01169: (F801) _pfix 64
+0492: 01170: (D660) st.w r6, [r3, 64]
+0493: 01171: (F801) _pfix 64
+0494: 01172: (C260) ld.w [r3, 64], r2
+0495: 01173: (1058) cmp eq, r2, r6
+0496: 01174: (3A03) brcc 3
+0497: 01175: (F009) call fail  Program:00009
+0498: 01176: (001C) halt
+0499: 01177: (0000) nop
+049A: 01178: (F801) _pfix 104
+049B: 01179: (D474) st.w r4, [r3, 104]
+049C: 01180: (F801) _pfix 104
+049D: 01181: (C274) ld.w [r3, 104], r2
+049E: 01182: (1050) cmp eq, r2, r4
+049F: 01183: (3A03) brcc 3
+04A0: 01184: (F009) call fail  Program:00009
+04A1: 01185: (001C) halt
+04A2: 01186: (0000) nop
+04A3: 01187: (F803) _pfix 104
+04A4: 01188: (BA68) addx r3, 104, r2
+04A5: 01189: (C240) ld.w [r2, 0], r2
+04A6: 01190: (1050) cmp eq, r2, r4
+04A7: 01191: (3A03) brcc 3
+04A8: 01192: (F009) call fail  Program:00009
+04A9: 01193: (001C) halt
+04AA: 01194: (0000) nop
+04AB: 01195: (F801) _pfix 32
+04AC: 01196: (DF60) st.b r7, [r3, 32]
+04AD: 01197: (F801) _pfix 32
+04AE: 01198: (CA60) ld.sb [r3, 32], r2
+04AF: 01199: (01E3) sext r7, r1
+04B0: 01200: (1028) cmp eq, r1, r2
+04B1: 01201: (3A03) brcc 3
+04B2: 01202: (F009) call fail  Program:00009
+04B3: 01203: (001C) halt
+04B4: 01204: (0000) nop
+04B5: 01205: (F801) _pfix 33
+04B6: 01206: (DE61) st.b r6, [r3, 33]
+04B7: 01207: (F801) _pfix 33
+04B8: 01208: (CA61) ld.sb [r3, 33], r2
+04B9: 01209: (01C3) sext r6, r1
+04BA: 01210: (1028) cmp eq, r1, r2
+04BB: 01211: (3A03) brcc 3
+04BC: 01212: (F009) call fail  Program:00009
+04BD: 01213: (001C) halt
+04BE: 01214: (0000) nop
+04BF: 01215: (C170) ld.w [r3, 32], r1
+04C0: 01216: (F9A5) _pfix 13482
+04C1: 01217: (A02A) cmp eq, r1, 13482
+04C2: 01218: (3A03) brcc 3
+04C3: 01219: (F009) call fail  Program:00009
+04C4: 01220: (001C) halt
+04C5: 01221: (0000) nop
+04C6: 01222: (F803) _pfix 104
+04C7: 01223: (DF68) st.b r7, [r3, 104]
+04C8: 01224: (F803) _pfix 104
+04C9: 01225: (CA68) ld.sb [r3, 104], r2
+04CA: 01226: (01E3) sext r7, r1
+04CB: 01227: (1028) cmp eq, r1, r2
+04CC: 01228: (3A03) brcc 3
+04CD: 01229: (F009) call fail  Program:00009
+04CE: 01230: (001C) halt
+04CF: 01231: (0000) nop
+04D0: 01232: (F803) _pfix 105
+04D1: 01233: (DE69) st.b r6, [r3, 105]
+04D2: 01234: (F803) _pfix 105
+04D3: 01235: (CA69) ld.sb [r3, 105], r2
+04D4: 01236: (01C3) sext r6, r1
+04D5: 01237: (1028) cmp eq, r1, r2
+04D6: 01238: (3A03) brcc 3
+04D7: 01239: (F009) call fail  Program:00009
+04D8: 01240: (001C) halt
+04D9: 01241: (0000) nop
+04DA: 01242: (F801) _pfix 104
+04DB: 01243: (C174) ld.w [r3, 104], r1
+04DC: 01244: (F9A5) _pfix 13482
+04DD: 01245: (A02A) cmp eq, r1, 13482
+04DE: 01246: (3A03) brcc 3
+04DF: 01247: (F009) call fail  Program:00009
+04E0: 01248: (001C) halt
+04E1: 01249: (0000) nop
+04E2: 01250: (F803) _pfix 104
+04E3: 01251: (BA68) addx r3, 104, r2
+04E4: 01252: (C140) ld.w [r2, 0], r1
+04E5: 01253: (F9A5) _pfix 13482
+04E6: 01254: (A02A) cmp eq, r1, 13482
+04E7: 01255: (3A03) brcc 3
+04E8: 01256: (F009) call fail  Program:00009
+04E9: 01257: (001C) halt
+04EA: 01258: (0000) nop
+04EB: 01259: (F809) _pfix 304  Data:00304
+04EC: 01260: (A070) cmp eq, r3, loadStoreOffset_mem  Data:00304
+04ED: 01261: (3A03) brcc 3
+04EE: 01262: (F009) call fail  Program:00009
+04EF: 01263: (001C) halt
+04F0: 01264: (0000) nop
+04F1: 01265: (F005) call pass  Program:00005
+04F2: 01266: (F806) _pfix 199  Data:00199
+04F3: 01267: (6007) mov .L.str.14, r0  Data:00199
+04F4: 01268: (F002) call test  Program:00002
+04F5: 01269: (6100) mov 0, r1
+04F6: 01270: (F809) _pfix 312  Data:00312
+04F7: 01271: (6018) mov loadStoreIndex_mem, r0  Data:00312
+04F8: 01272: (0220) mov r1, r2
+04F9: 01273: (FAAF) _pfix 22010
+04FA: 01274: (721A) add r2, 22010, r2
+04FB: 01275: (2A06) st.w r2, [r0, r1]
+04FC: 01276: (B921) addx r1, 1, r1
+04FD: 01277: (A028) cmp eq, r1, 8
+04FE: 01278: (39F9) brncc .Llsi_1  Program:-7
+04FF: 01279: (6100) mov 0, r1
+0500: 01280: (2207) ld.w [r0, r1], r2
+0501: 01281: (0320) mov r1, r3
+0502: 01282: (FAAF) _pfix 22010
+0503: 01283: (731A) add r3, 22010, r3
+0504: 01284: (1068) cmp eq, r3, r2
+0505: 01285: (3A03) brcc 3
+0506: 01286: (F009) call fail  Program:00009
+0507: 01287: (001C) halt
+0508: 01288: (0000) nop
+0509: 01289: (B921) addx r1, 1, r1
+050A: 01290: (A028) cmp eq, r1, 8
+050B: 01291: (39F4) brncc .Llsi_3  Program:-12
+050C: 01292: (6100) mov 0, r1
+050D: 01293: (0220) mov r1, r2
+050E: 01294: (727C) add r2, 124, r2
+050F: 01295: (2A23) st.b r2, [r1, r0]
+0510: 01296: (B921) addx r1, 1, r1
+0511: 01297: (F800) _pfix 16
+0512: 01298: (A030) cmp eq, r1, 16
+0513: 01299: (39F9) brncc .Llsi_7  Program:-7
+0514: 01300: (6100) mov 0, r1
+0515: 01301: (2A21) ld.sb [r1, r0], r2
+0516: 01302: (0320) mov r1, r3
+0517: 01303: (737C) add r3, 124, r3
+0518: 01304: (0363) sext r3, r3
+0519: 01305: (104C) cmp eq, r2, r3
+051A: 01306: (3A03) brcc 3
+051B: 01307: (F009) call fail  Program:00009
+051C: 01308: (001C) halt
+051D: 01309: (0000) nop
+051E: 01310: (B921) addx r1, 1, r1
+051F: 01311: (F800) _pfix 16
+0520: 01312: (A030) cmp eq, r1, 16
+0521: 01313: (39F3) brncc .Llsi_9  Program:-13
+0522: 01314: (6100) mov 0, r1
+0523: 01315: (2A20) ld.zb [r1, r0], r2
+0524: 01316: (0320) mov r1, r3
+0525: 01317: (737C) add r3, 124, r3
+0526: 01318: (0362) zext r3, r3
+0527: 01319: (104C) cmp eq, r2, r3
+0528: 01320: (3A03) brcc 3
+0529: 01321: (F009) call fail  Program:00009
+052A: 01322: (001C) halt
+052B: 01323: (0000) nop
+052C: 01324: (B921) addx r1, 1, r1
+052D: 01325: (F800) _pfix 16
+052E: 01326: (A030) cmp eq, r1, 16
+052F: 01327: (39F3) brncc .Llsi_13  Program:-13
+0530: 01328: (6100) mov 0, r1
+0531: 01329: (0008) lsr r0, r0
+0532: 01330: (2223) ld.w [r1, r0], r2
+0533: 01331: (0320) mov r1, r3
+0534: 01332: (737C) add r3, 124, r3
+0535: 01333: (0442) zext r2, r4
+0536: 01334: (0244) lsrb r2, r2
+0537: 01335: (1070) cmp eq, r3, r4
+0538: 01336: (3A03) brcc 3
+0539: 01337: (F009) call fail  Program:00009
+053A: 01338: (001C) halt
+053B: 01339: (0000) nop
+053C: 01340: (0320) mov r1, r3
+053D: 01341: (737D) add r3, 125, r3
+053E: 01342: (1068) cmp eq, r3, r2
+053F: 01343: (3A03) brcc 3
+0540: 01344: (F009) call fail  Program:00009
+0541: 01345: (001C) halt
+0542: 01346: (0000) nop
+0543: 01347: (B922) addx r1, 2, r1
+0544: 01348: (A62F) cmp ugt, r1, 15
+0545: 01349: (39EC) brncc .Llsi_17  Program:-20
+0546: 01350: (F005) call pass  Program:00005
+0547: 01351: (F806) _pfix 215  Data:00215
+0548: 01352: (6017) mov .L.str.15, r0  Data:00215
+0549: 01353: (F002) call test  Program:00002
+054A: 01354: (FAAD) _pfix 21930
+054B: 01355: (640A) mov 21930, r4
+054C: 01356: (FC09) _pfix 33076
+054D: 01357: (6514) mov 33076, r5
+054E: 01358: (FFF8) _pfix 65280
+054F: 01359: (6600) mov 65280, r6
+0550: 01360: (FD5E) _pfix 43981
+0551: 01361: (670D) mov 43981, r7
+0552: 01362: (54A7) st.w r4, [dmem6]  Data:00334
+0553: 01363: (55A6) st.w r5, [dmem4]  Data:00332
+0554: 01364: (56A5) st.w r6, [dmem2]  Data:00330
+0555: 01365: (57A4) st.w r7, [dmem0]  Data:00328
+0556: 01366: (47A7) ld.w [dmem6], r7  Data:00334
+0557: 01367: (FAAD) _pfix 21930
+0558: 01368: (A0EA) cmp eq, r7, 21930
+0559: 01369: (3A03) brcc 3
+055A: 01370: (F009) call fail  Program:00009
+055B: 01371: (001C) halt
+055C: 01372: (0000) nop
+055D: 01373: (46A6) ld.w [dmem4], r6  Data:00332
+055E: 01374: (FC09) _pfix 33076
+055F: 01375: (A0D4) cmp eq, r6, 33076
+0560: 01376: (3A03) brcc 3
+0561: 01377: (F009) call fail  Program:00009
+0562: 01378: (001C) halt
+0563: 01379: (0000) nop
+0564: 01380: (45A5) ld.w [dmem2], r5  Data:00330
+0565: 01381: (FFF8) _pfix 65280
+0566: 01382: (A0A0) cmp eq, r5, 65280
+0567: 01383: (3A03) brcc 3
+0568: 01384: (F009) call fail  Program:00009
+0569: 01385: (001C) halt
+056A: 01386: (0000) nop
+056B: 01387: (44A4) ld.w [dmem0], r4  Data:00328
+056C: 01388: (FD5E) _pfix 43981
+056D: 01389: (A08D) cmp eq, r4, 43981
+056E: 01390: (3A03) brcc 3
+056F: 01391: (F009) call fail  Program:00009
+0570: 01392: (001C) halt
+0571: 01393: (0000) nop
+0572: 01394: (F80A) _pfix 334  Data:00334
+0573: 01395: (490E) ld.sb [dmem6], r1  Data:00334
+0574: 01396: (FFFD) _pfix 65450
+0575: 01397: (A02A) cmp eq, r1, 65450
+0576: 01398: (3A03) brcc 3
+0577: 01399: (F009) call fail  Program:00009
+0578: 01400: (001C) halt
+0579: 01401: (0000) nop
+057A: 01402: (F80A) _pfix 335  Data:00335
+057B: 01403: (490F) ld.sb [dmem6+1], r1  Data:00335
+057C: 01404: (F802) _pfix 85
+057D: 01405: (A035) cmp eq, r1, 85
+057E: 01406: (3A03) brcc 3
+057F: 01407: (F009) call fail  Program:00009
+0580: 01408: (001C) halt
+0581: 01409: (0000) nop
+0582: 01410: (F80A) _pfix 333  Data:00333
+0583: 01411: (490D) ld.sb [dmem4+1], r1  Data:00333
+0584: 01412: (FFFC) _pfix 65409
+0585: 01413: (A021) cmp eq, r1, 65409
+0586: 01414: (3A03) brcc 3
+0587: 01415: (F009) call fail  Program:00009
+0588: 01416: (001C) halt
+0589: 01417: (0000) nop
+058A: 01418: (F80A) _pfix 332  Data:00332
+058B: 01419: (490C) ld.sb [dmem4], r1  Data:00332
+058C: 01420: (F801) _pfix 52
+058D: 01421: (A034) cmp eq, r1, 52
+058E: 01422: (3A03) brcc 3
+058F: 01423: (F009) call fail  Program:00009
+0590: 01424: (001C) halt
+0591: 01425: (0000) nop
+0592: 01426: (F80A) _pfix 330  Data:00330
+0593: 01427: (490A) ld.sb [dmem2], r1  Data:00330
+0594: 01428: (A020) cmp eq, r1, 0
+0595: 01429: (3A03) brcc 3
+0596: 01430: (F009) call fail  Program:00009
+0597: 01431: (001C) halt
+0598: 01432: (0000) nop
+0599: 01433: (F80A) _pfix 331  Data:00331
+059A: 01434: (490B) ld.sb [dmem2+1], r1  Data:00331
+059B: 01435: (A03F) cmp eq, r1, 65535
+059C: 01436: (3A03) brcc 3
+059D: 01437: (F009) call fail  Program:00009
+059E: 01438: (001C) halt
+059F: 01439: (0000) nop
+05A0: 01440: (6122) mov 34, r1
+05A1: 01441: (F80A) _pfix 335  Data:00335
+05A2: 01442: (590F) st.b r1, [dmem6+1]  Data:00335
+05A3: 01443: (F806) _pfix 221
+05A4: 01444: (611D) mov 221, r1
+05A5: 01445: (F80A) _pfix 332  Data:00332
+05A6: 01446: (590C) st.b r1, [dmem4]  Data:00332
+05A7: 01447: (6177) mov 119, r1
+05A8: 01448: (F80A) _pfix 331  Data:00331
+05A9: 01449: (590B) st.b r1, [dmem2+1]  Data:00331
+05AA: 01450: (F804) _pfix 153
+05AB: 01451: (6119) mov 153, r1
+05AC: 01452: (F80A) _pfix 328  Data:00328
+05AD: 01453: (5908) st.b r1, [dmem0]  Data:00328
+05AE: 01454: (41A4) ld.w [dmem0], r1  Data:00328
+05AF: 01455: (FD5C) _pfix 43929
+05B0: 01456: (A039) cmp eq, r1, 43929
+05B1: 01457: (3A03) brcc 3
+05B2: 01458: (F009) call fail  Program:00009
+05B3: 01459: (001C) halt
+05B4: 01460: (0000) nop
+05B5: 01461: (41A5) ld.w [dmem2], r1  Data:00330
+05B6: 01462: (FBB8) _pfix 30464
+05B7: 01463: (A020) cmp eq, r1, 30464
+05B8: 01464: (3A03) brcc 3
+05B9: 01465: (F009) call fail  Program:00009
+05BA: 01466: (001C) halt
+05BB: 01467: (0000) nop
+05BC: 01468: (41A6) ld.w [dmem4], r1  Data:00332
+05BD: 01469: (FC0E) _pfix 33245
+05BE: 01470: (A03D) cmp eq, r1, 33245
+05BF: 01471: (3A03) brcc 3
+05C0: 01472: (F009) call fail  Program:00009
+05C1: 01473: (001C) halt
+05C2: 01474: (0000) nop
+05C3: 01475: (41A7) ld.w [dmem6], r1  Data:00334
+05C4: 01476: (F915) _pfix 8874
+05C5: 01477: (A02A) cmp eq, r1, 8874
+05C6: 01478: (3A03) brcc 3
+05C7: 01479: (F009) call fail  Program:00009
+05C8: 01480: (001C) halt
+05C9: 01481: (0000) nop
+05CA: 01482: (F80D) _pfix 840  Data:00840
+05CB: 01483: (5704) st.w r7, [dmem0+512]  Data:00840
+05CC: 01484: (F80D) _pfix 840  Data:00840
+05CD: 01485: (4204) ld.w [dmem0+512], r2  Data:00840
+05CE: 01486: (105C) cmp eq, r2, r7
+05CF: 01487: (3A03) brcc 3
+05D0: 01488: (F009) call fail  Program:00009
+05D1: 01489: (001C) halt
+05D2: 01490: (0000) nop
+05D3: 01491: (F812) _pfix 584  Data:00584
+05D4: 01492: (5F08) st.b r7, [dmem0+256]  Data:00584
+05D5: 01493: (F812) _pfix 584  Data:00584
+05D6: 01494: (4A08) ld.sb [dmem0+256], r2  Data:00584
+05D7: 01495: (01E3) sext r7, r1
+05D8: 01496: (1028) cmp eq, r1, r2
+05D9: 01497: (3A03) brcc 3
+05DA: 01498: (F009) call fail  Program:00009
+05DB: 01499: (001C) halt
+05DC: 01500: (0000) nop
+05DD: 01501: (F812) _pfix 585  Data:00585
+05DE: 01502: (5E09) st.b r6, [dmem0+257]  Data:00585
+05DF: 01503: (F812) _pfix 585  Data:00585
+05E0: 01504: (4A09) ld.sb [dmem0+257], r2  Data:00585
+05E1: 01505: (01C3) sext r6, r1
+05E2: 01506: (1028) cmp eq, r1, r2
+05E3: 01507: (3A03) brcc 3
+05E4: 01508: (F009) call fail  Program:00009
+05E5: 01509: (001C) halt
+05E6: 01510: (0000) nop
+05E7: 01511: (F809) _pfix 584  Data:00584
+05E8: 01512: (4104) ld.w [dmem0+256], r1  Data:00584
+05E9: 01513: (F9A5) _pfix 13482
+05EA: 01514: (A02A) cmp eq, r1, 13482
+05EB: 01515: (3A03) brcc 3
+05EC: 01516: (F009) call fail  Program:00009
+05ED: 01517: (001C) halt
+05EE: 01518: (0000) nop
+05EF: 01519: (F005) call pass  Program:00005
+05F0: 01520: (F807) _pfix 233  Data:00233
+05F1: 01521: (6009) mov .L.str.16, r0  Data:00233
+05F2: 01522: (F002) call test  Program:00002
+05F3: 01523: (6000) mov 0, r0
+05F4: 01524: (6101) mov 1, r1
+05F5: 01525: (6202) mov 2, r2
+05F6: 01526: (6303) mov 3, r3
+05F7: 01527: (1720) cmp gt, r1, r0
+05F8: 01528: (1C4E) selcc r2, r3, r4
+05F9: 01529: (056C) selcc 0, r3, r5
+05FA: 01530: (064D) selcc r2, 0, r6
+05FB: 01531: (0717) setcc r7
+05FC: 01532: (A082) cmp eq, r4, 2
+05FD: 01533: (3A03) brcc 3
+05FE: 01534: (F009) call fail  Program:00009
+05FF: 01535: (001C) halt
+0600: 01536: (0000) nop
+0601: 01537: (A0A0) cmp eq, r5, 0
+0602: 01538: (3A03) brcc 3
+0603: 01539: (F009) call fail  Program:00009
+0604: 01540: (001C) halt
+0605: 01541: (0000) nop
+0606: 01542: (A0C2) cmp eq, r6, 2
+0607: 01543: (3A03) brcc 3
+0608: 01544: (F009) call fail  Program:00009
+0609: 01545: (001C) halt
+060A: 01546: (0000) nop
+060B: 01547: (A0E1) cmp eq, r7, 1
+060C: 01548: (3A03) brcc 3
+060D: 01549: (F009) call fail  Program:00009
+060E: 01550: (001C) halt
+060F: 01551: (0000) nop
+0610: 01552: (1704) cmp gt, r0, r1
+0611: 01553: (1C4E) selcc r2, r3, r4
+0612: 01554: (056C) selcc 0, r3, r5
+0613: 01555: (064D) selcc r2, 0, r6
+0614: 01556: (0717) setcc r7
+0615: 01557: (A083) cmp eq, r4, 3
+0616: 01558: (3A03) brcc 3
+0617: 01559: (F009) call fail  Program:00009
+0618: 01560: (001C) halt
+0619: 01561: (0000) nop
+061A: 01562: (A0A3) cmp eq, r5, 3
+061B: 01563: (3A03) brcc 3
+061C: 01564: (F009) call fail  Program:00009
+061D: 01565: (001C) halt
+061E: 01566: (0000) nop
+061F: 01567: (A0C0) cmp eq, r6, 0
+0620: 01568: (3A03) brcc 3
+0621: 01569: (F009) call fail  Program:00009
+0622: 01570: (001C) halt
+0623: 01571: (0000) nop
+0624: 01572: (A0E0) cmp eq, r7, 0
+0625: 01573: (3A03) brcc 3
+0626: 01574: (F009) call fail  Program:00009
+0627: 01575: (001C) halt
+0628: 01576: (0000) nop
+0629: 01577: (F005) call pass  Program:00005
+062A: 01578: (F807) _pfix 247  Data:00247
+062B: 01579: (6017) mov .L.str.17, r0  Data:00247
+062C: 01580: (F002) call test  Program:00002
+062D: 01581: (6200) mov 0, r2
+062E: 01582: (6000) mov 0, r0
+062F: 01583: (6100) mov 0, r1
+0630: 01584: (2306) add r0, r1, r3
+0631: 01585: (104C) cmp eq, r2, r3
+0632: 01586: (3A03) brcc 3
+0633: 01587: (F009) call fail  Program:00009
+0634: 01588: (001C) halt
+0635: 01589: (0000) nop
+0636: 01590: (B921) addx r1, 1, r1
+0637: 01591: (BA41) addx r2, 1, r2
+0638: 01592: (F800) _pfix 16
+0639: 01593: (A530) cmp lt, r1, 16
+063A: 01594: (3BF5) brcc .Lasa_inner  Program:-11
+063B: 01595: (B801) addx r0, 1, r0
+063C: 01596: (6A0F) sub r2, 15, r2
+063D: 01597: (F800) _pfix 16
+063E: 01598: (A510) cmp lt, r0, 16
+063F: 01599: (3BEF) brcc .Lasa_outer  Program:-17
+0640: 01600: (6200) mov 0, r2
+0641: 01601: (600F) mov 15, r0
+0642: 01602: (610F) mov 15, r1
+0643: 01603: (1307) sub r0, r1, r3
+0644: 01604: (104C) cmp eq, r2, r3
+0645: 01605: (3A03) brcc 3
+0646: 01606: (F009) call fail  Program:00009
+0647: 01607: (001C) halt
+0648: 01608: (0000) nop
+0649: 01609: (6901) sub r1, 1, r1
+064A: 01610: (BA41) addx r2, 1, r2
+064B: 01611: (A420) cmp ge, r1, 0
+064C: 01612: (3BF6) brcc .Lass_inner  Program:-10
+064D: 01613: (6801) sub r0, 1, r0
+064E: 01614: (6A11) sub r2, 17, r2
+064F: 01615: (F800) _pfix 16
+0650: 01616: (A410) cmp ge, r0, 16
+0651: 01617: (3BF0) brcc .Lass_outer  Program:-16
+0652: 01618: (62F1) mov -15, r2
+0653: 01619: (610F) mov 15, r1
+0654: 01620: (032E) neg r1, r3
+0655: 01621: (104C) cmp eq, r2, r3
+0656: 01622: (3A03) brcc 3
+0657: 01623: (F009) call fail  Program:00009
+0658: 01624: (001C) halt
+0659: 01625: (0000) nop
+065A: 01626: (6901) sub r1, 1, r1
+065B: 01627: (BA41) addx r2, 1, r2
+065C: 01628: (A420) cmp ge, r1, 0
+065D: 01629: (3BF6) brcc .Lasn_inner  Program:-10
+065E: 01630: (F005) call pass  Program:00005
+065F: 01631: (F808) _pfix 262  Data:00262
+0660: 01632: (6006) mov .L.str.18, r0  Data:00262
+0661: 01633: (F002) call test  Program:00002
+0662: 01634: (6600) mov 0, r6
+0663: 01635: (64FA) mov 65530, r4
+0664: 01636: (6500) mov 0, r5
+0665: 01637: (60FA) mov 65530, r0
+0666: 01638: (6100) mov 0, r1
+0667: 01639: (6200) mov 0, r2
+0668: 01640: (6300) mov 0, r3
+0669: 01641: (260A) add r0, r2, r6
+066A: 01642: (272D) addc r1, r3, r7
+066B: 01643: (1098) cmp eq, r4, r6
+066C: 01644: (10BD) cmpc eq, r5, r7
+066D: 01645: (3801) brncc 1
+066E: 01646: (3A03) brcc 3
+066F: 01647: (F009) call fail  Program:00009
+0670: 01648: (001C) halt
+0671: 01649: (0000) nop
+0672: 01650: (7201) add r2, 1, r2
+0673: 01651: (6600) mov 0, r6
+0674: 01652: (2379) addc r3, r6, r3
+0675: 01653: (7401) add r4, 1, r4
+0676: 01654: (25B9) addc r5, r6, r5
+0677: 01655: (F800) _pfix 16
+0678: 01656: (A550) cmp lt, r2, 16
+0679: 01657: (AD60) cmpc lt, r3, 0
+067A: 01658: (3BEE) brcc .Lasa32_inner  Program:-18
+067B: 01659: (7001) add r0, 1, r0
+067C: 01660: (2139) addc r1, r6, r1
+067D: 01661: (6C0F) sub r4, 15, r4
+067E: 01662: (15BA) subc r5, r6, r5
+067F: 01663: (A50A) cmp lt, r0, 10
+0680: 01664: (AD21) cmpc lt, r1, 1
+0681: 01665: (3BE5) brcc .Lasa32_outer  Program:-27
+0682: 01666: (6600) mov 0, r6
+0683: 01667: (64FA) mov 65530, r4
+0684: 01668: (6500) mov 0, r5
+0685: 01669: (6009) mov 9, r0
+0686: 01670: (6101) mov 1, r1
+0687: 01671: (620F) mov 15, r2
+0688: 01672: (6300) mov 0, r3
+0689: 01673: (160B) sub r0, r2, r6
+068A: 01674: (172E) subc r1, r3, r7
+068B: 01675: (1098) cmp eq, r4, r6
+068C: 01676: (10BD) cmpc eq, r5, r7
+068D: 01677: (3801) brncc 1
+068E: 01678: (3A03) brcc 3
+068F: 01679: (F009) call fail  Program:00009
+0690: 01680: (001C) halt
+0691: 01681: (0000) nop
+0692: 01682: (6A01) sub r2, 1, r2
+0693: 01683: (6600) mov 0, r6
+0694: 01684: (137A) subc r3, r6, r3
+0695: 01685: (7401) add r4, 1, r4
+0696: 01686: (25B9) addc r5, r6, r5
+0697: 01687: (A440) cmp ge, r2, 0
+0698: 01688: (AC60) cmpc ge, r3, 0
+0699: 01689: (3BEF) brcc .Lass32_inner  Program:-17
+069A: 01690: (6801) sub r0, 1, r0
+069B: 01691: (113A) subc r1, r6, r1
+069C: 01692: (6C11) sub r4, 17, r4
+069D: 01693: (15BA) subc r5, r6, r5
+069E: 01694: (A41A) cmp ge, r0, 65530
+069F: 01695: (AC20) cmpc ge, r1, 0
+06A0: 01696: (3BE6) brcc .Lass32_outer  Program:-26
+06A1: 01697: (F005) call pass  Program:00005
+06A2: 01698: (F808) _pfix 276  Data:00276
+06A3: 01699: (6014) mov .L.str.19, r0  Data:00276
+06A4: 01700: (F002) call test  Program:00002
+06A5: 01701: (F878) _pfix 3855
+06A6: 01702: (600F) mov 3855, r0
+06A7: 01703: (61FF) mov 65535, r1
+06A8: 01704: (FBFB) _pfix 32639
+06A9: 01705: (621F) mov 32639, r2
+06AA: 01706: (FC04) _pfix 32896
+06AB: 01707: (6300) mov 32896, r3
+06AC: 01708: (FF87) _pfix 61680
+06AD: 01709: (6410) mov 61680, r4
+06AE: 01710: (65FF) mov 65535, r5
+06AF: 01711: (66FF) mov 65535, r6
+06B0: 01712: (67FF) mov 65535, r7
+06B1: 01713: (1810) and r0, r4, r0
+06B2: 01714: (3801) brncc 1
+06B3: 01715: (3A03) brcc 3
+06B4: 01716: (F009) call fail  Program:00009
+06B5: 01717: (001C) halt
+06B6: 01718: (0000) nop
+06B7: 01719: (A000) cmp eq, r0, 0
+06B8: 01720: (3A03) brcc 3
+06B9: 01721: (F009) call fail  Program:00009
+06BA: 01722: (001C) halt
+06BB: 01723: (0000) nop
+06BC: 01724: (1834) and r1, r5, r0
+06BD: 01725: (3A01) brcc 1
+06BE: 01726: (3803) brncc 3
+06BF: 01727: (F009) call fail  Program:00009
+06C0: 01728: (001C) halt
+06C1: 01729: (0000) nop
+06C2: 01730: (A01F) cmp eq, r0, 65535
+06C3: 01731: (3A03) brcc 3
+06C4: 01732: (F009) call fail  Program:00009
+06C5: 01733: (001C) halt
+06C6: 01734: (0000) nop
+06C7: 01735: (1858) and r2, r6, r0
+06C8: 01736: (3A01) brcc 1
+06C9: 01737: (3803) brncc 3
+06CA: 01738: (F009) call fail  Program:00009
+06CB: 01739: (001C) halt
+06CC: 01740: (0000) nop
+06CD: 01741: (FBFB) _pfix 32639
+06CE: 01742: (A01F) cmp eq, r0, 32639
+06CF: 01743: (3A03) brcc 3
+06D0: 01744: (F009) call fail  Program:00009
+06D1: 01745: (001C) halt
+06D2: 01746: (0000) nop
+06D3: 01747: (187C) and r3, r7, r0
+06D4: 01748: (3A01) brcc 1
+06D5: 01749: (3803) brncc 3
+06D6: 01750: (F009) call fail  Program:00009
+06D7: 01751: (001C) halt
+06D8: 01752: (0000) nop
+06D9: 01753: (FC04) _pfix 32896
+06DA: 01754: (A000) cmp eq, r0, 32896
+06DB: 01755: (3A03) brcc 3
+06DC: 01756: (F009) call fail  Program:00009
+06DD: 01757: (001C) halt
+06DE: 01758: (0000) nop
+06DF: 01759: (F878) _pfix 3855
+06E0: 01760: (600F) mov 3855, r0
+06E1: 01761: (FF87) _pfix 61680
+06E2: 01762: (B010) and r0, 61680, r0
+06E3: 01763: (3801) brncc 1
+06E4: 01764: (3A03) brcc 3
+06E5: 01765: (F009) call fail  Program:00009
+06E6: 01766: (001C) halt
+06E7: 01767: (0000) nop
+06E8: 01768: (A000) cmp eq, r0, 0
+06E9: 01769: (3A03) brcc 3
+06EA: 01770: (F009) call fail  Program:00009
+06EB: 01771: (001C) halt
+06EC: 01772: (0000) nop
+06ED: 01773: (FFFF) _pfix -1
+06EE: 01774: (B03F) and r1, -1, r0
+06EF: 01775: (3A01) brcc 1
+06F0: 01776: (3803) brncc 3
+06F1: 01777: (F009) call fail  Program:00009
+06F2: 01778: (001C) halt
+06F3: 01779: (0000) nop
+06F4: 01780: (A01F) cmp eq, r0, 65535
+06F5: 01781: (3A03) brcc 3
+06F6: 01782: (F009) call fail  Program:00009
+06F7: 01783: (001C) halt
+06F8: 01784: (0000) nop
+06F9: 01785: (FFFF) _pfix -1
+06FA: 01786: (B05F) and r2, -1, r0
+06FB: 01787: (3A01) brcc 1
+06FC: 01788: (3803) brncc 3
+06FD: 01789: (F009) call fail  Program:00009
+06FE: 01790: (001C) halt
+06FF: 01791: (0000) nop
+0700: 01792: (FBFB) _pfix 32639
+0701: 01793: (A01F) cmp eq, r0, 32639
+0702: 01794: (3A03) brcc 3
+0703: 01795: (F009) call fail  Program:00009
+0704: 01796: (001C) halt
+0705: 01797: (0000) nop
+0706: 01798: (FFFF) _pfix -1
+0707: 01799: (B07F) and r3, -1, r0
+0708: 01800: (3A01) brcc 1
+0709: 01801: (3803) brncc 3
+070A: 01802: (F009) call fail  Program:00009
+070B: 01803: (001C) halt
+070C: 01804: (0000) nop
+070D: 01805: (FC04) _pfix 32896
+070E: 01806: (A000) cmp eq, r0, 32896
+070F: 01807: (3A03) brcc 3
+0710: 01808: (F009) call fail  Program:00009
+0711: 01809: (001C) halt
+0712: 01810: (0000) nop
+0713: 01811: (B020) and r1, 0, r0
+0714: 01812: (3801) brncc 1
+0715: 01813: (3A03) brcc 3
+0716: 01814: (F009) call fail  Program:00009
+0717: 01815: (001C) halt
+0718: 01816: (0000) nop
+0719: 01817: (A000) cmp eq, r0, 0
+071A: 01818: (3A03) brcc 3
+071B: 01819: (F009) call fail  Program:00009
+071C: 01820: (001C) halt
+071D: 01821: (0000) nop
+071E: 01822: (6000) mov 0, r0
+071F: 01823: (F8F8) _pfix 7967
+0720: 01824: (611F) mov 7967, r1
+0721: 01825: (FB8B) _pfix 29041
+0722: 01826: (6211) mov 29041, r2
+0723: 01827: (FC04) _pfix 32896
+0724: 01828: (6300) mov 32896, r3
+0725: 01829: (6400) mov 0, r4
+0726: 01830: (FF8F) _pfix 61937
+0727: 01831: (6511) mov 61937, r5
+0728: 01832: (F8F8) _pfix 7967
+0729: 01833: (661F) mov 7967, r6
+072A: 01834: (6700) mov 0, r7
+072B: 01835: (1811) or r0, r4, r0
+072C: 01836: (3801) brncc 1
+072D: 01837: (3A03) brcc 3
+072E: 01838: (F009) call fail  Program:00009
+072F: 01839: (001C) halt
+0730: 01840: (0000) nop
+0731: 01841: (A000) cmp eq, r0, 0
+0732: 01842: (3A03) brcc 3
+0733: 01843: (F009) call fail  Program:00009
+0734: 01844: (001C) halt
+0735: 01845: (0000) nop
+0736: 01846: (1835) or r1, r5, r0
+0737: 01847: (3A01) brcc 1
+0738: 01848: (3803) brncc 3
+0739: 01849: (F009) call fail  Program:00009
+073A: 01850: (001C) halt
+073B: 01851: (0000) nop
+073C: 01852: (A01F) cmp eq, r0, 65535
+073D: 01853: (3A03) brcc 3
+073E: 01854: (F009) call fail  Program:00009
+073F: 01855: (001C) halt
+0740: 01856: (0000) nop
+0741: 01857: (1859) or r2, r6, r0
+0742: 01858: (3A01) brcc 1
+0743: 01859: (3803) brncc 3
+0744: 01860: (F009) call fail  Program:00009
+0745: 01861: (001C) halt
+0746: 01862: (0000) nop
+0747: 01863: (FBFB) _pfix 32639
+0748: 01864: (A01F) cmp eq, r0, 32639
+0749: 01865: (3A03) brcc 3
+074A: 01866: (F009) call fail  Program:00009
+074B: 01867: (001C) halt
+074C: 01868: (0000) nop
+074D: 01869: (187D) or r3, r7, r0
+074E: 01870: (3A01) brcc 1
+074F: 01871: (3803) brncc 3
+0750: 01872: (F009) call fail  Program:00009
+0751: 01873: (001C) halt
+0752: 01874: (0000) nop
+0753: 01875: (FC04) _pfix 32896
+0754: 01876: (A000) cmp eq, r0, 32896
+0755: 01877: (3A03) brcc 3
+0756: 01878: (F009) call fail  Program:00009
+0757: 01879: (001C) halt
+0758: 01880: (0000) nop
+0759: 01881: (60FF) mov 65535, r0
+075A: 01882: (F878) _pfix 3855
+075B: 01883: (610F) mov 3855, r1
+075C: 01884: (FC7C) _pfix 36751
+075D: 01885: (620F) mov 36751, r2
+075E: 01886: (FC7C) _pfix 36751
+075F: 01887: (630F) mov 36751, r3
+0760: 01888: (64FF) mov 65535, r4
+0761: 01889: (FF87) _pfix 61680
+0762: 01890: (6510) mov 61680, r5
+0763: 01891: (FF87) _pfix 61680
+0764: 01892: (6610) mov 61680, r6
+0765: 01893: (F878) _pfix 3855
+0766: 01894: (670F) mov 3855, r7
+0767: 01895: (2010) xor r0, r4, r0
+0768: 01896: (3801) brncc 1
+0769: 01897: (3A03) brcc 3
+076A: 01898: (F009) call fail  Program:00009
+076B: 01899: (001C) halt
+076C: 01900: (0000) nop
+076D: 01901: (A000) cmp eq, r0, 0
+076E: 01902: (3A03) brcc 3
+076F: 01903: (F009) call fail  Program:00009
+0770: 01904: (001C) halt
+0771: 01905: (0000) nop
+0772: 01906: (2034) xor r1, r5, r0
+0773: 01907: (3A01) brcc 1
+0774: 01908: (3803) brncc 3
+0775: 01909: (F009) call fail  Program:00009
+0776: 01910: (001C) halt
+0777: 01911: (0000) nop
+0778: 01912: (A01F) cmp eq, r0, 65535
+0779: 01913: (3A03) brcc 3
+077A: 01914: (F009) call fail  Program:00009
+077B: 01915: (001C) halt
+077C: 01916: (0000) nop
+077D: 01917: (2058) xor r2, r6, r0
+077E: 01918: (3A01) brcc 1
+077F: 01919: (3803) brncc 3
+0780: 01920: (F009) call fail  Program:00009
+0781: 01921: (001C) halt
+0782: 01922: (0000) nop
+0783: 01923: (FBFB) _pfix 32639
+0784: 01924: (A01F) cmp eq, r0, 32639
+0785: 01925: (3A03) brcc 3
+0786: 01926: (F009) call fail  Program:00009
+0787: 01927: (001C) halt
+0788: 01928: (0000) nop
+0789: 01929: (207C) xor r3, r7, r0
+078A: 01930: (3A01) brcc 1
+078B: 01931: (3803) brncc 3
+078C: 01932: (F009) call fail  Program:00009
+078D: 01933: (001C) halt
+078E: 01934: (0000) nop
+078F: 01935: (FC04) _pfix 32896
+0790: 01936: (A000) cmp eq, r0, 32896
+0791: 01937: (3A03) brcc 3
+0792: 01938: (F009) call fail  Program:00009
+0793: 01939: (001C) halt
+0794: 01940: (0000) nop
+0795: 01941: (F005) call pass  Program:00005
+0796: 01942: (6000) mov 0, r0
+0797: 01943: (0018) ret
 
 Source: systemio.c
-027D: 00637: (C900) ld.sb [r0, 0], r1
-027E: 00638: (A020) cmp eq, r1, 0
-027F: 00639: (3A08) brcc .LBB0_3  Program:+8
-0280: 00640: (B801) addx r0, 1, r0
-0281: 00641: (FFFF) _pfix -1
-0282: 00642: (591F) st.b r1, [-1]
-0283: 00643: (BA01) addx r0, 1, r2
-0284: 00644: (C900) ld.sb [r0, 0], r1
-0285: 00645: (A020) cmp eq, r1, 0
-0286: 00646: (0040) mov r2, r0
-0287: 00647: (39F9) brncc .LBB0_2  Program:-7
-0288: 00648: (0018) ret
-0289: 00649: (3DFF) addx SP, -2, SP
-028A: 00650: (9400) st.w r4, [SP, 0]
-028B: 00651: (6100) mov 0, r1
-028C: 00652: (6252) mov .L__const.printnum.factors, r2  Data:00082
-028D: 00653: (2447) ld.w [r2, r1], r4
-028E: 00654: (1310) cmp ult, r0, r4
-028F: 00655: (6330) mov 48, r3
-0290: 00656: (3A05) brcc .LBB1_4  Program:+5
-0291: 00657: (6330) mov 48, r3
-0292: 00658: (1013) sub r0, r4, r0
-0293: 00659: (1210) cmp uge, r0, r4
-0294: 00660: (BB61) addx r3, 1, r3
-0295: 00661: (3BFC) brcc .LBB1_3  Program:-4
-0296: 00662: (FFFF) _pfix -1
-0297: 00663: (5B1F) st.b r3, [-1]
-0298: 00664: (B921) addx r1, 1, r1
-0299: 00665: (A025) cmp eq, r1, 5
-029A: 00666: (39F2) brncc .LBB1_1  Program:-14
-029B: 00667: (8400) ld.w [SP, 0], r4
-029C: 00668: (3C01) addx SP, 2, SP
-029D: 00669: (0018) ret
+0798: 01944: (C900) ld.sb [r0, 0], r1
+0799: 01945: (A020) cmp eq, r1, 0
+079A: 01946: (3A08) brcc .LBB0_3  Program:+8
+079B: 01947: (B801) addx r0, 1, r0
+079C: 01948: (FFFF) _pfix -1
+079D: 01949: (591F) st.b r1, [-1]
+079E: 01950: (BA01) addx r0, 1, r2
+079F: 01951: (C900) ld.sb [r0, 0], r1
+07A0: 01952: (A020) cmp eq, r1, 0
+07A1: 01953: (0040) mov r2, r0
+07A2: 01954: (39F9) brncc .LBB0_2  Program:-7
+07A3: 01955: (0018) ret
+07A4: 01956: (3DFF) addx SP, -2, SP
+07A5: 01957: (9400) st.w r4, [SP, 0]
+07A6: 01958: (6100) mov 0, r1
+07A7: 01959: (F809) _pfix 294  Data:00294
+07A8: 01960: (6206) mov .L__const.printnum.factors, r2  Data:00294
+07A9: 01961: (2447) ld.w [r2, r1], r4
+07AA: 01962: (1310) cmp ult, r0, r4
+07AB: 01963: (6330) mov 48, r3
+07AC: 01964: (3A05) brcc .LBB1_4  Program:+5
+07AD: 01965: (6330) mov 48, r3
+07AE: 01966: (1013) sub r0, r4, r0
+07AF: 01967: (1210) cmp uge, r0, r4
+07B0: 01968: (BB61) addx r3, 1, r3
+07B1: 01969: (3BFC) brcc .LBB1_3  Program:-4
+07B2: 01970: (FFFF) _pfix -1
+07B3: 01971: (5B1F) st.b r3, [-1]
+07B4: 01972: (B921) addx r1, 1, r1
+07B5: 01973: (A025) cmp eq, r1, 5
+07B6: 01974: (39F2) brncc .LBB1_1  Program:-14
+07B7: 01975: (8400) ld.w [SP, 0], r4
+07B8: 01976: (3C01) addx SP, 2, SP
+07B9: 01977: (0018) ret
 
 Source: $setup
-029E: 00670: (FFF8) _pfix -256  :-0256
-029F: 00671: (6000) mov initialSP, r0  :-0256
-02A0: 00672: (0001) mov r0, SP
-02A1: 00673: (F815) _pfix 687  :00687
-02A2: 00674: (610F) mov setupAddr, r1  :00687
-02A3: 00675: (6200) mov dataAddr, r2  :00000
-02A4: 00676: (602E) mov wordLength, r0  :00046
-02A5: 00677: (A000) cmp eq, r0, 0
-02A6: 00678: (3A06) brcc .LL1  Program:+6
-02A7: 00679: (032B) ld.w {r1}, r3
-02A8: 00680: (D340) st.w r3, [r2, 0]
-02A9: 00681: (7101) add r1, 1, r1
-02AA: 00682: (7202) add r2, 2, r2
-02AB: 00683: (6801) sub r0, 1, r0
-02AC: 00684: (3FF8) jmp .LL0  Program:-8
-02AD: 00685: (F011) call main  Program:00017
-02AE: 00686: (001C) halt
+07BA: 01978: (FFF8) _pfix -256  :-0256
+07BB: 01979: (6000) mov initialSP, r0  :-0256
+07BC: 01980: (0001) mov r0, SP
+07BD: 01981: (F83E) _pfix 1996  :01996
+07BE: 01982: (610C) mov setupAddr, r1  :01996
+07BF: 01983: (6200) mov dataAddr, r2  :00000
+07C0: 01984: (F804) _pfix 152  :00152
+07C1: 01985: (6018) mov wordLength, r0  :00152
+07C2: 01986: (A000) cmp eq, r0, 0
+07C3: 01987: (3A06) brcc .LL1  Program:+6
+07C4: 01988: (032B) ld.w {r1}, r3
+07C5: 01989: (D340) st.w r3, [r2, 0]
+07C6: 01990: (7101) add r1, 1, r1
+07C7: 01991: (7202) add r2, 2, r2
+07C8: 01992: (6801) sub r0, 1, r0
+07C9: 01993: (3FF8) jmp .LL0  Program:-8
+07CA: 01994: (F014) call main  Program:00020
+07CB: 01995: (001C) halt
 
 Source: setupData
-02AF: 00687: (2E09) _imm 11785
-02B0: 00688: (2E2E) _imm 11822
-02B1: 00689: (6170) _imm 24944
-02B2: 00690: (7373) _imm 29555
-02B3: 00691: (000A) _imm 10
-02B4: 00692: (2E09) _imm 11785
-02B5: 00693: (2E2E) _imm 11822
-02B6: 00694: (6166) _imm 24934
-02B7: 00695: (6C69) _imm 27753
-02B8: 00696: (000A) _imm 10
-02B9: 00697: (7262) _imm 29282
-02BA: 00698: (6E61) _imm 28257
-02BB: 00699: (6863) _imm 26723
-02BC: 00700: (6F43) _imm 28483
-02BD: 00701: (646E) _imm 25710
-02BE: 00702: (6974) _imm 26996
-02BF: 00703: (6E6F) _imm 28271
-02C0: 00704: (000A) _imm 10
-02C1: 00705: (6573) _imm 25971
-02C2: 00706: (656C) _imm 25964
-02C3: 00707: (7463) _imm 29795
-02C4: 00708: (6E41) _imm 28225
-02C5: 00709: (5364) _imm 21348
-02C6: 00710: (7465) _imm 29797
-02C7: 00711: (000A) _imm 10
-02C8: 00712: (6461) _imm 25697
-02C9: 00713: (5364) _imm 21348
-02CA: 00714: (6275) _imm 25205
-02CB: 00715: (654E) _imm 25934
-02CC: 00716: (5467) _imm 21607
-02CD: 00717: (7365) _imm 29541
-02CE: 00718: (0A74) _imm 2676
-02CF: 00719: (6100) _imm 24832
-02D0: 00720: (646E) _imm 25710
-02D1: 00721: (724F) _imm 29263
-02D2: 00722: (6F58) _imm 28504
-02D3: 00723: (4E72) _imm 20082
-02D4: 00724: (746F) _imm 29807
-02D5: 00725: (6554) _imm 25940
-02D6: 00726: (7473) _imm 29811
-02D7: 00727: (000A) _imm 10
-02D8: 00728: (2710) _imm 10000
-02D9: 00729: (03E8) _imm 1000
-02DA: 00730: (0064) _imm 100
-02DB: 00731: (000A) _imm 10
-02DC: 00732: (0001) _imm 1</a>
+07CC: 01996: (2E09) _imm 11785
+07CD: 01997: (2E2E) _imm 11822
+07CE: 01998: (6170) _imm 24944
+07CF: 01999: (7373) _imm 29555
+07D0: 02000: (000A) _imm 10
+07D1: 02001: (2E09) _imm 11785
+07D2: 02002: (2E2E) _imm 11822
+07D3: 02003: (6166) _imm 24934
+07D4: 02004: (6C69) _imm 27753
+07D5: 02005: (000A) _imm 10
+07D6: 02006: (7270) _imm 29296
+07D7: 02007: (4D65) _imm 19813
+07D8: 02008: (766F) _imm 30319
+07D9: 02009: (6D43) _imm 27971
+07DA: 02010: (0A70) _imm 2672
+07DB: 02011: (7000) _imm 28672
+07DC: 02012: (6572) _imm 25970
+07DD: 02013: (6554) _imm 25940
+07DE: 02014: (7473) _imm 29811
+07DF: 02015: (6143) _imm 24899
+07E0: 02016: (6C6C) _imm 27756
+07E1: 02017: (000A) _imm 10
+07E2: 02018: (7270) _imm 29296
+07E3: 02019: (5365) _imm 21349
+07E4: 02020: (6F68) _imm 28520
+07E5: 02021: (7472) _imm 29810
+07E6: 02022: (7242) _imm 29250
+07E7: 02023: (6E61) _imm 28257
+07E8: 02024: (6863) _imm 26723
+07E9: 02025: (000A) _imm 10
+07EA: 02026: (7262) _imm 29282
+07EB: 02027: (6E61) _imm 28257
+07EC: 02028: (6863) _imm 26723
+07ED: 02029: (6441) _imm 25665
+07EE: 02030: (7264) _imm 29284
+07EF: 02031: (7365) _imm 29541
+07F0: 02032: (0A73) _imm 2675
+07F1: 02033: (6300) _imm 25344
+07F2: 02034: (6C61) _imm 27745
+07F3: 02035: (416C) _imm 16748
+07F4: 02036: (6464) _imm 25700
+07F5: 02037: (6572) _imm 25970
+07F6: 02038: (7373) _imm 29555
+07F7: 02039: (000A) _imm 10
+07F8: 02040: (7262) _imm 29282
+07F9: 02041: (6E61) _imm 28257
+07FA: 02042: (6863) _imm 26723
+07FB: 02043: (6F43) _imm 28483
+07FC: 02044: (646E) _imm 25710
+07FD: 02045: (6974) _imm 26996
+07FE: 02046: (6E6F) _imm 28271
+07FF: 02047: (000A) _imm 10
+0800: 02048: (7262) _imm 29282
+0801: 02049: (6E61) _imm 28257
+0802: 02050: (6863) _imm 26723
+0803: 02051: (6F43) _imm 28483
+0804: 02052: (646E) _imm 25710
+0805: 02053: (6974) _imm 26996
+0806: 02054: (6E6F) _imm 28271
+0807: 02055: (3233) _imm 12851
+0808: 02056: (000A) _imm 10
+0809: 02057: (7270) _imm 29296
+080A: 02058: (6665) _imm 26213
+080B: 02059: (7869) _imm 30825
+080C: 02060: (6445) _imm 25669
+080D: 02061: (6567) _imm 25959
+080E: 02062: (000A) _imm 10
+080F: 02063: (7962) _imm 31074
+0810: 02064: (6574) _imm 25972
+0811: 02065: (6853) _imm 26707
+0812: 02066: (6669) _imm 26217
+0813: 02067: (7374) _imm 29556
+0814: 02068: (6E41) _imm 28225
+0815: 02069: (4564) _imm 17764
+0816: 02070: (7478) _imm 29816
+0817: 02071: (6E65) _imm 28261
+0818: 02072: (6973) _imm 26995
+0819: 02073: (6E6F) _imm 28271
+081A: 02074: (0A73) _imm 2675
+081B: 02075: (6200) _imm 25088
+081C: 02076: (7469) _imm 29801
+081D: 02077: (6853) _imm 26707
+081E: 02078: (6669) _imm 26217
+081F: 02079: (7374) _imm 29556
+0820: 02080: (000A) _imm 10
+0821: 02081: (7473) _imm 29811
+0822: 02082: (6361) _imm 25441
+0823: 02083: (466B) _imm 18027
+0824: 02084: (6172) _imm 24946
+0825: 02085: (656D) _imm 25965
+0826: 02086: (000A) _imm 10
+0827: 02087: (6F6C) _imm 28524
+0828: 02088: (6461) _imm 25697
+0829: 02089: (7453) _imm 29779
+082A: 02090: (726F) _imm 29295
+082B: 02091: (4F65) _imm 20325
+082C: 02092: (6666) _imm 26214
+082D: 02093: (6573) _imm 25971
+082E: 02094: (0A74) _imm 2676
+082F: 02095: (6C00) _imm 27648
+0830: 02096: (616F) _imm 24943
+0831: 02097: (5364) _imm 21348
+0832: 02098: (6F74) _imm 28532
+0833: 02099: (6572) _imm 25970
+0834: 02100: (6E49) _imm 28233
+0835: 02101: (6564) _imm 25956
+0836: 02102: (0A78) _imm 2680
+0837: 02103: (6C00) _imm 27648
+0838: 02104: (616F) _imm 24943
+0839: 02105: (5364) _imm 21348
+083A: 02106: (6F74) _imm 28532
+083B: 02107: (6572) _imm 25970
+083C: 02108: (6441) _imm 25665
+083D: 02109: (7264) _imm 29284
+083E: 02110: (7365) _imm 29541
+083F: 02111: (0A73) _imm 2675
+0840: 02112: (7300) _imm 29440
+0841: 02113: (6C65) _imm 27749
+0842: 02114: (6365) _imm 25445
+0843: 02115: (4174) _imm 16756
+0844: 02116: (646E) _imm 25710
+0845: 02117: (6553) _imm 25939
+0846: 02118: (0A74) _imm 2676
+0847: 02119: (6100) _imm 24832
+0848: 02120: (6464) _imm 25700
+0849: 02121: (7553) _imm 30035
+084A: 02122: (4E62) _imm 20066
+084B: 02123: (6765) _imm 26469
+084C: 02124: (6554) _imm 25940
+084D: 02125: (7473) _imm 29811
+084E: 02126: (000A) _imm 10
+084F: 02127: (6461) _imm 25697
+0850: 02128: (5364) _imm 21348
+0851: 02129: (6275) _imm 25205
+0852: 02130: (6554) _imm 25940
+0853: 02131: (7473) _imm 29811
+0854: 02132: (3233) _imm 12851
+0855: 02133: (000A) _imm 10
+0856: 02134: (6E61) _imm 28257
+0857: 02135: (4F64) _imm 20324
+0858: 02136: (5872) _imm 22642
+0859: 02137: (726F) _imm 29295
+085A: 02138: (6F4E) _imm 28494
+085B: 02139: (5474) _imm 21620
+085C: 02140: (7365) _imm 29541
+085D: 02141: (0A74) _imm 2676
+085E: 02142: (0000) _imm 0
+085F: 02143: (2710) _imm 10000
+0860: 02144: (03E8) _imm 1000
+0861: 02145: (0064) _imm 100
+0862: 02146: (000A) _imm 10
+0863: 02147: (0001) _imm 1</a>
       <a name="lines" val="20"/>
       <a name="select" val="address"/>
     </comp>
@@ -1921,8 +3290,8 @@ Source: setupData
     <comp loc="(1280,1300)" name="MARCTRL"/>
     <comp loc="(1280,680)" name="ALU"/>
     <comp loc="(1500,1270)" name="SHL8"/>
-    <comp loc="(1610,1010)" name="Clock"/>
     <comp loc="(1760,1310)" name="SHR8EXT"/>
+    <comp loc="(280,220)" name="Clock"/>
     <comp loc="(370,1130)" name="RegSP"/>
     <comp loc="(370,1300)" name="RegPC"/>
     <comp loc="(370,890)" name="Registers"/>
@@ -2086,6 +3455,10 @@ Source: setupData
     <wire from="(1280,700)" to="(1320,700)"/>
     <wire from="(1280,770)" to="(1390,770)"/>
     <wire from="(1280,840)" to="(1310,840)"/>
+    <wire from="(130,180)" to="(170,180)"/>
+    <wire from="(130,220)" to="(150,220)"/>
+    <wire from="(130,250)" to="(190,250)"/>
+    <wire from="(130,320)" to="(170,320)"/>
     <wire from="(1300,640)" to="(1300,680)"/>
     <wire from="(1310,1500)" to="(1310,1680)"/>
     <wire from="(1310,1680)" to="(1310,1860)"/>
@@ -2103,32 +3476,26 @@ Source: setupData
     <wire from="(140,1610)" to="(140,1720)"/>
     <wire from="(140,1610)" to="(300,1610)"/>
     <wire from="(140,1720)" to="(400,1720)"/>
-    <wire from="(1460,1010)" to="(1480,1010)"/>
-    <wire from="(1460,1040)" to="(1520,1040)"/>
-    <wire from="(1460,1110)" to="(1500,1110)"/>
-    <wire from="(1460,970)" to="(1500,970)"/>
-    <wire from="(1470,1070)" to="(1480,1070)"/>
-    <wire from="(1480,1010)" to="(1480,1020)"/>
-    <wire from="(1480,1020)" to="(1520,1020)"/>
-    <wire from="(1480,1060)" to="(1480,1070)"/>
-    <wire from="(1480,1060)" to="(1520,1060)"/>
-    <wire from="(1500,1000)" to="(1520,1000)"/>
-    <wire from="(1500,1080)" to="(1500,1110)"/>
-    <wire from="(1500,1080)" to="(1520,1080)"/>
-    <wire from="(1500,1110)" to="(1560,1110)"/>
+    <wire from="(140,280)" to="(150,280)"/>
+    <wire from="(150,220)" to="(150,230)"/>
+    <wire from="(150,230)" to="(190,230)"/>
+    <wire from="(150,270)" to="(150,280)"/>
+    <wire from="(150,270)" to="(190,270)"/>
     <wire from="(1500,1300)" to="(1610,1300)"/>
     <wire from="(1500,1310)" to="(1620,1310)"/>
-    <wire from="(1500,970)" to="(1500,1000)"/>
-    <wire from="(1590,1110)" to="(1640,1110)"/>
     <wire from="(1590,1730)" to="(1610,1730)"/>
     <wire from="(1590,1910)" to="(1620,1910)"/>
-    <wire from="(1610,1010)" to="(1640,1010)"/>
     <wire from="(1610,1300)" to="(1610,1730)"/>
     <wire from="(1610,1300)" to="(1650,1300)"/>
     <wire from="(1620,1310)" to="(1620,1910)"/>
     <wire from="(1620,1310)" to="(1650,1310)"/>
     <wire from="(1620,1910)" to="(1660,1910)"/>
     <wire from="(1680,1910)" to="(1690,1910)"/>
+    <wire from="(170,180)" to="(170,210)"/>
+    <wire from="(170,210)" to="(190,210)"/>
+    <wire from="(170,290)" to="(170,320)"/>
+    <wire from="(170,290)" to="(190,290)"/>
+    <wire from="(170,320)" to="(230,320)"/>
     <wire from="(1760,1310)" to="(1790,1310)"/>
     <wire from="(1790,550)" to="(1790,1310)"/>
     <wire from="(230,1150)" to="(270,1150)"/>
@@ -2148,9 +3515,11 @@ Source: setupData
     <wire from="(240,950)" to="(270,950)"/>
     <wire from="(240,970)" to="(270,970)"/>
     <wire from="(240,990)" to="(270,990)"/>
+    <wire from="(260,320)" to="(310,320)"/>
     <wire from="(270,1630)" to="(300,1630)"/>
     <wire from="(270,1650)" to="(300,1650)"/>
     <wire from="(270,1670)" to="(300,1670)"/>
+    <wire from="(280,220)" to="(310,220)"/>
     <wire from="(370,1020)" to="(480,1020)"/>
     <wire from="(370,1040)" to="(780,1040)"/>
     <wire from="(370,1130)" to="(390,1130)"/>
